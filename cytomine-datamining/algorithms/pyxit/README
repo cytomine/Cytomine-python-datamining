@@ -1,0 +1,18 @@
+
+This code implements the core algorithms for Random subwindows extraction and Extra-Trees classifiers.
+It is used by Cytomine pyxit_validation, segmentation_model_builder and segmentation_prediction.
+But it can be run without Cytomine on local data (using dir_ls and dir_ts arguments).
+
+It is based on the following paper:
+
+1) For image/object classification:
+Towards generic image classification: an extensive empirical study
+Marée et al., 2014
+http://orbi.ulg.ac.be/handle/2268/175525
+
+
+2) For image semantic segmentation:
+Fast Multi-Class Image Annotation with Random Subwindows and Multiple Output Randomized Trees
+Dumont et al., 2009
+http://orbi.ulg.ac.be/handle/2268/12205
+
