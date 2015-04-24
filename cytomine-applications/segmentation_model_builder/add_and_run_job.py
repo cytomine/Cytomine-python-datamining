@@ -1,4 +1,26 @@
-__author__ = 'rmaree,stevben'
+# -*- coding: utf-8 -*-
+
+#
+# * Copyright (c) 2009-2015. Authors: see NOTICE file.
+# *
+# * Licensed under the Apache License, Version 2.0 (the "License");
+# * you may not use this file except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *      http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# */
+
+
+__author__          = "Marée Raphael <raphael.maree@ulg.ac.be>"
+__contributors__    = ["Stévens Benjamin <b.stevens@ulg.ac.be>"]
+__copyright__       = "Copyright 2010-2015 University of Liège, Belgium, http://www.cytomine.be/"
+
 
 import cytomine
 import os, optparse
@@ -25,12 +47,14 @@ from time import localtime, strftime
 
 #Usage:
 #This file download (dump) existing annotations from the server at specified dump_zoom
-#It builds a segmentation model (using randomly extracted subwindows and extra-trees) that tries to discriminate between the predicted_terms (regrouped
-#into one class),and all other terms (regrouped in a second class), but don't use terms specified in excluded_terms
+#It builds a segmentation model (using randomly extracted subwindows and extra-trees with multiple outputs) that tries to 
+# discriminate between the predicted_terms (regrouped into one class),and all other terms (regrouped in a second class), 
+# but without using terms specified in excluded_terms.
 #You need to specify the Cytomine id_project, and the software id (as produced by the add_software.py script)
 #See test-train.sh
 
-#cytomine parameters
+
+#Cytomine parameters are given in command-line
 parameters = {
 'cytomine_host' : None,
 'cytomine_public_key' : None,
@@ -55,20 +79,18 @@ pyxit_parameters = {
 'pyxit_n_jobs' : 10, #threads
 #subwindows extraction
 'pyxit_n_subwindows' : 100, #number of subwindows extracted per annotation
-#'pyxit_min_size' : 0.1,
-#'pyxit_max_size' : 0.1,
-'pyxit_target_width' : 24,  
-'pyxit_target_height' : 24,
+'pyxit_target_width' : 24,  #fixed size in segmentation mode
+'pyxit_target_height' : 24, #fixed size in segmentation mode
 'pyxit_interpolation' : 1, #interpolation used if subwindows are resized
 'pyxit_transpose' : 1, #do we apply rotation/mirroring to subwindows (to enrich training set)
 'pyxit_colorspace' : 2, # which colorspace do we use ?
-'pyxit_fixed_size' : True, #do we extracted fixed sizes (True) or random sizes
-'pyxit_save_to' : '/home/maree/tmp/cytomine/models/test.pkl',
+'pyxit_fixed_size' : True, #fixed size in segmentation mode
+'pyxit_save_to' : '',
 #classifier parameters
 'forest_n_estimators' : 10, #number of trees
 'forest_max_features' : 28, #number of attributes considered at each node
 'forest_min_samples_split' : 1, #nmin
-'svm' : 0,
+'svm' : 0, #no svm in segmentation mode
 'svm_c': 1.0,
 }
 
@@ -277,22 +299,10 @@ def main(argv):
     if pyxit_parameters['pyxit_save_to']:
         pickle.dump(pyxit, fd, protocol=pickle.HIGHEST_PROTOCOL)
 
-#no svm layer in segmentation
-#    if pyxit_parameters['svm']:
-#        Xt = pyxit.transform(X, _X=_X, reset=True)
-#        if options.verbose:
-#            print "[pyxit.main] Fitting SVC on %s" % pyxit_parameters['dir_ls']
-#        svm.fit(Xt, y)
-#        if options.verbose:
-#            print "[pyxit.main] Saving SVM into %s" % pyxit_parameters['pyxit_save_to']
-#        if pyxit_parameters['pyxit_save_to']:
-#            pickle.dump(svm, fd, protocol=pickle.HIGHEST_PROTOCOL)
-
     if pyxit_parameters['pyxit_save_to']:
         fd.close()
 	
-
-    #print "Not Publishing Result.."
+    print "Not Publishing model in db.."
     #job_data = conn.add_job_data(job, "model", pyxit_parameters['pyxit_save_to'])
     
     job = conn.update_job_status(job, status = job.TERMINATED, status_comment = "Finish", progress = 100)    
