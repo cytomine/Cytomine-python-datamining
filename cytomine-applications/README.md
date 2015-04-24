@@ -1,7 +1,9 @@
 Copyright 2010-2015 University of Liège, Belgium, http://www.cytomine.be/
 
 
-This folder contains application examples for different image analysis tasks:
+This folder contains application examples for different image analysis tasks.
+Annotation objects that are created by these algorithms can be proofread using
+Review modules on Cytomine-WebUI.
 
 
 ---------------------------------------------------------------------------------
