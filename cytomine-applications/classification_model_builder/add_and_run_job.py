@@ -95,7 +95,7 @@ def main(argv):
     p.add_option('--cytomine_id_project', type="int", dest="cytomine_id_project", help="The Cytomine project identifier")	
     p.add_option('-z', '--cytomine_zoom_level', type='int', dest='cytomine_zoom_level', help="working zoom level")
     p.add_option('--cytomine_dump_type', type='int', dest='cytomine_dump_type', help="annotation type (1=crop, 2=alphamask)")
-    p.add_option('--cytomine_annotation_projects', type="string", dest="cytomine_annotation_projects", help="Projects from which annotations are extracted")	
+    p.add_option('--cytomine_annotation_projects', type="string", dest="cytomine_annotation_projects", help="Projects from which annotations are extracted")
     p.add_option('--cytomine_predict_terms', type='string', default='0', dest='cytomine_predict_terms', help="term ids of predicted terms (=positive class in binary mode)")
     p.add_option('--cytomine_excluded_terms', type='string', default='5735', dest='cytomine_excluded_terms', help="term ids of excluded terms")
     p.add_option('--cytomine_reviewed', default=False, action="store_true", dest="cytomine_reviewed", help="Get reviewed annotations only")
@@ -190,7 +190,7 @@ def main(argv):
     for prj in parameters['cytomine_annotation_projects']:
         if parameters["cytomine_reviewed"]:
             print "Retrieving reviewed annotations..."
-            annotations_prj = conn.get_reviewed_annotations(id_project = prj)
+            annotations_prj = conn.get_annotations(id_project = prj, reviewed_only = parameters["cytomine_reviewed"])
             print "Reviewed annotations: %d" %len(annotations_prj.data())
         else :
             print "Retrieving (unreviewed) annotations..."
