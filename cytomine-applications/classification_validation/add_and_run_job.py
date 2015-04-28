@@ -211,7 +211,7 @@ def main(argv):
 
 
     #get annotation collection from Cytomine 
-    annotations = conn.get_annotations(id_project = parameters['cytomine_id_project'])
+    annotations = conn.get_annotations(id_project = parameters['cytomine_id_project'], reviewed_only = parameters['cytomine_reviewed'])
     #set output dir parameters
     pyxit_parameters['dir_ls'] = os.path.join(parameters["cytomine_working_path"], str(parameters['cytomine_annotation_projects']).replace(',','-').replace('[','').replace(']','').replace(' ',''), "zoom_level", str(parameters['cytomine_zoom_level']),"dump_type",str(parameters['cytomine_dump_type']))
     if not os.path.exists(pyxit_parameters['dir_ls']):
