@@ -1,10 +1,5 @@
 
-#script should specify: list of annotation_projects ids, user ids, reviewed/not, excluded_terms ids, image ids, increasedarea?
-
 # ---------------------------------------------------------------------------------------------------------
-# LBTD tissus post-classification model
-
-
 # * Copyright (c) 2009-2015. Authors: see NOTICE file.
 # *
 # * Licensed under the Apache License, Version 2.0 (the "License");
@@ -64,5 +59,6 @@ max_size=0.9 #maximum size of subwindows (...)
 #-If you want to use only reviewed annotations, uncomment --cytomine_reviewed
 #-If you want to build a model better robust to orientation, uncomment pyxit_transpose (which applies random right-angle rotation to subwindows)
 #But it the orientation is related to object classes (e.g. 6 and 9 in digit classification) do not use transpose
+#-Code could be modified to specify other filters (e.g. user ids, image ids, increasedarea)
 
 python add_and_run_job.py --cytomine_host $host --cytomine_public_key $public_key --cytomine_private_key $private_key --cytomine_base_path /api/ --cytomine_id_software $software --cytomine_working_path $working_path/annotations/ --cytomine_id_project $id_project --cytomine_annotation_projects $annotation_projects -z $zoom --cytomine_excluded_terms $excluded_terms --pyxit_target_width $windowsize --pyxit_target_height $windowsize --pyxit_colorspace $colorspace --pyxit_n_jobs $njobs --pyxit_min_size $min_size --pyxit_max_size $max_size --pyxit_interpolation $interpolation --forest_n_estimators $nbt --forest_max_features $k --forest_min_samples_split $nmin --pyxit_n_subwindows $subw --svm 1 --pyxit_save_to $working_path/models/$model_file --cytomine_dump_type 1 #--cytomine_reviewed #--pyxit_transpose
