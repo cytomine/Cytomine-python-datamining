@@ -2,8 +2,11 @@ Copyright 2010-2015 University of Liège, Belgium, http://www.cytomine.be/
 
 
 This folder contains application examples for different image analysis tasks.
-Annotation objects that are created by these algorithms can be proofread using
-Review modules on Cytomine-WebUI.
+These algorithms generally download image data from Cytomine-Core, process them
+(e.g. segment or classify), and upload results (e.g. annotation geometries
+and associated terms (e.g. cell category) or properties (e.g. cell counts))
+to Cytomine-core. Annotation objects that are created by these algorithms can then
+be proofread using Review modules on Cytomine-WebUI.
 
 
 ---------------------------------------------------------------------------------
