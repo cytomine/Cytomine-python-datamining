@@ -1,6 +1,7 @@
 
 This code implements the core algorithms for Random subwindows extraction and Extra-Trees classifiers.
-It is used by Cytomine pyxit_validation, segmentation_model_builder and segmentation_prediction.
+It is used by Cytomine DataMining applications: classification_validation, classification_model_builder, classification_prediction,
+segmentation_model_builder and segmentation_prediction.
 But it can be run without Cytomine on local data (using dir_ls and dir_ts arguments).
 
 It is based on the following paper:
