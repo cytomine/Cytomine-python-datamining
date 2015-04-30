@@ -44,8 +44,9 @@ http://orbi.ulg.ac.be/handle/2268/175580
 ---------------------------------------------------------------------------------
 3) classification_prediction:
 
-* Summary: It downloads from Cytomine-Core annotations images from an image, apply a classification model (previously saved locally), and 
-uploads to Cytomine-Core annotation terms (in a userjob layer).
+* Summary: It downloads from Cytomine-Core annotations images from an image (e.g. detected by an object finder), 
+apply a classification model (previously saved locally), and  uploads to Cytomine-Core annotation 
+terms (in a userjob layer).
 
 * Typical application: cell classification in cytology slides.
 
@@ -124,3 +125,20 @@ http://dx.doi.org/10.1109/TMI.2015.2412951
 http://orbi.ulg.ac.be/handle/2268/99199 (preliminary version of the algorithm)
 
 ---------------------------------------------------------------------------------
+
+8) object_finder:
+
+* Summary: It applies an object finder (e.g. threshold algorithm + connected components) to
+tiles in a wholeimage and uploads detected geometries to Cytomine-Core (in a userjob layer)
+
+* Typical application: Object detection (e.g. cells) before object classification
+
+* Based on:
+Existing algorithms (Otsu, ...)
+
+* Used in:
+
+
+---------------------------------------------------------------------------------
+
+
