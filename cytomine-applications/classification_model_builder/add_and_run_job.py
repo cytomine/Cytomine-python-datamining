@@ -227,7 +227,7 @@ def main(argv):
 
 
     #Build pyxit classification model (and saves it)
-    print "Create software parameters values..."
+    print "Upload software parameters values to Cytomine-Core..."
     parameters_values = conn.add_job_parameters(user_job.job, conn.get_software(parameters['cytomine_id_software']), pyxit_parameters)
     print "Run PyXiT..."
     argv = parameters_values_to_argv(pyxit_parameters, parameters_values) 
