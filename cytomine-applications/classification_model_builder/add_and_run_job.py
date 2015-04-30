@@ -41,13 +41,13 @@ parameters = {
 'cytomine_private_key' : None,
 'cytomine_base_path' : None,
 'cytomine_working_path' : '/home/maree/tmp/cytomine/annotations/',
-'cytomine_id_software' : 816476,
-'cytomine_id_project' : 716498,
+'cytomine_id_software' : 1,
+'cytomine_id_project' : 1,
 'cytomine_zoom_level' : 1,
 'cytomine_dump_type' : 1,
-'cytomine_annotation_projects' : [716498],  #id of projets from which we dump annotations for learning
-'cytomine_predict_terms' : [676390], #inclusion
-'cytomine_excluded_terms' : [676131,676210,676176,676446,676434,676390,676407,933004,8844845,8844862], #exclude these terms
+'cytomine_annotation_projects' : [1],  #id of projets from which we dump annotations for learning
+'cytomine_predict_terms' : [1], #
+'cytomine_excluded_terms' : [2,3], #exclude these term ids
 'cytomine_reviewed': True
 }
 
@@ -63,8 +63,8 @@ pyxit_parameters = {
 'pyxit_n_subwindows' : 100,
 'pyxit_min_size' : 0.1,
 'pyxit_max_size' : 1.0,
-'pyxit_target_width' : 16,  #24x24 en zoom 3 sur agar/pgp
-'pyxit_target_height' : 16,
+'pyxit_target_width' : 24,  #24x24 
+'pyxit_target_height' : 24,
 'pyxit_interpolation' : 1,
 'pyxit_transpose' : 1, #do we apply rotation/mirroring to subwindows (to enrich training set)
 'pyxit_colorspace' : 2, # which colorspace do we use ?
