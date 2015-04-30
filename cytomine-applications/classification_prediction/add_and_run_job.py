@@ -103,13 +103,13 @@ def main(argv):
 
     if options.verbose:
         print "Create Job and UserJob..."
-        
-    user_job = conn.add_user_job(parameters['cytomine_id_software'], parameters['cytomine_id_project'])
-
+    
     #Switch to job Connection
+    user_job = conn.add_user_job(parameters['cytomine_id_software'], parameters['cytomine_id_project'])
     conn.set_credentials(str(user_job.publicKey), str(user_job.privateKey))
     job = conn.get_job(user_job.job)  
-    print "Fetching data..."
+    job = conn.update_job_status(job, status_comment = "Publish software parameters values")
+    job_parameters_values = conn.add_job_parameters(user_job.job, conn.get_software(parameters['cytomine_id_software']), parameters)    
     job = conn.update_job_status(job, status = job.RUNNING, status_comment = "Run...", progress = 0)
 
 
