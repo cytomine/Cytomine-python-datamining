@@ -814,19 +814,20 @@ def main(argv):
         #Segmentation model was applied on individual tiles. We need to merge geometries generated from each tile.
         #We use a groovy/JTS script that downloads annotation geometries and perform union locally to relieve the Cytomine server
         if parameters['cytomine_union']:
-            union_term=parameters['cytomine_predict_term']
-            union_minlength=10 # we consider merging polygons that have at least 20 pixels in common, default=20
-            union_bufferoverlap=5 # for each polygon, we look in a surrounding region of 5 pixels
-            union_area=5000
-            union_minPointForSimplify=1000  #if an annotation has more than x points after union, it will be simplified (default 10000)
-            union_minPoint=500 #minimum number of points for simplified annotation
-            union_maxPoint=1000 #maximum number of points for simplified annotation
-            union_nbzonesWidth=5 #an image is divided into this number of horizontal grid cells to perform lookup
-            union_nbzonesHeight=5 #an image is divided into this number of vertical grid cells to perform lookup
             print "TIME : %s" %strftime("%Y-%m-%d %H:%M:%S", localtime())
-            print "Union of polygons for job %d and image %d, term: %d, minlength: %d, bufferoverlap: %d, union area: %d" %(job.userJob,id_image,union_term,union_minlength,union_bufferoverlap,union_area)
+            print "Union of polygons for job %d and image %d, term: %d" %(job.userJob,id_image,parameters['cytomine_predict_term'])
             start = time.time()
-            unioncommand = "groovy -cp \"../../../lib/jars/*\" ../../../lib/union4.groovy http://%s %s %s %d %d %d %d %d %d %d %d %d %d" %(parameters["cytomine_host"],user_job.publicKey,user_job.privateKey,id_image,job.userJob,union_term,union_minlength,union_bufferoverlap,union_minPointForSimplify,union_minPoint,union_maxPoint,union_nbzonesWidth,union_nbzonesHeight)
+            unioncommand = "groovy -cp \"../../../lib/jars/*\" ../../../lib/union4.groovy http://%s %s %s %d %d %d %d %d %d %d %d %d %d" %(parameters["cytomine_host"],
+                                                                                                                                           user_job.publicKey,user_job.privateKey,
+                                                                                                                                           id_image,job.userJob,
+                                                                                                                                           parameters['cytomine_predict_term'], #union_term,
+                                                                                                                                           parameters['cytomine_union_min_length'], #union_minlength,
+                                                                                                                                           parameters['cytomine_union_bufferoverlap'], #union_bufferoverlap,
+                                                                                                                                           parameters['cytomine_union_min_point_for_simplify'], #union_minPointForSimplify,
+                                                                                                                                           parameters['cytomine_union_min_point'], #union_minPoint,
+                                                                                                                                           parameters['cytomine_union_max_point'], #union_maxPoint,
+                                                                                                                                           parameters['cytomine_union_nb_zones_width'], #union_nbzonesWidth,
+                                                                                                                                           parameters['cytomine_union_nb_zones_height']) #union_nbzonesHeight)
             print unioncommand
             os.system(unioncommand)
             #old version was using a cytomine core webservice for union 
