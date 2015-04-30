@@ -240,7 +240,7 @@ static Geometry combineIntoOneGeometry( def geometryCollection ){
      def filters = [:]
      filters.put("user",user);
      filters.put("image",image);
-     filters.put("term",term);
+     if (term!=0) { filters.put("term",term.toString());}
      filters.put("showTerm","true");
      filters.put("showWKT","true");
 
