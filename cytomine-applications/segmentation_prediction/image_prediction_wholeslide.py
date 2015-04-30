@@ -826,7 +826,7 @@ def main(argv):
             print "TIME : %s" %strftime("%Y-%m-%d %H:%M:%S", localtime())
             print "Union of polygons for job %d and image %d, term: %d, minlength: %d, bufferoverlap: %d, union area: %d" %(job.userJob,id_image,union_term,union_minlength,union_bufferoverlap,union_area)
             start = time.time()
-            unioncommand = "groovy -cp \"union/lib/*\" union/union4.groovy http://%s %s %s %d %d %d %d %d %d %d %d %d %d" %(parameters["cytomine_host"],user_job.publicKey,user_job.privateKey,id_image,job.userJob,union_term,union_minlength,union_bufferoverlap,union_minPointForSimplify,union_minPoint,union_maxPoint,union_nbzonesWidth,union_nbzonesHeight)
+            unioncommand = "groovy -cp \"../../../lib/jars/*\" ../../../lib/union4.groovy http://%s %s %s %d %d %d %d %d %d %d %d %d %d" %(parameters["cytomine_host"],user_job.publicKey,user_job.privateKey,id_image,job.userJob,union_term,union_minlength,union_bufferoverlap,union_minPointForSimplify,union_minPoint,union_maxPoint,union_nbzonesWidth,union_nbzonesHeight)
             print unioncommand
             os.system(unioncommand)
             #old version was using a cytomine core webservice for union 
