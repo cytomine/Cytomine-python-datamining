@@ -192,7 +192,7 @@ def main(argv):
 			job = conn.update_job_status(job, status_comment = "Create software parameters values...")
                         job_parameters_values = conn.add_job_parameters(user_job.job, conn.get_software(parameters['cytomine_id_software']), parameters)        
 			job = conn.update_job_status(job, status = job.RUNNING, progress = 0, status_comment = "Loading data...")
-
+                        print "Cytomine imageid %d jobid %d" %(obj.id,job.userJob)
 
                         #Resize image
 			print "Resizing and processing image %s" % obj.filename
