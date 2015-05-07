@@ -17,11 +17,11 @@ be proofread using Review modules on Cytomine-WebUI.
 
 * Based on:
 Towards generic image classification: an extensive empirical study
-Marée et al., 2014 http://orbi.ulg.ac.be/handle/2268/175525
+Marée et al., TR 2014 http://orbi.ulg.ac.be/handle/2268/175525
 
 * Used in (Note: Another previous implementation/variants were used):
 Towards generic image classification: an extensive empirical study
-Marée et al., 2014 http://orbi.ulg.ac.be/handle/2268/175525
+Marée et al., TR 2014 http://orbi.ulg.ac.be/handle/2268/175525
 
 ---------------------------------------------------------------------------------
 2) classification_model_builder:
@@ -32,7 +32,7 @@ Marée et al., 2014 http://orbi.ulg.ac.be/handle/2268/175525
 
 * Based on:
 - Towards generic image classification: an extensive empirical study
-Marée et al., 2014 http://orbi.ulg.ac.be/handle/2268/175525
+Marée et al., TR 2014 http://orbi.ulg.ac.be/handle/2268/175525
 
 * Used in (Note: Another previous implementation/variants were used):
 - Phenotype Classification of Zebrafish Embryos by Supervised Learning
@@ -52,7 +52,7 @@ terms (in a userjob layer).
 
 * Based on:
 - Towards generic image classification: an extensive empirical study
-Marée et al., 2014 http://orbi.ulg.ac.be/handle/2268/175525
+Marée et al., TR 2014 http://orbi.ulg.ac.be/handle/2268/175525
 
 * Used in (Note: Another previous implementation/variants were used):
 - Phenotype Classification of Zebrafish Embryos by Supervised Learning
@@ -136,9 +136,22 @@ tiles in a wholeimage and uploads detected geometries to Cytomine-Core (in a use
 * Based on:
 Existing algorithms (Otsu, ...)
 
-* Used in:
+
+---------------------------------------------------------------------------------
+
+9) detect_sample:
+
+* Summary: It applies a thresholding algorithm to a thumbnail of a whole image (downloaded
+from Cytomine-Core) and upload detected geometries to Cytomine-Core (in a userjob layer)
+
+* Typical application: Detect sample region before applying other algorithms (e.g. segmentation)
+
+* Based on:
+Existing algorithms (Adaptive Thresholding)
 
 
 ---------------------------------------------------------------------------------
 
 
+Future work:
+- Object-oriented implementation of applications into a common analysis workflow.
