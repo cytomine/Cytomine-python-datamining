@@ -22,14 +22,14 @@ __contributors__    = ["Marée Raphael <raphael.maree@ulg.ac.be>"]
 __copyright__       = "Copyright 2010-2015 University of Liège, Belgium, http://www.cytomine.be/"
 
 
-import numpy
+import numpy as np
 import sys
 
 from cytomine_utilities import *
 from cytomine import cytomine, models
 
 from cytomine_utilities.objectfinder import ObjectFinder
-from cytomine_utilities.utils import Utils_
+from cytomine_utilities.utils import Utils
 from shapely.geometry.polygon import Polygon
 from shapely.wkt import dumps
 
@@ -199,27 +199,27 @@ def main(argv):
                         ori_image = cv2.imread(obj.filename,0)
                         ori_height, ori_width = ori_image.shape
                         print "Downloaded thumbnail image: %dx%d" %(ori_width, ori_height)
-                        width_ratio = ori_width / parameters['cytomine_max_image_size']
-			if width_ratio > 1:
-                                image = cv2.resize(image, (0,0), fx=int(ori_width / width_ratio), fy=int(ori_height / width_ratio))
+                        max_dim = max(ori_width,ori_height)
+                        resize_ratio = max_dim / parameters['cytomine_max_image_size']
+			if resize_ratio > 1:
+                                image = cv2.resize(image, (0,0), fx=int(ori_width / resize_ratio), fy=int(ori_height / resize_ratio))
                         else:
                             image = ori_image
 
                         #Threshold image using adaptive thresholding
-                        new_height=int(ori_height/width_ratio)
-                        new_width=int(ori_width/width_ratio)
-                        cv_im = cv.CreateImageHeader((new_width,new_height), cv.IPL_DEPTH_8U, 1)
-			cv.SetData(cv_im, image.tostring())
-                        cv.AdaptiveThreshold(cv_im, cv_im, 255, cv.CV_ADAPTIVE_THRESH_GAUSSIAN_C, 
-                                             cv.CV_THRESH_BINARY, 
-                                             parameters['cytomine_athreshold_blocksize'], 
-                                             parameters['cytomine_athreshold_constant'])
-                        
-			
-                        #ellipse = cv.CreateStructuringElementEx(15,15,0,0, cv.CV_SHAPE_ELLIPSE)
-                        cv.Erode(cv_im, cv_im, iterations = parameters['cytomine_erode_iterations'], element = None)  #3
-			cv.Dilate(cv_im, cv_im, iterations = parameters['cytomine_dilate_iterations'], element = None) #3
-        
+                        new_height=int(ori_height/resize_ratio)
+                        new_width=int(ori_width/resize_ratio)
+                        cv_im = image
+                        print cv_im.shape
+                        cv_im_thres = cv2.adaptiveThreshold(cv_im, 255, cv.CV_ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                                            cv.CV_THRESH_BINARY, 
+                                                            parameters['cytomine_athreshold_blocksize'], 
+                                                            parameters['cytomine_athreshold_constant'])
+
+                        kernel = np.ones((5,5),np.uint8)
+                        cv_im_erode = cv2.erode(cv_im_thres, kernel, iterations = parameters['cytomine_erode_iterations'])  #3
+			cv_im_dilate = cv2.dilate(cv_im_erode, kernel, iterations = parameters['cytomine_dilate_iterations']) #3
+                        cv_im = cv_im_dilate
 
                         #Save binarized image
 			#image = Image.fromstring("L", cv.GetSize(cv_im), cv_im.tostring())
@@ -231,20 +231,25 @@ def main(argv):
 
                         
                         #Find components, get a CV_RETR_LIST with all components
-			components = ObjectFinder(cv_im).find_components_list()
+                        #Extend the image with borders (padding) to find contours touching the borders
+                        ext=10
+                        extended_cv_im= cv2.copyMakeBorder(cv_im,ext,ext,ext,ext,cv2.BORDER_CONSTANT,value=[255,255,255])
+                        components = ObjectFinder(extended_cv_im).find_components_list()
 
 
                         #Convert components to real coordinates in the whole slide
-                        image_width, image_height = cv.GetSize(cv_im)
+                        image_height, image_width = cv_im.shape #cv2.getSize(extended_cv_im)
+                        
  			zoom_factor = obj.width / float(image_width)
+                        print "obj.width: %d" %obj.width
+                        print "image: width %d height %d" %(image_width,image_height)
                         print "Apply zoom_factor to geometries: %f" %zoom_factor
 			converted_components = []
 			for component in components:
 				converted_component = []
-				for point in component:
-					x = point[0]
-					y = point[1]
-                
+				for point in component[0]:
+					x = point[0] - ext
+					y = point[1] - ext
 					x_at_maximum_zoom = x * zoom_factor
 					y_at_maximum_zoom =  obj.height - (y * zoom_factor)
 					point = (int(x_at_maximum_zoom), int(y_at_maximum_zoom))
@@ -263,7 +268,7 @@ def main(argv):
 				elif Polygon(biggest_geom).area < Polygon(component).area:
 					biggest_geom = component
 
-                        #Skip the biggest component
+                        #Skip the biggest component and filter based on min/max size
 			locations = []
 			for component in converted_components:
 				p = Polygon(component)
@@ -271,17 +276,16 @@ def main(argv):
 					continue
 				if min_area and max_area:                
 					if p.area > min_area and p.area < max_area:
-						locations.append(component)
+						locations.append(p.wkt) 
 				else:
-					locations.append(component)
+					locations.append(p.wkt) 
                 
 			print "Image : %s " % obj.filename
 			print "Nb annotations found : %d" % len(locations)
 
 
                         #Convert to geometries and upload annotations (with term) to Cytomine-Core
-                        geometries.extend(Utils_().get_geometries(locations, min_area, max_area))
-			for geometry in geometries:
+			for geometry in locations:
 				print "Uploading geometry %s" % geometry
 				annotation = conn.add_annotation(geometry, obj.id)
 				print annotation
