@@ -168,31 +168,28 @@ def main(argv):
 	#Process each image to detect sample
 	i = 0
 	geometries = []
+
+
+        #Create a new userjob if connected as human user
+        current_user = conn.get_current_user()
+        if current_user.algo==False:
+            print "adduserJob..."
+            user_job = conn.add_user_job(id_software, idProject)
+            print "set_credentials..."
+            conn.set_credentials(str(user_job.publicKey), str(user_job.privateKey))
+            print "done"
+        else:
+            user_job = current_user
+            print "Already running as userjob"
+        job = conn.get_job(user_job.job)
+        job = conn.update_job_status(job, status_comment = "Create software parameters values...")
+        job_parameters_values = conn.add_job_parameters(user_job.job, conn.get_software(parameters['cytomine_id_software']), parameters)        
+
 	for obj in images:
 		if True:
-			print "Processing image %d " % obj.id
-
-                        #Re-establish a cytomine connection and create a new userjob for each image
-                        conn = cytomine.Cytomine(parameters["cytomine_host"], 
-                                 parameters["cytomine_public_key"], 
-                                 parameters["cytomine_private_key"] , 
-                                 base_path = parameters['cytomine_base_path'], 
-                                 working_path = parameters['cytomine_working_path'], 
-                                 verbose= True)
-                        #Create new userJob for this image
-			image_instance = conn.get_image_instance(obj.id)
-			print "adduserJob..."
-			user_job = conn.add_user_job(id_software, image_instance.project)
-			print "done..."
-			print "set_credentials..."
-			conn.set_credentials(str(user_job.publicKey), str(user_job.privateKey))
-			print "done"
-			job = conn.get_job(user_job.job)
-			job = conn.update_job_status(job, status_comment = "Create software parameters values...")
-                        job_parameters_values = conn.add_job_parameters(user_job.job, conn.get_software(parameters['cytomine_id_software']), parameters)        
-			job = conn.update_job_status(job, status = job.RUNNING, progress = 0, status_comment = "Loading data...")
-                        print "Cytomine imageid %d jobid %d" %(obj.id,job.userJob)
-
+                        print "Processing Cytomine imageid %d jobid %d" %(obj.id,job.userJob)
+			job = conn.update_job_status(job, status = job.RUNNING, progress = i/len(images)*100, status_comment = "Processing images...")
+                        
                         #Resize image
 			print "Resizing and processing image %s" % obj.filename
                         ori_image = cv2.imread(obj.filename,0)
@@ -227,8 +224,6 @@ def main(argv):
 			#filename = obj.filename.replace(".jpg", "_clo.png")
 			#image.save(filename, "PNG")
 
-
-                        
                         #Find components, get a CV_RETR_LIST with all components
                         #Extend the image with borders (padding) to find contours touching the borders
                         ext=10
@@ -291,12 +286,12 @@ def main(argv):
 				if annotation:
 					conn.add_annotation_term(annotation.id, parameters['cytomine_predict_term'], parameters['cytomine_predict_term'], 1.0, annotation_term_model = models.AlgoAnnotationTerm)
 			geometries = []
-			job = conn.update_job_status(job, status = job.TERMINATED, progress = 100, status_comment =  "Finish Job..")
-			job = None	
+			
 
-		i += 1
+                        i += 1
 
-
+        job = conn.update_job_status(job, status = job.TERMINATED, progress = 100, status_comment =  "Finish Job..")
+        job = None	
 
 
 if __name__ == "__main__":
