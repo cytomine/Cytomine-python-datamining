@@ -112,8 +112,7 @@ def main(argv):
         p.add_option('--cytomine_dilate_iterations', type='int', dest='cytomine_dilate_iterations', help="number of dilatations")
 	p.add_option('--cytomine_predict_term', type='int', dest='cytomine_predict_term', help="term id of predicted term (binary mode)")
         p.add_option('--cytomine_id_image', type="int", dest="cytomine_id_image", help="The Cytomine image identifier")	
-	p.add_option('--verbose', action="store_true", default=False, dest="verbose", help="Turn on verbose mode")
-        p.add_option('--quiet', action="store_false", default=False, dest="verbose", help="Turn off verbose mode")
+	p.add_option('--verbose', type="int", default=0, dest="verbose", help="Turn on (1) or off (0) verbose mode")
 
 	options, arguments = p.parse_args( args = argv)
 
@@ -149,7 +148,7 @@ def main(argv):
                                  parameters["cytomine_private_key"] , 
                                  base_path = parameters['cytomine_base_path'], 
                                  working_path = parameters['cytomine_working_path'], 
-                                 verbose= True)
+                                 verbose=options.verbose)
         #Initialize parameters
 	id_software = parameters['cytomine_id_software']
         print "id software : %d" %id_software
