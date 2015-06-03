@@ -46,6 +46,6 @@ cytomine_athreshold_constant=5
 
 #Note: 
 #This script downloads thumbnails of whole-slide image, applies adaptive thresholding, and uploads geometries to Cytomine-Core as userjob layer
-python ../detect_sample.py --cytomine_host $cytomine_host --cytomine_public_key $cytomine_public_key --cytomine_private_key $cytomine_private_key --cytomine_base_path /api/ --cytomine_working_path $cytomine_working_path --cytomine_id_software $cytomine_id_software --cytomine_id_project $cytomine_id_project --cytomine_predict_term $cytomine_predict_term --cytomine_max_image_size $cytomine_max_image_size --cytomine_erode_iterations $cytomine_erode_iterations --cytomine_dilate_iterations $cytomine_dilate_iterations --cytomine_athreshold_blocksize $cytomine_athreshold_blocksize --cytomine_athreshold_constant $cytomine_athreshold_constant --verbose 1
+python ../detect_sample.py --cytomine_host $cytomine_host --cytomine_public_key $cytomine_public_key --cytomine_private_key $cytomine_private_key --cytomine_base_path /api/ --cytomine_working_path $cytomine_working_path --cytomine_id_software $cytomine_id_software --cytomine_id_project $cytomine_id_project --cytomine_predict_term $cytomine_predict_term --cytomine_max_image_size $cytomine_max_image_size --cytomine_erode_iterations $cytomine_erode_iterations --cytomine_dilate_iterations $cytomine_dilate_iterations --cytomine_athreshold_blocksize $cytomine_athreshold_blocksize --cytomine_athreshold_constant $cytomine_athreshold_constant --verbose True
 
 
