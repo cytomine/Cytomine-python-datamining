@@ -26,15 +26,15 @@
 
 
 #2. Edit following XXX and 0 values with your cytomine identifiers
-host="XXX"
-software=XXX
-public_key="XXX"
-private_key="XXX"
-id_project=XXX
-working_path=/bigdata/tmp/cytomine/
-annotation_projects=XXX #separated by ,
-predict_terms=XXX #id of terms to be grouped into the positive class (e.g. tumor) separated by ,
-excluded_terms=XXX #id of terms that will not be used (neither positive nor negative class) separated by ,
+cytomine_host="XXX"
+cytomine_id_software=XXX
+cyotmine_public_key="XXX"
+cytomine_private_key="XXX"
+cyotmine_id_project=XXX
+cytomine_working_path=/bigdata/tmp/cytomine/
+cytomine_annotation_projects=XXX #separated by ,
+cytomine_predict_terms=XXX #id of terms to be grouped into the positive class (e.g. tumor) separated by ,
+cytomine_excluded_terms=XXX #id of terms that will not be used (neither positive nor negative class) separated by ,
 model_file=classification_model.pkl
 zoom=XXX #zoom_level at which annotations are dumped
 
@@ -61,4 +61,4 @@ max_size=0.9 #maximum size of subwindows (...)
 #But it the orientation is related to object classes (e.g. 6 and 9 in digit classification) do not use transpose
 #-Code could be modified to specify other filters (e.g. user ids, image ids, increasedarea)
 
-python add_and_run_job.py --cytomine_host $host --cytomine_public_key $public_key --cytomine_private_key $private_key --cytomine_base_path /api/ --cytomine_id_software $software --cytomine_working_path $working_path/annotations/ --cytomine_id_project $id_project --cytomine_annotation_projects $annotation_projects -z $zoom --cytomine_excluded_terms $excluded_terms --pyxit_target_width $windowsize --pyxit_target_height $windowsize --pyxit_colorspace $colorspace --pyxit_n_jobs $njobs --pyxit_min_size $min_size --pyxit_max_size $max_size --pyxit_interpolation $interpolation --forest_n_estimators $nbt --forest_max_features $k --forest_min_samples_split $nmin --pyxit_n_subwindows $subw --svm 1 --pyxit_save_to $working_path/models/$model_file --cytomine_dump_type 1 #--cytomine_reviewed #--pyxit_transpose
+python add_and_run_job.py --cytomine_host $cytomine_host --cytomine_public_key $cytomine_public_key --cytomine_private_key $cytomine_private_key --cytomine_base_path /api/ --cytomine_id_software $cytomine_id_software --cytomine_working_path $working_path/annotations/ --cytomine_id_project $cytomine_id_project --cytomine_annotation_projects $cytomine_annotation_projects -z $zoom --cytomine_excluded_terms $cytomine_excluded_terms --pyxit_target_width $windowsize --pyxit_target_height $windowsize --pyxit_colorspace $colorspace --pyxit_n_jobs $njobs --pyxit_min_size $min_size --pyxit_max_size $max_size --pyxit_interpolation $interpolation --forest_n_estimators $nbt --forest_max_features $k --forest_min_samples_split $nmin --pyxit_n_subwindows $subw --svm 1 --pyxit_save_to $working_path/models/$model_file --cytomine_dump_type 1 --pyxit_transpose false --pyxit_fixed_size false --cytomine_reviewed false --verbose true
