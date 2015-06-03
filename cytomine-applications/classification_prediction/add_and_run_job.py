@@ -50,6 +50,10 @@ parameters = {
 }
 
 
+def str2bool(v):
+        return v.lower() in ("yes", "true", "t", "1")
+
+
 def main(argv):
     # Define command line options
     p = optparse.OptionParser(description='Pyxit/Cytomine Classification Model Prediction',
@@ -67,8 +71,7 @@ def main(argv):
     p.add_option('-z', '--cytomine_zoom_level', type='int', dest='cytomine_zoom_level', help="working zoom level")
     p.add_option('--cytomine_dump_type', type='int', dest='cytomine_dump_type', help="dump type of annotations (with/out alpha channel)")
     p.add_option('--cytomine_id_userjob', type="int", dest="cytomine_id_userjob", help="The Cytomine user (job) id of annotations to classify with the model")
-    p.add_option('--quiet', action="store_false", default=True, dest="verbose", help="Turn off verbose mode")
-    p.add_option('--verbose', action="store_true", default=True, dest="verbose", help="Turn on verbose mode")
+    p.add_option('--verbose', type="string", default="0", dest="verbose", help="Turn on (1) or off (0) verbose mode")
 
     options, arguments = p.parse_args( args = argv)
 
@@ -89,9 +92,8 @@ def main(argv):
     parameters['pyxit_save_to'] = options.pyxit_save_to
 
 
-    # Check for errors in the options
-    if options.verbose:
-      print "[pyxit.main] Options = ", options
+    
+    print "[pyxit.main] Options = ", options
     
     # Create JOB/USER/JOB
     conn = cytomine.Cytomine(parameters["cytomine_host"], 
@@ -99,19 +101,25 @@ def main(argv):
                              parameters["cytomine_private_key"] , 
                              base_path = parameters['cytomine_base_path'], 
                              working_path = parameters['cytomine_working_path'], 
-                             verbose=True)
+                             verbose=str2bool(options.verbose))
 
-    if options.verbose:
-        print "Create Job and UserJob..."
-    
-    #Switch to job Connection
-    user_job = conn.add_user_job(parameters['cytomine_id_software'], parameters['cytomine_id_project'])
-    conn.set_credentials(str(user_job.publicKey), str(user_job.privateKey))
-    job = conn.get_job(user_job.job)  
+    #Create a new userjob if connected as human user
+    current_user = conn.get_current_user()
+    if current_user.algo==False:
+        print "adduserJob..."
+        user_job = conn.add_user_job(parameters['cytomine_id_software'], parameters['cytomine_id_project'])
+        print "set_credentials..."
+        conn.set_credentials(str(user_job.publicKey), str(user_job.privateKey))
+        print "done"
+    else:
+        user_job = current_user
+        print "Already running as userjob"
+    job = conn.get_job(user_job.job)
+
+    print "Fetching data..."
     job = conn.update_job_status(job, status_comment = "Publish software parameters values")
     job_parameters_values = conn.add_job_parameters(user_job.job, conn.get_software(parameters['cytomine_id_software']), parameters)    
     job = conn.update_job_status(job, status = job.RUNNING, status_comment = "Run...", progress = 0)
-
 
     #Image dump type (for classification use 1)
     if parameters['cytomine_dump_type']==1:
@@ -123,6 +131,7 @@ def main(argv):
         annotation_get_func = Annotation.get_annotation_crop_url  
 
     
+        
     #Get description of annotations to predict (e.g. geometries created by a another object finder (e.g. threshold) job)
     job = conn.update_job_status(job, status = job.RUNNING, status_comment = "Run (getting annotations)...", progress = 25)
     candidate_annotations = conn.get_annotations(id_user = parameters['cytomine_id_userjob'],
@@ -131,6 +140,7 @@ def main(argv):
                                                  showWKT=True, showMeta=True)
 
     print "Number of annotations to predict: %d" %len(candidate_annotations.data())
+    time.sleep(2)
 
     #Create temporary dir to download annotation crops
     folder_name = "%s/annotations/project-%d/crops-candidates-%d-%d/zoom-%d/" % (parameters["cytomine_working_path"],
@@ -148,7 +158,7 @@ def main(argv):
     print "Model: %s" %pyxit
     time.sleep(2)
 
-    print "Downloading annotation images to classify"
+    print "Dumping annotation cropped images to classify to %s" %folder_name
     annotation_mapping = {}
     for i, annotation in enumerate(candidate_annotations.data()):
         url = annotation_get_func(annotation, desired_zoom = parameters['cytomine_zoom_level'])

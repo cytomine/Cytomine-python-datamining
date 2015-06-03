@@ -26,10 +26,10 @@
 #0. Edit the add_software.py file to add the software to Cytomine Core and project (once)
 
 #1. Edit following XXX and 0 values with your cytomine identifiers
-host="XXX"
+cytomine_host="XXX"
 cytomine_id_software=XXX #identifier of the cytomine classification_prediction software (added by add_software)
-public_key="XXX"
-private_key="XXX"
+cytomine_public_key="XXX"
+cytomine_private_key="XXX"
 cytomine_id_project=XXX #identifier of the project in which to work
 cytomine_working_path=/bigdata/tmp/cytomine/
 model_dir="models/"
@@ -49,7 +49,7 @@ cytomine_dump_type=1 #original crop image of the annotation (2 = with alpha mask
 
 for cytomine_id_image in XXX #identifier of the image from which annotations are retrieved
 do
-    python ../add_and_run_job.py --cytomine_host $host --cytomine_public_key $public_key --cytomine_private_key $private_key --cytomine_base_path /api/ --cytomine_id_software $cytomine_id_software --cytomine_working_path $cytomine_working_path --cytomine_id_project $cytomine_id_project --cytomine_id_image $cytomine_id_image --cytomine_zoom_level $cytomine_zoom_level --cytomine_id_userjob $cytomine_id_userjob --pyxit_save_to $pyxit_save_to --cytomine_dump_type $cytomine_dump_type
+    python ../add_and_run_job.py --cytomine_host $cytomine_host --cytomine_public_key $cytomine_public_key --cytomine_private_key $cytomine_private_key --cytomine_base_path /api/ --cytomine_id_software $cytomine_id_software --cytomine_working_path $cytomine_working_path --cytomine_id_project $cytomine_id_project --cytomine_id_image $cytomine_id_image --cytomine_zoom_level $cytomine_zoom_level --cytomine_id_userjob $cytomine_id_userjob --pyxit_save_to $pyxit_save_to --cytomine_dump_type $cytomine_dump_type --verbose false
 done
 
 
