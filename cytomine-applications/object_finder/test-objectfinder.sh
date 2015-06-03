@@ -30,7 +30,7 @@
 
 #2. Replace XXX values by your settings
 cytomine_host="XXX"
-cytomine_public_key="XXX"
+cytomine_public_key="XXX" #if human user then creates a new userjob, otherwise use provided userjob keys
 cytomine_private_key="XXX"
 cytomine_id_project=XXX
 cytomine_id_image=XXX
@@ -62,6 +62,6 @@ cytomine_union_nb_zones_height=5 #an image is divided into this number of vertic
 # Warning: the script saves each tile locally to an existing directory
 # $working_path/image-id_image-tile*** (see code)
 
-python ../image_wholeslide_objectfinder.py --cytomine_host $cytomine_host --cytomine_public_key $cytomine_public_key --cytomine_private_key $cytomine_private_key --cytomine_base_path /api/ --cytomine_working_path $cytomine_working_path --cytomine_id_software $cytomine_id_software --cytomine_id_project $cytomine_id_project  --cytomine_id_image $cytomine_id_image --cytomine_tile_size $cytomine_tile_size --cytomine_zoom_level $cytomine_zoom_level --cytomine_tile_overlap $cytomine_tile_overlap --cytomine_filter $cytomine_filter --cytomine_union_min_length $cytomine_union_minlength --cytomine_union_bufferoverlap $cytomine_union_bufferoverlap --cytomine_union_area $cytomine_union_area --cytomine_union_min_point_for_simplify $cytomine_union_min_point_for_simplify  --cytomine_union_min_point $cytomine_union_min_point --cytomine_union_max_point $cytomine_union_max_point --cytomine_union_nb_zones_width $cytomine_union_nb_zones_width --cytomine_union_nb_zones_height $cytomine_union_nb_zones_height --cytomine_predict_term $cytomine_predict_term #--cytomine_min_area $cytomine_min_area #--cytomine_max_area $cytomine_max_area
+python ../image_wholeslide_objectfinder.py --cytomine_host $cytomine_host --cytomine_public_key $cytomine_public_key --cytomine_private_key $cytomine_private_key --cytomine_base_path /api/ --cytomine_working_path $cytomine_working_path --cytomine_id_software $cytomine_id_software --cytomine_id_project $cytomine_id_project  --cytomine_id_image $cytomine_id_image --cytomine_tile_size $cytomine_tile_size --cytomine_zoom_level $cytomine_zoom_level --cytomine_tile_overlap $cytomine_tile_overlap --cytomine_filter $cytomine_filter --cytomine_union_min_length $cytomine_union_minlength --cytomine_union_bufferoverlap $cytomine_union_bufferoverlap --cytomine_union_area $cytomine_union_area --cytomine_union_min_point_for_simplify $cytomine_union_min_point_for_simplify  --cytomine_union_min_point $cytomine_union_min_point --cytomine_union_max_point $cytomine_union_max_point --cytomine_union_nb_zones_width $cytomine_union_nb_zones_width --cytomine_union_nb_zones_height $cytomine_union_nb_zones_height --cytomine_predict_term $cytomine_predict_term --verbose true #--cytomine_min_area $cytomine_min_area #--cytomine_max_area $cytomine_max_area
 
 
