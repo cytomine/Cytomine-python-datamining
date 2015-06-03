@@ -28,6 +28,7 @@ import sys
 from cytomine_utilities import *
 from cytomine import cytomine, models
 
+
 from cytomine_utilities.objectfinder import ObjectFinder
 from cytomine_utilities.utils import Utils
 from shapely.geometry.polygon import Polygon
@@ -50,6 +51,12 @@ parameters = {
 'cytomine_predict_term' : 0,
 'cytomine_id_image' : 0,
 }
+
+
+
+
+def str2bool(v):
+        return v.lower() in ("yes", "true", "t", "1")
 
 
 #ISO DATA
@@ -112,7 +119,7 @@ def main(argv):
         p.add_option('--cytomine_dilate_iterations', type='int', dest='cytomine_dilate_iterations', help="number of dilatations")
 	p.add_option('--cytomine_predict_term', type='int', dest='cytomine_predict_term', help="term id of predicted term (binary mode)")
         p.add_option('--cytomine_id_image', type="int", dest="cytomine_id_image", help="The Cytomine image identifier")	
-	p.add_option('--verbose', type="int", default=0, dest="verbose", help="Turn on (1) or off (0) verbose mode")
+	p.add_option('--verbose', type="string", default="0", dest="verbose", help="Turn on or off verbose mode")
 
 	options, arguments = p.parse_args( args = argv)
 
@@ -148,7 +155,7 @@ def main(argv):
                                  parameters["cytomine_private_key"] , 
                                  base_path = parameters['cytomine_base_path'], 
                                  working_path = parameters['cytomine_working_path'], 
-                                 verbose=options.verbose)
+                                 verbose=str2bool(options.verbose))
         #Initialize parameters
 	id_software = parameters['cytomine_id_software']
         print "id software : %d" %id_software
