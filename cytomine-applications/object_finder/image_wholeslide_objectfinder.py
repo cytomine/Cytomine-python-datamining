@@ -53,6 +53,12 @@ parameters = {
 }
 
 
+
+def str2bool(v):
+        return v.lower() in ("yes", "true", "t", "1")
+
+
+
 class Enum(set):
     def __getattr__(self, name):
         if name in self:
@@ -93,7 +99,7 @@ def main(argv):
     parser.add_option('--cytomine_union_max_point', type='int', default=5, dest='cytomine_union_max_point', help="union")
     parser.add_option('--cytomine_union_nb_zones_width', type='int', default=5, dest='cytomine_union_nb_zones_width', help="union")
     parser.add_option('--cytomine_union_nb_zones_height', type='int', default=5, dest='cytomine_union_nb_zones_height', help="union")
-
+    parser.add_option('--verbose', type="string", default="0", dest="verbose", help="Turn on (1) or off (0) verbose mode")
 
     options, arguments = parser.parse_args( args = argv)
 
@@ -135,20 +141,28 @@ def main(argv):
                              parameters["cytomine_private_key"] , 
                              base_path = parameters['cytomine_base_path'], 
                              working_path = parameters['cytomine_working_path'], 
-                             verbose= True)
+                             verbose= str2bool(options.verbose))
     whole_slide = WholeSlide(conn.get_image_instance(parameters['cytomine_id_image'], True))
     async = False #True is experimental
     reader = CytomineReader(conn, whole_slide, window_position = Bounds(0,0, parameters['cytomine_tile_size'], parameters['cytomine_tile_size']), zoom = parameters['cytomine_zoom_level'], overlap = parameters['cytomine_tile_overlap'])
     cv_image = cv.CreateImageHeader((reader.window_position.width, reader.window_position.height), cv.IPL_DEPTH_8U, 3)
     reader.window_position = Bounds(0, 0, reader.window_position.width, reader.window_position.height)
 
-    #Switch to job Connection
-    user_job = conn.add_user_job(parameters['cytomine_id_software'], parameters['cytomine_id_project'])
-    conn.set_credentials(str(user_job.publicKey), str(user_job.privateKey))
-    job = conn.get_job(user_job.job)  
-    job = conn.update_job_status(job, status_comment = "Publish software parameters values")
-    job_parameters_values = conn.add_job_parameters(user_job.job, conn.get_software(parameters['cytomine_id_software']), parameters)    
-    job = conn.update_job_status(job, status = job.RUNNING, status_comment = "Run...", progress = 0)
+    #Create a new userjob if connected as human user
+    current_user = conn.get_current_user()
+    if current_user.algo==False:
+        print "adduserJob..."
+        user_job = conn.add_user_job(parameters['cytomine_id_software'], parameters['cytomine_id_project'])
+        print "set_credentials..."
+        conn.set_credentials(str(user_job.publicKey), str(user_job.privateKey))
+        print "done"
+    else:
+        user_job = current_user
+        print "Already running as userjob"
+    job = conn.get_job(user_job.job)
+    job = conn.update_job_status(job, status_comment = "Create software parameters values...")
+    job_parameters_values = conn.add_job_parameters(user_job.job, conn.get_software(parameters['cytomine_id_software']), parameters)       
+
 
 
     #Browse the slide using reader
