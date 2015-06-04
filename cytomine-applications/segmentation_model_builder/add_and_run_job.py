@@ -95,6 +95,9 @@ pyxit_parameters = {
 }
 
 
+def str2bool(v):
+        return v.lower() in ("yes", "true", "t", "1")
+
 def main(argv):
     # Define command line options
     p = optparse.OptionParser(description='Pyxit/Cytomine Segmentation Model Builder',
@@ -109,9 +112,9 @@ def main(argv):
     p.add_option('--cytomine_id_project', type="int", dest="cytomine_id_project", help="The Cytomine project identifier")	
     p.add_option('-z', '--cytomine_zoom_level', type='int', dest='cytomine_zoom_level', help="working zoom level")
     p.add_option('--cytomine_annotation_projects', type="string", dest="cytomine_annotation_projects", help="Projects from which annotations are extracted")	
-    p.add_option('--cytomine_predict_terms', type='string', default='20202', dest='cytomine_predict_terms', help="term ids of predicted terms (=positive class in binary mode)")
-    p.add_option('--cytomine_excluded_terms', type='string', default='5735', dest='cytomine_excluded_terms', help="term ids of excluded terms")
-    p.add_option('--cytomine_reviewed', default=False, action="store_true", dest="cytomine_reviewed", help="Get reviewed annotations only")
+    p.add_option('--cytomine_predict_terms', type='string', default='0', dest='cytomine_predict_terms', help="term ids of predicted terms (=positive class in binary mode)")
+    p.add_option('--cytomine_excluded_terms', type='string', default='0', dest='cytomine_excluded_terms', help="term ids of excluded terms")
+    p.add_option('--cytomine_reviewed', type='string', default="False", dest="cytomine_reviewed", help="Get reviewed annotations only")
     p.add_option('--pyxit_target_width', type='int', dest='pyxit_target_width', help="pyxit subwindows width")
     p.add_option('--pyxit_target_height', type='int', dest='pyxit_target_height', help="pyxit subwindows height")
     p.add_option('--pyxit_save_to', type='string', dest='pyxit_save_to', help="pyxit model directory") #future: get it from server db
@@ -119,13 +122,12 @@ def main(argv):
     p.add_option('--pyxit_n_jobs', type='int', dest='pyxit_n_jobs', help="pyxit number of jobs for trees") #future: get it from server db
     p.add_option('--pyxit_n_subwindows', default=10, type="int", dest="pyxit_n_subwindows", help="number of subwindows")
     p.add_option('--pyxit_interpolation', default=2, type="int", dest="pyxit_interpolation", help="interpolation method 1,2,3,4")
-    p.add_option('--pyxit_transpose', default=False, action="store_true", dest="pyxit_transpose", help="transpose subwindows")
-    p.add_option('--pyxit_fixed_size', default=False, action="store_true", dest="pyxit_fixed_size", help="extract fixed size subwindows")
+    p.add_option('--pyxit_transpose', type="string", default="False", dest="pyxit_transpose", help="transpose subwindows")
+    p.add_option('--pyxit_fixed_size', type="string", default="False", dest="pyxit_fixed_size", help="extract fixed size subwindows")
     p.add_option('--forest_n_estimators', default=10, type="int", dest="forest_n_estimators", help="number of base estimators (T)")
     p.add_option('--forest_max_features' , default=1, type="int", dest="forest_max_features", help="max features at test node (k)")
     p.add_option('--forest_min_samples_split', default=1, type="int", dest="forest_min_samples_split", help="minimum node sample size (nmin)")
-    p.add_option('--quiet', action="store_false", default=True, dest="verbose", help="Turn off verbose mode")
-    p.add_option('--verbose', action="store_true", default=True, dest="verbose", help="Turn on verbose mode")
+    p.add_option('--verbose', type="string", default="0", dest="verbose", help="Turn on (1) or off (0) verbose mode")
 
     options, arguments = p.parse_args( args = argv)
 
@@ -141,7 +143,7 @@ def main(argv):
     parameters['cytomine_predict_terms'] = map(int,options.cytomine_predict_terms.split(','))
     parameters['cytomine_excluded_terms'] = map(int,options.cytomine_excluded_terms.split(','))
     parameters['cytomine_zoom_level'] = options.cytomine_zoom_level
-    parameters['cytomine_reviewed'] = options.cytomine_reviewed
+    parameters['cytomine_reviewed'] = str2bool(options.cytomine_reviewed)
 
    
     pyxit_parameters['pyxit_target_width'] = options.pyxit_target_width
@@ -149,8 +151,8 @@ def main(argv):
     pyxit_parameters['pyxit_n_subwindows'] = options.pyxit_n_subwindows
     pyxit_parameters['pyxit_colorspace'] = options.pyxit_colorspace
     pyxit_parameters['pyxit_interpolation'] = options.pyxit_interpolation
-    pyxit_parameters['pyxit_transpose'] = options.pyxit_transpose
-    pyxit_parameters['pyxit_fixed_size'] = options.pyxit_fixed_size
+    pyxit_parameters['pyxit_transpose'] = str2bool(options.pyxit_transpose)
+    pyxit_parameters['pyxit_fixed_size'] = str2bool(options.pyxit_fixed_size)
     pyxit_parameters['forest_n_estimators'] = options.forest_n_estimators
     pyxit_parameters['forest_max_features'] = options.forest_max_features
     pyxit_parameters['forest_min_samples_split'] = options.forest_min_samples_split
@@ -169,23 +171,31 @@ def main(argv):
                              parameters["cytomine_private_key"] , 
                              base_path = parameters['cytomine_base_path'], 
                              working_path = parameters['cytomine_working_path'], 
-                             verbose= True)
+                             verbose= str2bool(options.verbose))
 
-    if options.verbose:
-        print "Create Job and UserJob..."
+    #Create a new userjob if connected as human user
+    current_user = conn.get_current_user()
+    if current_user.algo==False:
+        print "adduserJob..."
+        user_job = conn.add_user_job(parameters['cytomine_id_software'], parameters['cytomine_id_project'])
+        print "set_credentials..."
+        conn.set_credentials(str(user_job.publicKey), str(user_job.privateKey))
+        print "done"
+    else:
+        user_job = current_user
+        print "Already running as userjob"
+    job = conn.get_job(user_job.job)
 
-    #Create Cytomine job and local directory
-    user_job = conn.add_user_job(parameters['cytomine_id_software'], parameters['cytomine_id_project'])
-    #Switch to job Connection
-    conn.set_credentials(str(user_job.publicKey), str(user_job.privateKey))
-    job = conn.get_job(user_job.job)  
+
     pyxit_parameters['dir_ls'] = os.path.join(parameters["cytomine_working_path"], str(parameters['cytomine_annotation_projects']).replace(',','-').replace('[','').replace(']','').replace(' ',''), "zoom_level", str(parameters['cytomine_zoom_level']))
     if not os.path.exists(pyxit_parameters['dir_ls']):
         print "Creating annotation directory: %s" %pyxit_parameters['dir_ls']
         os.makedirs(pyxit_parameters['dir_ls'])
     time.sleep(2)
     job = conn.update_job_status(job, status_comment = "Publish software parameters values")
-    job_parameters_values = conn.add_job_parameters(user_job.job, conn.get_software(parameters['cytomine_id_software']), pyxit_parameters)        
+    all_params=pyxit_parameters
+    all_params.update(parameters)
+    job_parameters_values = conn.add_job_parameters(user_job.job, conn.get_software(parameters['cytomine_id_software']), all_params)
 
     #Get annotation data
     job = conn.update_job_status(job, status = job.RUNNING, status_comment = "Fetching data", progress = 0)    

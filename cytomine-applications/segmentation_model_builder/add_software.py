@@ -50,6 +50,11 @@ conn.add_software_parameter("forest_max_features", software.id, "Number", 1, Tru
 conn.add_software_parameter("forest_min_samples_split", software.id, "Number", 1, True, 1300, False)
 conn.add_software_parameter("pyxit_save_to", software.id, "String", "/tmp", False, 20, False)
 conn.add_software_parameter("pyxit_n_jobs", software.id, "Number", -1, True, 1000, False)
+conn.add_software_parameter("cytomine_annotation_projects", software.id, "List", 0, True, 1200, False)
+conn.add_software_parameter("cytomine_predict_terms", software.id, "List", 0, True, 1300, False)
+conn.add_software_parameter("cytomine_excluded_terms", software.id, "List", 0, True, 1400, False)
+conn.add_software_parameter("cytomine_zoom_level", software.id, "Number", 0, True, 1500, False)
+conn.add_software_parameter("cytomine_reviewed", software.id, "Boolean", "false", True, 1600, False)
 
 #add software to a given project
 addSoftwareProject = conn.add_software_project(id_project,software.id)
