@@ -207,7 +207,8 @@ def main(argv):
 			if resize_ratio > 1:
                                 image = cv2.resize(image, (0,0), fx=int(ori_width / resize_ratio), fy=int(ori_height / resize_ratio))
                         else:
-                            image = ori_image
+                                resize_ratio=1 #we do not upscale images
+                                image = ori_image
 
                         #Threshold image using adaptive thresholding
                         new_height=int(ori_height/resize_ratio)
