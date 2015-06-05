@@ -26,8 +26,8 @@
 
 #1. Edit following XXX with your cytomine identifiers and other parameter values
 cytomine_host="XXX"
-cytomine_private_key="XXX"
-cytomine_public_key="XXX"
+cytomine_public_key="XXX" #if human user then creates a new userjob, otherwise use provided userjob keys
+cytomine_private_key="XXX" 
 software=XXX
 id_project=XXX  #project where to run the job
 annotation_projects=XXX  #projects from which to download annotations to build the models (should include the id_project)
