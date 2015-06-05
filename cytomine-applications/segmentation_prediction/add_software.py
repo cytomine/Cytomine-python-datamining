@@ -64,6 +64,7 @@ conn.add_software_parameter("cytomine_postproc", software.id, "Boolean", "/tmp",
 conn.add_software_parameter("pyxit_post_classification", software.id, "Boolean", "/tmp", False, 230, False)
 conn.add_software_parameter("pyxit_post_classification_save_to", software.id, "String", "/tmp", False, 240, False)
 conn.add_software_parameter("cytomine_mask_internal_holes",software.id, "Boolean", "true", True, 250, False)
+conn.add_software_parameter("cytomine_id_image", software.id, "Number", 0, True, 1, False)
 
 #add software to a given project
 addSoftwareProject = conn.add_software_project(id_project,software.id)
