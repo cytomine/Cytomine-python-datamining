@@ -60,6 +60,7 @@ conn.add_software_parameter("cytomine_union_max_point", software.id, "Number", 1
 conn.add_software_parameter("cytomine_union_nb_zones_width", software.id, "Number", 5, True, 200, False)
 conn.add_software_parameter("cytomine_union_nb_zones_height", software.id, "Number", 5, True, 210, False)
 conn.add_software_parameter("pyxit_save_to", software.id, "String", "/tmp", False, 220, False)
+conn.add_software_parameter("cytomine_postproc", software.id, "Boolean", "/tmp", False, 115, False)
 conn.add_software_parameter("pyxit_post_classification", software.id, "Boolean", "/tmp", False, 230, False)
 conn.add_software_parameter("pyxit_post_classification_save_to", software.id, "String", "/tmp", False, 240, False)
 conn.add_software_parameter("cytomine_mask_internal_holes",software.id, "Boolean", "true", True, 250, False)

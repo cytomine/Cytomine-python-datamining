@@ -104,6 +104,12 @@ parameters = {
 
 #-----------------------------------------------------------------------------------------------------------
 #Functions
+
+
+def str2bool(v):
+        return v.lower() in ("yes", "true", "t", "1")
+
+
 #For parallel extraction of subwindows in current tile
 def _parallel_crop_boxes (y_roi, x_roi, image_filename, half_width, half_height, pyxit_colorspace):
     try:
@@ -279,13 +285,19 @@ def main(argv):
 	p.add_option('--cytomine_id_software', type="int", dest="cytomine_id_software", help="The Cytomine software identifier")	
 	p.add_option('--cytomine_working_path', default="/tmp/", type="string", dest="cytomine_working_path", help="The working directory (eg: /tmp)")    
         p.add_option('--cytomine_id_project', type="int", dest="cytomine_id_project", help="The Cytomine project identifier")	
-        p.add_option('--cytomine_union', action="store_true", default=False, dest="cytomine_union", help="Turn on union of geometries")
-        p.add_option('--cytomine_postproc', action="store_true", default=False, dest="cytomine_postproc", help="Turn on postprocessing")
-        p.add_option('--cytomine_count', action="store_true", default=False, dest="cytomine_count", help="Turn on object counting")
+        #p.add_option('--cytomine_union', action="store_true", default=False, dest="cytomine_union", help="Turn on union of geometries")
+        p.add_option('--cytomine_union', type="string", default="0", dest="cytomine_union", help="Turn on union of geometries")
+        #p.add_option('--cytomine_postproc', action="store_true", default=False, dest="cytomine_postproc", help="Turn on postprocessing")
+        p.add_option('--cytomine_postproc', type="string", default="0", dest="cytomine_postproc", help="Turn on postprocessing")
+        #p.add_option('--cytomine_count', action="store_true", default=False, dest="cytomine_count", help="Turn on object counting")
+        p.add_option('--cytomine_count', type="string", default="0", dest="cytomine_count", help="Turn on object counting")
+        
         p.add_option('--cytomine_min_size', type="int", default=0, dest="cytomine_min_size", help="minimum size (area) of annotations")	
         p.add_option('--cytomine_max_size', type="int", default=10000000000, dest="cytomine_max_size", help="maximum size (area) of annotations")	
-        p.add_option('--cytomine_mask_internal_holes', action="store_true", default=False, dest="cytomine_mask_internal_holes", help="Turn on precise hole finding")
-	p.add_option('-i', '--cytomine_id_image', type='int', dest='cytomine_id_image', help="image id from cytomine", metavar='IMAGE')
+        #p.add_option('--cytomine_mask_internal_holes', action="store_true", default=False, dest="cytomine_mask_internal_holes", help="Turn on precise hole finding")
+        p.add_option('--cytomine_mask_internal_holes', type='string', default="0", dest="cytomine_mask_internal_holes", help="Turn on precise hole finding")
+	
+        p.add_option('-i', '--cytomine_id_image', type='int', dest='cytomine_id_image', help="image id from cytomine", metavar='IMAGE')
         p.add_option('-z', '--cytomine_zoom_level', type='int', dest='cytomine_zoom_level', help="working zoom level")
         p.add_option('-t', '--cytomine_tile_size', type='int', dest='cytomine_tile_size', help="sliding tile size")
         p.add_option('--cytomine_tile_min_stddev', type='int', default=5, dest='cytomine_tile_min_stddev', help="tile minimum standard deviation")
@@ -305,16 +317,22 @@ def main(argv):
         p.add_option('--endy', type='int', dest='cytomine_endy', help="end y position")
         p.add_option('--cytomine_predict_term', type='int', dest='cytomine_predict_term', help="term id of predicted term (binary mode)")
         p.add_option('--cytomine_roi_term', type='string', dest='cytomine_roi_term', help="term id of region of interest where to count)")
-        p.add_option('--cytomine_reviewed_roi', action="store_true", default=False, dest="cytomine_reviewed_roi", help="Use reviewed roi only")
+        #p.add_option('--cytomine_reviewed_roi', action="store_true", default=False, dest="cytomine_reviewed_roi", help="Use reviewed roi only")
+        p.add_option('--cytomine_reviewed_roi', type='string', default="0", dest="cytomine_reviewed_roi", help="Use reviewed roi only")
+        
         p.add_option('--pyxit_target_width', type='int', dest='pyxit_target_width', help="pyxit subwindows width")
         p.add_option('--pyxit_target_height', type='int', dest='pyxit_target_height', help="pyxit subwindows height")
         p.add_option('--cytomine_predict_step', type='int', dest='cytomine_predict_step', help="pyxit step between successive subwindows")
         p.add_option('--pyxit_save_to', type='string', dest='pyxit_save_to', help="pyxit segmentation model file") #future: get it from server db
-        p.add_option('--pyxit_post_classification', action="store_true", default=False, dest="pyxit_post_classification", help="pyxit post classification of candidate annotations")
+        #p.add_option('--pyxit_post_classification', action="store_true", default=False, dest="pyxit_post_classification", help="pyxit post classification of candidate annotations")
+        p.add_option('--pyxit_post_classification', type="string", default="0", dest="pyxit_post_classification", help="pyxit post classification of candidate annotations")
+        
         p.add_option('--pyxit_post_classification_save_to', type='string', dest='pyxit_post_classification_save_to', help="pyxit post classification model file") #future: get it from server db
         p.add_option('--pyxit_colorspace', type='int', dest='pyxit_colorspace', help="pyxit colorspace encoding") #future: get it from server db
         p.add_option('--pyxit_n_jobs', type='int', dest='pyxit_n_jobs', help="pyxit number of jobs for trees") #future: get it from server db
-	p.add_option('--verbose', action="store_true", default=False, dest="verbose", help="Turn on verbose mode")
+	
+        #p.add_option('--verbose', action="store_true", default=False, dest="verbose", help="Turn on verbose mode")
+        p.add_option('--verbose', type='string', default="0", dest="verbose", help="Turn on (1) or off (0) verbose mode")
 
         
 	options, arguments = p.parse_args( args = argv)
@@ -330,18 +348,18 @@ def main(argv):
         parameters['cytomine_predict_term'] = options.cytomine_predict_term
         if options.cytomine_roi_term: 
             parameters['cytomine_roi_term'] = map(int,options.cytomine_roi_term.split(','))
-        parameters['cytomine_reviewed_roi'] = options.cytomine_reviewed_roi
-        parameters['cytomine_union'] = options.cytomine_union
-        parameters['cytomine_postproc'] = options.cytomine_postproc
-        parameters['cytomine_mask_internal_holes'] = options.cytomine_mask_internal_holes
-        parameters['cytomine_count'] = options.cytomine_count
+        parameters['cytomine_reviewed_roi'] = str2bool(options.cytomine_reviewed_roi)
+        parameters['cytomine_union'] = str2bool(options.cytomine_union)
+        parameters['cytomine_postproc'] = str2bool(options.cytomine_postproc)
+        parameters['cytomine_mask_internal_holes'] = str2bool(options.cytomine_mask_internal_holes)
+        parameters['cytomine_count'] = str2bool(options.cytomine_count)
         if options.cytomine_min_size: 
             parameters['cytomine_min_size'] = options.cytomine_min_size
         if options.cytomine_max_size:
             parameters['cytomine_max_size'] = options.cytomine_max_size
         parameters['cytomine_predict_step'] = options.cytomine_predict_step
         parameters['pyxit_save_to'] = options.pyxit_save_to
-        parameters['pyxit_post_classification'] = options.pyxit_post_classification
+        parameters['pyxit_post_classification'] = str2bool(options.pyxit_post_classification)
         parameters['pyxit_post_classification_save_to'] = options.pyxit_post_classification_save_to
         parameters['pyxit_colorspace'] = options.pyxit_colorspace
         parameters['pyxit_n_jobs'] = options.pyxit_n_jobs
@@ -410,31 +428,34 @@ def main(argv):
                                  base_path = parameters['cytomine_base_path'], 
                                  working_path = parameters['cytomine_working_path'], 
                                  verbose= True)
+
+
         print "Create Job and UserJob..."
         id_software = parameters['cytomine_id_software']
-        iretrieved = False
-        while(not iretrieved):
-            try:
-                image_instance = conn.get_image_instance(id_image)
-                iretrieved = True
-            except socket.timeout, socket.error:
-                print "socket timeout/error get_image_instance"
-                time.sleep(1)
-                continue
-        user_job = conn.add_user_job(id_software, image_instance.project)
-        #Switch to job Connection
-        conn.set_credentials(str(user_job.publicKey), str(user_job.privateKey))
+        #Create a new userjob if connected as human user
+        current_user = conn.get_current_user()
+        if current_user.algo==False:
+            print "adduserJob..."
+            user_job = conn.add_user_job(parameters['cytomine_id_software'], parameters['cytomine_id_project'])
+            print "set_credentials..."
+            conn.set_credentials(str(user_job.publicKey), str(user_job.privateKey))
+            print "done"
+        else:
+            user_job = current_user
+            print "Already running as userjob"
         job = conn.get_job(user_job.job)
+
         job = conn.update_job_status(job, status_comment = "Publish software parameters values")
         job_parameters_values = conn.add_job_parameters(user_job.job, conn.get_software(parameters['cytomine_id_software']), parameters)        
-
         job = conn.update_job_status(job, status = job.RUNNING, progress = 0, status_comment = "Loading data...")
 
 
 
         #Create local object to access the remote whole slide
         print "Creating connector to Slide Image from Cytomine server"
-        whole_slide = WholeSlide(conn.get_image_instance(id_image, True))
+        image_instance = conn.get_image_instance(id_image, True)
+        #whole_slide = WholeSlide(conn.get_image_instance(id_image, True))
+        whole_slide = WholeSlide(image_instance)
         print "Whole slide: %d x %d pixels" %(whole_slide.width,whole_slide.height)
         print "Done"
 
