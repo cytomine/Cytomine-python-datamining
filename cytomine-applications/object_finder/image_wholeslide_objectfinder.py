@@ -67,6 +67,8 @@ class Enum(set):
 
 def main(argv):
 
+    current_path = os.getcwd() +'/'+ os.path.dirname(__file__)
+
     #Available filters
     filters = { 'binary' : BinaryFilter(), 'adaptive' : AdaptiveThresholdFilter(), 'otsu' : OtsuFilter()}
 
@@ -206,11 +208,11 @@ def main(argv):
         if not reader.next(): break
      
 
-    
+    host = parameters["cytomine_host"].replace("http://" , "")
     #Union of geometries (because geometries are computed locally in each time but objects (e.g. cell clusters) might overlap several tiles)
     print "Union of polygons for job %d and image %d, term: %d" %(job.userJob,parameters['cytomine_id_image'],
                                                                   parameters['cytomine_predict_term'])
-    unioncommand = "groovy -cp \"../../../lib/jars/*\" ../../../lib/union4.groovy http://%s %s %s %d %d %d %d %d %d %d %d %d %d" %(parameters["cytomine_host"],
+    unioncommand = "groovy -cp \"../../../lib/jars/*\" ../../../lib/union4.groovy http://%s %s %s %d %d %d %d %d %d %d %d %d %d" %(host,
                                                                                                                                    user_job.publicKey,user_job.privateKey,
                                                                                                                                    parameters['cytomine_id_image'],
                                                                                                                                    job.userJob,
@@ -222,6 +224,8 @@ def main(argv):
                                                                                                                                    parameters['cytomine_union_max_point'], #union_maxPoint,
                                                                                                                                    parameters['cytomine_union_nb_zones_width'], #union_nbzonesWidth,
                                                                                                                                    parameters['cytomine_union_nb_zones_height']) #union_nbzonesHeight)
+
+    os.chdir(current_path)
     print unioncommand
     os.system(unioncommand)
 

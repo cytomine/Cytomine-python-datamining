@@ -41,7 +41,7 @@ def maxHeight = Long.parseLong(args[i++])
 println "cytomineHost=$cytomineHost; cytominePublicKey=$cytominePublicKey; cytominePrivateKey=$cytominePrivateKey;"
 println "image=$image; user=$user; term=$term; minIntersectLength=$minIntersectLength; bufferLength=$bufferLength;"
 
-Cytomine cytomine = new Cytomine(cytomineHost, cytominePublicKey, cytominePrivateKey, "./");
+Cytomine cytomine = new Cytomine(cytomineHost, cytominePublicKey, cytominePrivateKey);
 
 
 unionPicture(cytomine,image,user,term,bufferLength,minIntersectLength,minPointForSimplify,minPoint,maxPoint,maxWith,maxHeight)
