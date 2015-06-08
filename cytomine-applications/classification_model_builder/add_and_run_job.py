@@ -178,6 +178,7 @@ def main(argv):
 
     #Create a new userjob if connected as human user
     current_user = conn.get_current_user()
+    run_by_user_job = False
     if current_user.algo==False:
         print "adduserJob..."
         user_job = conn.add_user_job(parameters['cytomine_id_software'], parameters['cytomine_id_project'])
@@ -187,6 +188,7 @@ def main(argv):
     else:
         user_job = current_user
         print "Already running as userjob"
+        run_by_user_job = True
     job = conn.get_job(user_job.job)
 
     print "Fetching data..."
@@ -239,10 +241,20 @@ def main(argv):
     job = conn.update_job_status(job, status = job.RUNNING, status_comment = "Build model...", progress = 75)
     #Build pyxit classification model (and saves it)
     print "Upload software parameters values to Cytomine-Core..."
-    parameters_values = conn.add_job_parameters(user_job.job, conn.get_software(parameters['cytomine_id_software']), pyxit_parameters)
-    print "Run PyXiT..."
-    argv = parameters_values_to_argv(pyxit_parameters, parameters_values) 
+    if run_by_user_job==False:
+        parameters_values = conn.add_job_parameters(user_job.job, conn.get_software(parameters['cytomine_id_software']), pyxit_parameters)
+        argv = parameters_values_to_argv(pyxit_parameters, parameters_values)
+    else:
+        argv = []
+        for key in pyxit_parameters:
+            value = pyxit_parameters[key]
+            argv.append("--%s" % key)
+            argv.append("%s" % value)
+
+
+    print "argv :"
     print argv
+    print "Run PyXiT..."
 
     predict = pyxitstandalone.main(argv)
 
