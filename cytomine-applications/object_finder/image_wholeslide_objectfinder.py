@@ -208,11 +208,11 @@ def main(argv):
         if not reader.next(): break
      
 
-    host = parameters["cytomine_host"].replace("http://" , "")
+    host = parameters["cytomine_host"].replace("http://" , "")    
     #Union of geometries (because geometries are computed locally in each time but objects (e.g. cell clusters) might overlap several tiles)
     print "Union of polygons for job %d and image %d, term: %d" %(job.userJob,parameters['cytomine_id_image'],
                                                                   parameters['cytomine_predict_term'])
-    unioncommand = "groovy -cp \"../../../lib/jars/*\" ../../../lib/union4.groovy http://%s %s %s %d %d %d %d %d %d %d %d %d %d" %(host,
+    unioncommand = "groovy -cp \"../../lib/jars/*\" ../../lib/union4.groovy http://%s %s %s %d %d %d %d %d %d %d %d %d %d" %(host,
                                                                                                                                    user_job.publicKey,user_job.privateKey,
                                                                                                                                    parameters['cytomine_id_image'],
                                                                                                                                    job.userJob,
@@ -233,6 +233,7 @@ def main(argv):
     #output = open(os.path.join(cytomine_working_path,save_to), 'wb')
     #pickle.dump(geometries, output, protocol=pickle.HIGHEST_PROTOCOL)
     #output.close()
+    print "END"
 
 if __name__ == '__main__':
     main(sys.argv[1:])

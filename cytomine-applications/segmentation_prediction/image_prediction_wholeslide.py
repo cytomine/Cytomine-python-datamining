@@ -272,6 +272,7 @@ def process_mask(mask):
 
 
 def main(argv):
+        current_path = os.getcwd() +'/'+ os.path.dirname(__file__)
 	# Define command line options
         print "Main function"
 	p = optparse.OptionParser(description='Cytomine Segmentation prediction',
@@ -434,6 +435,7 @@ def main(argv):
         id_software = parameters['cytomine_id_software']
         #Create a new userjob if connected as human user
         current_user = conn.get_current_user()
+        run_by_user_job = False
         if current_user.algo==False:
             print "adduserJob..."
             user_job = conn.add_user_job(parameters['cytomine_id_software'], parameters['cytomine_id_project'])
@@ -443,10 +445,12 @@ def main(argv):
         else:
             user_job = current_user
             print "Already running as userjob"
+            run_by_user_job = True
         job = conn.get_job(user_job.job)
 
         job = conn.update_job_status(job, status_comment = "Publish software parameters values")
-        job_parameters_values = conn.add_job_parameters(user_job.job, conn.get_software(parameters['cytomine_id_software']), parameters)        
+        if run_by_user_job==False:
+            job_parameters_values = conn.add_job_parameters(user_job.job, conn.get_software(parameters['cytomine_id_software']), parameters)        
         job = conn.update_job_status(job, status = job.RUNNING, progress = 0, status_comment = "Loading data...")
 
 
@@ -838,7 +842,8 @@ def main(argv):
             print "TIME : %s" %strftime("%Y-%m-%d %H:%M:%S", localtime())
             print "Union of polygons for job %d and image %d, term: %d" %(job.userJob,id_image,parameters['cytomine_predict_term'])
             start = time.time()
-            unioncommand = "groovy -cp \"../../../lib/jars/*\" ../../../lib/union4.groovy http://%s %s %s %d %d %d %d %d %d %d %d %d %d" %(parameters["cytomine_host"],
+            host = parameters["cytomine_host"].replace("http://" , "")
+            unioncommand = "groovy -cp \"../../lib/jars/*\" ../../lib/union4.groovy http://%s %s %s %d %d %d %d %d %d %d %d %d %d" %(host,
                                                                                                                                            user_job.publicKey,user_job.privateKey,
                                                                                                                                            id_image,job.userJob,
                                                                                                                                            parameters['cytomine_predict_term'], #union_term,
@@ -849,6 +854,7 @@ def main(argv):
                                                                                                                                            parameters['cytomine_union_max_point'], #union_maxPoint,
                                                                                                                                            parameters['cytomine_union_nb_zones_width'], #union_nbzonesWidth,
                                                                                                                                            parameters['cytomine_union_nb_zones_height']) #union_nbzonesHeight)
+            os.chdir(current_path)
             print unioncommand
             os.system(unioncommand)
             #old version was using a cytomine core webservice for union 
