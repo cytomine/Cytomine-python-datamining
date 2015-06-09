@@ -256,6 +256,10 @@ def main(argv):
     print argv
     print "Run PyXiT..."
 
+    d = os.path.dirname(pyxit_parameters['pyxit_save_to'])
+    if not os.path.exists(d):
+        os.makedirs(d)
+
     predict = pyxitstandalone.main(argv)
 
     print "-------------------------------------------------------"

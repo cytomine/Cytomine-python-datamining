@@ -258,6 +258,11 @@ def main(argv):
     print "Run PyXiT..."
     print argv
     job = conn.update_job_status(job, status = job.RUNNING, status_comment = "Build models...", progress = 75)
+
+    d = os.path.dirname(pyxit_parameters['pyxit_save_to'])
+    if not os.path.exists(d):
+        os.makedirs(d)
+
     predict = pyxitstandalone.main(argv)
 
     
