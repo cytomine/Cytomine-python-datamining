@@ -353,8 +353,16 @@ if __name__ == "__main__":
 		parameters['cytomine_working_path'] = parameters['cytomine_working_path']+'/'
 	
 	cytomine_connection = cytomine.Cytomine(parameters['cytomine_host'],parameters['cytomine_public_key'],parameters['cytomine_private_key'],base_path=parameters['cytomine_base_path'],working_path=parameters['cytomine_working_path'],verbose=parameters['verbose'])
-	user_job = cytomine_connection.add_user_job(parameters['cytomine_id_software'], parameters['cytomine_id_project'])
-	cytomine_connection.set_credentials(str(user_job.publicKey), str(user_job.privateKey))
+
+	current_user = cytomine_connection.get_current_user()
+	run_by_user_job = False
+	if current_user.algo==False:
+	    user_job = cytomine_connection.add_user_job(parameters['cytomine_id_software'], parameters['cytomine_id_project'])
+	    cytomine_connection.set_credentials(str(user_job.publicKey), str(user_job.privateKey))
+	else:
+	    user_job = current_user
+	    run_by_user_job = True
+
 	job = cytomine_connection.get_job(user_job.job)
 	job = cytomine_connection.update_job_status(job, status = job.RUNNING, progress = 0, status_comment = "Beginning validation...")
 	
@@ -459,5 +467,6 @@ if __name__ == "__main__":
 	job_parameters['validation_K'] = parameters['validation_K']
 	job_parameters['validation_result_mean'] = moy
 	
-	job_parameters_values = cytomine_connection.add_job_parameters(user_job.job, cytomine_connection.get_software(parameters['cytomine_id_software']),job_parameters)	
+	if run_by_user_job==False:
+	    job_parameters_values = cytomine_connection.add_job_parameters(user_job.job, cytomine_connection.get_software(parameters['cytomine_id_software']),job_parameters)
 	job = cytomine_connection.update_job_status(job, status = job.TERMINATED, progress = 100, status_comment = "Validation done.")

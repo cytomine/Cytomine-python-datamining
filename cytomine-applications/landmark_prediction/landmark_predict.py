@@ -170,9 +170,15 @@ if __name__ == "__main__":
 	min_samples = []
 	n = 0
 
-	user_job = cytomine_connection.add_user_job(parameters['cytomine_id_software'], parameters['cytomine_id_project'])
-	cytomine_connection.set_credentials(str(user_job.publicKey), str(user_job.privateKey))
-	
+	current_user = cytomine_connection.get_current_user()
+	run_by_user_job = False
+	if current_user.algo==False:
+	    user_job = cytomine_connection.add_user_job(parameters['cytomine_id_software'], parameters['cytomine_id_project'])
+	    cytomine_connection.set_credentials(str(user_job.publicKey), str(user_job.privateKey))
+	else:
+	    user_job = current_user
+	    run_by_user_job = True
+
 	job = cytomine_connection.get_job(user_job.job)
 	job = cytomine_connection.update_job_status(job, status = job.RUNNING, progress = 0, status_comment = "Uploading annotations...")
 	job_parameters= {}
@@ -188,7 +194,9 @@ if __name__ == "__main__":
 	job_parameters['forest_n_estimators'] = ntreess
 	job_parameters['forest_max_features'] = max_features
 	job_parameters['forest_min_samples_split'] = min_samples
-	job_parameters_values = cytomine_connection.add_job_parameters(user_job.job, cytomine_connection.get_software(id_software),job_parameters)
+
+	if run_by_user_job==False:
+	    job_parameters_values = cytomine_connection.add_job_parameters(user_job.job, cytomine_connection.get_software(id_software),job_parameters)
 
 	for model in model_names:
 		F = open('%s%s.conf'%(model_repo,model))
