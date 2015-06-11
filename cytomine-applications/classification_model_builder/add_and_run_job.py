@@ -266,6 +266,7 @@ def main(argv):
     print "Pyxit Classification Model saved locally: %s " %pyxit_parameters['pyxit_save_to'] 
     print "-------------------------------------------------------"
 
+    job = conn.update_job_status(job, status = job.TERMINATED, status_comment = "Finish", progress = 100)
 
 if __name__ == "__main__":
     import sys

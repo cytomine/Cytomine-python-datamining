@@ -168,8 +168,9 @@ def main(argv):
 
 
     #Browse the slide using reader
-    i = 0        
+    i = 0
     geometries = []
+    job = conn.update_job_status(job, status = job.RUNNING, status_comment = "Fetching data", progress = 0)
     while True:
         #Read next tile
         reader.read(async = async)
@@ -233,6 +234,7 @@ def main(argv):
     #output = open(os.path.join(cytomine_working_path,save_to), 'wb')
     #pickle.dump(geometries, output, protocol=pickle.HIGHEST_PROTOCOL)
     #output.close()
+    job = conn.update_job_status(job, status = job.TERMINATED, status_comment = "Finish", progress = 100)
     print "END"
 
 if __name__ == '__main__':
