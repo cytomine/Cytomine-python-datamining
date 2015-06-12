@@ -68,7 +68,6 @@ pyxit_parameters = {
 'pyxit_transpose' : 1, #do we apply rotation/mirroring to subwindows (to enrich training set)
 'pyxit_colorspace' : 2, # which colorspace do we use ?
 'pyxit_fixed_size' : False, #do we extracted fixed sizes or random sizes (false)
-'pyxit_save_to' : '/home/maree/tmp/cytomine/models/test.pkl',
 #classifier parameters
 'forest_n_estimators' : 10, #number of trees
 'forest_max_features' : 28, #number of attributes considered at each node
@@ -127,7 +126,6 @@ def main(argv):
 
     p.add_option('--pyxit_target_width', type='int', dest='pyxit_target_width', help="pyxit subwindows width")
     p.add_option('--pyxit_target_height', type='int', dest='pyxit_target_height', help="pyxit subwindows height")
-    p.add_option('--pyxit_save_to', type='string', dest='pyxit_save_to', help="pyxit model directory") #future: get it from server db
     p.add_option('--pyxit_colorspace', type='int', dest='pyxit_colorspace', help="pyxit colorspace encoding") #future: get it from server db
     p.add_option('--pyxit_n_jobs', type='int', dest='pyxit_n_jobs', help="pyxit number of jobs for trees") #future: get it from server db
     p.add_option('--pyxit_n_subwindows', default=10, type="int", dest="pyxit_n_subwindows", help="number of subwindows")
@@ -188,7 +186,6 @@ def main(argv):
     pyxit_parameters['cv_k_folds'] = options.cv_k_folds
     pyxit_parameters['cv_shuffle'] = str2bool(options.cv_shuffle)
     pyxit_parameters['cv_shuffle_test_fraction'] = options.cv_shuffle_test_fraction
-    pyxit_parameters['pyxit_save_to'] = options.pyxit_save_to
     pyxit_parameters['pyxit_n_jobs'] = options.pyxit_n_jobs
 
 
@@ -253,15 +250,16 @@ def main(argv):
         argv = []
         for key in pyxit_parameters:
             value = pyxit_parameters[key]
-            argv.append("--%s" % key)
-            argv.append("%s" % value)
+            if type(value) is bool or value == 'True':
+                if bool(value):
+                    argv.append("--%s" % key)
+            elif not value == 'False':
+                argv.append("--%s" % key)
+                argv.append("%s" % value)
+
     print "Run PyXiT..."
     print argv
     job = conn.update_job_status(job, status = job.RUNNING, status_comment = "Build models...", progress = 75)
-
-    d = os.path.dirname(pyxit_parameters['pyxit_save_to'])
-    if not os.path.exists(d):
-        os.makedirs(d)
 
     predict = pyxitstandalone.main(argv)
 
