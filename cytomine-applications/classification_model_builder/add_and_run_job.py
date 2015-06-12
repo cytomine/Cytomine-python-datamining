@@ -248,8 +248,12 @@ def main(argv):
         argv = []
         for key in pyxit_parameters:
             value = pyxit_parameters[key]
-            argv.append("--%s" % key)
-            argv.append("%s" % value)
+            if type(value) is bool or value == 'True':
+                if bool(value):
+                    argv.append("--%s" % key)
+            elif not value == 'False':
+                argv.append("--%s" % key)
+                argv.append("%s" % value)
 
 
     print "argv :"
