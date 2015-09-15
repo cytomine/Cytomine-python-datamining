@@ -67,7 +67,7 @@ def download_annotations(cytomine_connection, id_project, working_dir):
 		F = open(txt_path+'%d.txt'%(image.id),'w')
 		for t in key_t:
 			if((t,image.id) in xpos):
-				F.write('%d %d %d\n'%(t,xpos[(t,image.id)],ypos[(t,image.id)]))
+				F.write('%d %d %d %f %f\n'%(t,xpos[(t,image.id)],ypos[(t,image.id)],xpos[(t,image.id)]/float(image.width),ypos[(t,image.id)]/float(image.height)))
 		F.close()
 	return xpos,ypos
 

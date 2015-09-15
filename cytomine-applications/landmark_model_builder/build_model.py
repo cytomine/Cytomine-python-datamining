@@ -151,13 +151,13 @@ if __name__ == "__main__":
 
 	depths = 1./(2.**np.arange(parameters['model_depth']))
 
-	(xc,yc,imc) = getcoords(txt_repository,parameters['cytomine_id_term'])
+	(xc,yc,xr,yr,imc) = getcoords(txt_repository,parameters['cytomine_id_term'])
 	nimages = np.max(xc.shape)
-	mx = np.mean(xc)
-	my = np.mean(yc)
+	mx = np.mean(xr)
+	my = np.mean(yr)
 	P = np.zeros((2,nimages))
-	P[0,:] = xc
-	P[1,:] = yc
+	P[0,:] = xr
+	P[1,:] = yr
 	cm = np.cov(P)
 	
 	passe = False

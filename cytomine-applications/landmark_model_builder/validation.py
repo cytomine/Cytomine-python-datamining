@@ -49,6 +49,8 @@ def getcoords(repository,termid):
 	
 	x  = []
 	y  = []
+	xp = []
+	yp = []
 	im = []
 	
 	for f in os.listdir(repository):
@@ -63,9 +65,11 @@ def getcoords(repository,termid):
 				if(int(v[0])==termid):
 					x.append(int(float(v[1])))
 					y.append(int(float(v[2])))
+					xp.append(float(v[3]))
+					yp.append(float(v[4]))
 					im.append(imageid)
 			F.close()
-	return np.array(x),np.array(y),np.array(im)
+	return np.array(x),np.array(y),np.array(xp),np.array(yp),np.array(im)
 
 """
 This function returns a 8 bit grey-value image given its identifier in the 
@@ -81,7 +85,9 @@ def readimage(repository,idimage,image_type='jpg'):
 		IM = misc.imread('%s%d.bmp'%(repository,idimage),flatten=True)
 	elif(image_type=='jpg'):
 		IM = misc.imread('%s%d.jpg'%(repository,idimage),flatten=True)
-	IM = np.uint8(IM)
+	IM = np.double(IM)
+	IM = IM-np.mean(IM)
+	IM = IM/np.std(IM)
 	return IM
 
 """
@@ -92,12 +98,11 @@ def searchpoint(repository,current,clf,mx,my,cm,depths,window_size,image_type,
 	npred):
 	simage = readimage(repository,current,image_type)
 	(height,width) = simage.shape
+	P = np.random.multivariate_normal([mx,my],cm,npred)	
+	x_v = np.round(P[:,0]*width)
+	y_v = np.round(P[:,1]*height)
 	height=height-1
 	width=width-1
-	
-	P = np.random.multivariate_normal([mx,my],cm,npred)	
-	x_v = np.round(P[:,0])
-	y_v = np.round(P[:,1])
 	
 	n = len(x_v)
 	pos = 0
@@ -376,13 +381,13 @@ if __name__ == "__main__":
 	image_type = parameters['image_type']
 
 	
-	(xc,yc,imc) = getcoords(txt_repository,parameters['cytomine_id_term'])
+	(xc,yc,xr,yr,imc) = getcoords(txt_repository,parameters['cytomine_id_term'])
 	nimages = np.max(xc.shape)
-	mx = np.mean(xc)
-	my = np.mean(yc)
+	mx = np.mean(xr)
+	my = np.mean(yr)
 	P = np.zeros((2,nimages))
-	P[0,:] = xc
-	P[1,:] = yc
+	P[0,:] = xr
+	P[1,:] = yr
 	cm = np.cov(P)
 	
 	passe = False
