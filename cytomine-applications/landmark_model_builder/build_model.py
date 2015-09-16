@@ -127,16 +127,18 @@ if __name__ == "__main__":
 	job = cytomine_connection.get_job(user_job.job)
 	job = cytomine_connection.update_job_status(job, status = job.RUNNING, progress = 0, status_comment = "Bulding model...")
 	job_parameters= {}
-	job_parameters['landmark_term'] = parameters['cytomine_id_term']
-	job_parameters['landmark_r'] = parameters['model_R']
-	job_parameters['landmark_rmax'] = parameters['model_RMAX']
-	job_parameters['landmark_p'] = parameters['model_P']
-	job_parameters['landmark_npred'] = parameters['model_npred']
-	job_parameters['landmark_ntimes'] = parameters['model_ntimes']
-	job_parameters['landmark_alpha'] = parameters['model_angle']
-	job_parameters['landmark_depth'] = parameters['model_depth']
-	job_parameters['landmark_window_size'] = parameters['model_wsize']
-	job_parameters['forest_n_estimators'] = parameters['model_ntrees']
+	job_parameters['cytomine_id_term'] = parameters['cytomine_id_term']
+	job_parameters['model_R'] = parameters['model_R']
+	job_parameters['model_njobs'] = parameters['model_njobs']
+	job_parameters['model_RMAX'] = parameters['model_RMAX']
+	job_parameters['model_P'] = parameters['model_P']
+	job_parameters['model_npred'] = parameters['model_npred']
+	job_parameters['model_ntimes'] = parameters['model_ntimes']
+	job_parameters['model_angle'] = parameters['model_angle']
+	job_parameters['model_depth'] = parameters['model_depth']
+	job_parameters['model_wsize'] = parameters['model_wsize']
+	job_parameters['model_ntrees'] = parameters['model_ntrees']
+	job_parameters['model_step'] = parameters['model_step']
 	job_parameters['forest_max_features'] = ((2*parameters['model_wsize'])**2)*parameters['model_depth']
 	job_parameters['forest_min_samples_split'] = 2
 
@@ -172,8 +174,8 @@ if __name__ == "__main__":
 			(height,width) = data.shape
 			if(not passe):
 				passe = True
-				DATA = np.zeros((height*(len(T)+100)*parameters['model_ntimes'],width),'uint8')
-				REP = np.zeros(height*(len(T)+100)*parameters['model_ntimes'],'uint8')
+				DATA = np.zeros((height*(len(T)+100)*parameters['model_ntimes'],width))
+				REP = np.zeros(height*(len(T)+100)*parameters['model_ntimes'])
 				b=0
 				be=height
 			DATA[b:be,:]=data

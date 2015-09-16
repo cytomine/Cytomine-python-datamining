@@ -171,7 +171,7 @@ def build_dataset_image(IM,wp,x_v,y_v,depths):
 	dwp=2*wp
 	ndepths = len(depths)
 	
-	DATASET = np.zeros((ndata,swp*ndepths),'uint8')
+	DATASET = np.zeros((ndata,swp*ndepths))
 	REP = np.zeros(ndata)
 	
 	images = {}
@@ -402,8 +402,8 @@ if __name__ == "__main__":
 			(height,width) = data.shape
 			if(not passe):
 				passe = True
-				DATA = np.zeros((height*(len(T)+100)*parameters['model_ntimes'],width),'uint8')
-				REP = np.zeros(height*(len(T)+100)*parameters['model_ntimes'],'uint8')
+				DATA = np.zeros((height*(len(T)+100)*parameters['model_ntimes'],width))
+				REP = np.zeros(height*(len(T)+100)*parameters['model_ntimes'])
 				IMG = np.zeros(height*(len(T)+100)*parameters['model_ntimes'])
 				b=0
 				be=height

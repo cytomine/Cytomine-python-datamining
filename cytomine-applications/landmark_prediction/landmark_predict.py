@@ -40,13 +40,12 @@ def searchpoint_cytomine(repository,current,clf,mx,my,cm,depths,window_size,imag
 	npred):
 	simage = readimage(repository,current,image_type)
 	(height,width) = simage.shape
+	height=height-1
+	width=width-1
 	
 	P = np.random.multivariate_normal([mx,my],cm,npred)	
 	x_v = np.round(P[:,0]*width)
 	y_v = np.round(P[:,1]*height)
-	
-	height=height-1
-	width=width-1
 	
 	n = len(x_v)
 	pos = 0
