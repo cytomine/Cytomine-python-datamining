@@ -15,7 +15,15 @@ __copyright__ = "Copyright 2010-2013 University of Liège, Belgium"
 __version__ = '0.1'
 
 
-from cytomine_datamining.workflow.sldc import Classifier
+class Classifier(object):
+    """
+    """
+
+    def __init__(self):
+       pass
+
+    def classify(self, datastore):
+        pass
 
 
 class ThyroidClassifier(Classifier):
