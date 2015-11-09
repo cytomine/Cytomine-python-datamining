@@ -15,8 +15,53 @@ __version__ = '0.1'
 
 import abc
 
-from cytomine_datamining.workflow.sldc import DataStore
+class DataStore(object):
+    """
+    =========
+    DataStore
+    =========
+    A :class:`DataStore` encapsulates all the information about the data
+    required by a given SLDC workflow.
+    """
 
+    __metaclass__ = abc.ABCMeta
+
+    @abc.abstractmethod
+    def get_main_slide_stream(self):
+        """
+        Return
+        ------
+        slide_stream : :class:`SlideStream`
+            The :class:`SlideStream` encapsulating the slides to process
+        """
+        pass
+
+    @abc.abstractmethod
+    def store_polygons(self, dict_polygons):
+        """
+        Stores the given polygons in the datastore
+
+        Parameters
+        ----------
+        dict_polygons : a dictionary of polygons
+                    (:class:`shapely.Polygon`)
+            key = image_id => sequence of polygons
+            The polygons are expressed in "real" coordinates
+            (from the bottom left corner of the enclosing image)
+        """
+        self.dict_polygons = dict_polygons
+
+    def get_polygons(self):
+        """
+        Return
+        -----
+        dict_polygons : a dictionary of polygons
+                    (:class:`shapely.Polygon`)
+            key = image_id => sequence of polygons
+            The polygons are expressed in "real" coordinates
+            (from the bottom left corner of the enclosing image)
+        """
+        return self.dict_polygons
 
 class ThyroidDataStore(DataStore):
     """
