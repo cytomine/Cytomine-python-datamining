@@ -1,0 +1,9 @@
+#!/bin/bash
+
+PUBLICKEY=$1
+PRIVATEKEY=$2
+SOFTWAREID=152714969
+PROJECTID=151860018
+SLIDEIDS=151870700
+
+python thyroidapp.py cell_classif arch_pattern_classif beta.cytomine.be $PUBLICKEY $PRIVATEKEY $SOFTWAREID $PROJECTID $SLIDEIDS
