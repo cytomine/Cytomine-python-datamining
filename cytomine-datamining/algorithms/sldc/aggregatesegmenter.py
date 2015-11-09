@@ -14,12 +14,14 @@ __copyright__ = "Copyright 2010-2013 University of Liège, Belgium"
 __version__ = '0.1'
 
 import numpy as np
-import cv, cv2
+import cv2
+
+import cv
 import copy
 from scipy.ndimage.filters import maximum_filter
 from scipy.ndimage.measurements import label
-from cytomine_datamining.algorithm import BinarySegmenter
-from cytomine_utilities.source import NumpyConverter
+from segmenter import BinarySegmenter
+from utilities.source.imageconverter import NumpyConverter
 
 
 class AggregateSegmenter(BinarySegmenter):
