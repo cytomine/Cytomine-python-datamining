@@ -171,7 +171,7 @@ class CytomineJob:
         Notify the Cytomine server of the job's end
         Incurs a dataflow
         """
-        status = self.__job.FAILED
+        status = 4 # status code for FAILED
         if self.is_done():
             status = self.__job.TERMINATED
 
