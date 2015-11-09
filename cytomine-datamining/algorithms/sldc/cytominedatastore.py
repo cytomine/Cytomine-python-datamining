@@ -16,14 +16,13 @@ __version__ = '0.1'
 from datastore import ThyroidDataStore
 
 from cytomine.models.annotation import AlgoAnnotationTerm
-from cytomine_utilities.source import SlideBuffer, ImageBuffer
-from cytomine_utilities.cytomineadapter import CytomineTileStreamBuilder
-from cytomine_utilities.cytomineadapter import CytomineCropStreamBuilder
-from cytomine_utilities.cytomineadapter import CropLoader
-from cytomine_utilities.datatype import affine_transform
-from cytomine_utilities import WholeSlide
-from cytomine_datamining.algorithm.rasterizer import Rasterizer
-
+from helpers.utilities.source import SlideBuffer, ImageBuffer
+from helpers.utilities.cytomineadapter import CytomineTileStreamBuilder
+from helpers.utilities.cytomineadapter import CytomineCropStreamBuilder
+from helpers.utilities.cytomineadapter import CropLoader
+from helpers.utilities.datatype import affine_transform
+from helpers.utilities import WholeSlide
+from helpers.datamining.rasterizer import Rasterizer
 
 class ThyroidCytomineDataStore(ThyroidDataStore):
     """

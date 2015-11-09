@@ -34,17 +34,17 @@ from dummyclassifier import DummyClassifier
 
 
 from cytomine import Cytomine
-from cytomine_datamining.workflow import SLDCWorkflow
-from cytomine_datamining.algorithm import StdFilter
-from cytomine_datamining.algorithm import CDSegmenter
-from cytomine_datamining.algorithm import ColorDeconvoluter
-from cytomine_datamining.algorithm import MergerFactory, RowOrderMerger
-from cytomine_datamining.algorithm import CV2Locator
+from helpers.workflow import SLDCWorkflow
+from helpers.datamining import StdFilter
+from helpers.datamining import CDSegmenter
+from helpers.datamining import ColorDeconvoluter
+from helpers.datamining import MergerFactory, RowOrderMerger
+from helpers.datamining import CV2Locator
 
-from cytomine_utilities.argparsing import positive_int, positive_float
-from cytomine_utilities.argparsing import not_zero, range0_255
-from cytomine_utilities.cytominejob import CytomineJob
-from cytomine_utilities.taskmanager import SerialExecutor, ParallelExecutor
+from helpers.utilities.argparsing import positive_int, positive_float
+from helpers.utilities.argparsing import not_zero, range0_255
+from helpers.utilities.cytominejob import CytomineJob
+from helpers.utilities.taskmanager import SerialExecutor, ParallelExecutor
 
 
 
@@ -259,14 +259,9 @@ class ThyroidJob(CytomineJob):
         self._miner = thyroid_miner
         self._store = data_store
 
-
-
-
     def run(self):
         cell_classif, arch_pattern_classif = self._miner.process(self._store)
         self._store.publish_results(cell_classif, arch_pattern_classif)
-
-
 
 def main(argv):
     print argv  #TODO remove

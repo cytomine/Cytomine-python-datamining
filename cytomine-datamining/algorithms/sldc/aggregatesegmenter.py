@@ -20,8 +20,8 @@ import cv
 import copy
 from scipy.ndimage.filters import maximum_filter
 from scipy.ndimage.measurements import label
-from utilities.segmenter import BinarySegmenter
-from utilities.source.imageconverter import NumpyConverter
+from helpers.datamining.segmenter import BinarySegmenter
+from helpers.utilities.datatype.imageconverter import NumpyConverter
 
 
 class AggregateSegmenter(BinarySegmenter):

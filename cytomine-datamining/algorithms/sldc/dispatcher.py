@@ -15,7 +15,34 @@ __version__ = '0.1'
 
 
 import numpy as np
-from cytomine_datamining.workflow.sldc import Dispatcher
+
+class Dispatcher(object):
+    """
+    ==========
+    Dispatcher
+    ==========
+    A :class:`Dispatcher` takes some information from the workflow's
+    :class:`DataStore` to store it elsewhere (possibly in the same
+    :class:`DataStore`)
+
+    """
+    def __init__(self):
+        pass
+
+    def dispatch(self, datastore):
+        """
+        Performs the dispatching routine.
+
+        By default, this function does nothing. It must be reimplemented
+        if need be.
+
+        Parameters
+        ----------
+        datastore : :class:`DataStore`
+            The :class:`DataStore` from which to retrieve the information to
+            dispatch
+        """
+        pass
 
 
 class DispatchEnum:
@@ -25,7 +52,7 @@ class DispatchEnum:
     ARTIFACT = 4
 
 
-class ThyroidDispatcherAlgo:
+class ThyroidDispatcherAlgo(object):
     """
     =====================
     ThyroidDispatcherAlgo

@@ -1,9 +1,14 @@
 #!/bin/bash
 
-PUBLICKEY=$1
-PRIVATEKEY=$2
+HOST="beta.cytomine.be"
+PUBLICKEY="ad014190-2fba-45de-a09f-8665f803ee0b"
+PRIVATEKEY="767512dd-e66f-4d3c-bb46-306fa413a5eb"
 SOFTWAREID=152714969
 PROJECTID=151860018
 SLIDEIDS=151870700
+MODEL_PATH="/home/vagrant/models"
+ARCH_CLASS=$MODEL_PATH"/arch_model.pkl"
+CELL_CLASS=$MODEL_PATH"/cell_model.pkl"
 
-python thyroidapp.py cell_classif arch_pattern_classif beta.cytomine.be $PUBLICKEY $PRIVATEKEY $SOFTWAREID $PROJECTID $SLIDEIDS
+
+python thyroidapp.py $CELL_CLASS $ARCH_CLASS $HOST $PUBLICKEY $PRIVATEKEY $SOFTWAREID $PROJECTID $SLIDEIDS
