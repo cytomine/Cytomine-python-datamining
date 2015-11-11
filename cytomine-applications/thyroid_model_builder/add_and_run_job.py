@@ -237,6 +237,7 @@ def main(argv):
 
     job = conn.update_job_status(job, status = job.RUNNING, status_comment = "Build model...", progress = 75)
     #Build pyxit classification model (and saves it)
+    pyxit_parameters["verbose"] = True
     print "Upload software parameters values to Cytomine-Core..."
     argv = []
     for key in pyxit_parameters:
