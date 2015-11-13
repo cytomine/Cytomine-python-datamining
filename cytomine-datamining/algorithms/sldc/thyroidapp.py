@@ -357,8 +357,10 @@ def main(argv):
 
 
     with open(args.cell_classifier, "rb") as cell_classif_file:
+        cell_classes = pickle.load(cell_classif_file)
         cell_model = pickle.load(cell_classif_file)
     with open(args.pattern_classifier, "rb") as pattern_classif_file:
+        arch_pattern_classes = pickle.load(pattern_classif_file)
         arch_pattern_model = pickle.load(pattern_classif_file)
 
     args.cell_classifier = cell_model
