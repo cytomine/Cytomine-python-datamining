@@ -16,7 +16,7 @@ __version__ = '0.1'
 from datastore import ThyroidDataStore
 
 from cytomine.models.annotation import AlgoAnnotationTerm
-from helpers.utilities.source import SlideBuffer, ImageBuffer
+from helpers.utilities.source import SlideBuffer, Image2FileSystemBuffer
 from helpers.utilities.cytomineadapter import CytomineTileStreamBuilder
 from helpers.utilities.cytomineadapter import CytomineCropStreamBuilder
 from helpers.utilities.cytomineadapter import CropLoader
@@ -50,7 +50,7 @@ class ThyroidCytomineDataStore(ThyroidDataStore):
         The zoom level for the segment-locate part
     """
 
-    def __init__(self, cytomine, slide_ids, zoom_sl):
+    def __init__(self, cytomine, slide_ids, zoom_sl, working_path):
 
         self._cytomine = cytomine
 
@@ -65,6 +65,7 @@ class ThyroidCytomineDataStore(ThyroidDataStore):
         self.ss_polygons = []
         self.dict_polygons = None
         self._job = None
+        self._working_path = working_path
 
 
     def _get_slides_proxy(self):
@@ -139,8 +140,6 @@ class ThyroidCytomineDataStore(ThyroidDataStore):
     def store_aggregate(self, img_index, polygon):
         raise NotImplementedError("Not yet")
 
-
-
     def store_crop_to_segment(self, dict_2_segment):
         """
         Parameters
@@ -159,15 +158,13 @@ class ThyroidCytomineDataStore(ThyroidDataStore):
             img_inst = self._img_inst[slide_id]
             self._crops_to_segment.append((img_inst, polygons))
 
-
-
     def get_cells_to_classify(self):
         factory = CropLoader(self._cytomine)
-        return ImageBuffer(self._cells_to_classify, factory)
+        return Image2FileSystemBuffer(self._cells_to_classify, factory, self._working_path)
 
     def get_arch_pattern_to_classify(self):
         factory = CropLoader(self._cytomine)
-        return ImageBuffer(self._patterns_to_classify, factory)
+        return Image2FileSystemBuffer(self._patterns_to_classify, factory, self._working_path)
 
     def _upload_annotation(self, img_inst, geometry, label):
         image_id = img_inst.id

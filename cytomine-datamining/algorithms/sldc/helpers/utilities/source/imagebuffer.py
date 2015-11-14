@@ -14,6 +14,7 @@ __author__ = "Begon Jean-Michel <jm.begon@gmail.com>"
 __copyright__ = "Copyright 2010-2013 University of Liège, Belgium"
 __version__ = '0.1'
 
+import os
 
 from abc import ABCMeta, abstractmethod
 try:
@@ -31,7 +32,8 @@ class ImageBuffer(Sliceable):
     ImageBuffer
     ===========
     An :class:`ImageBuffer` is a buffer of predefined length which returns
-    images. Each seed refers to a new image.
+    images. Each seed refers to a new image. The images are only fetched from the source
+    when the image buffer is queried (through [int] or [int:int]).
 
     The [int] operator returns an image
     The [int:int] operator returns an :class:`ImageBuffer`
@@ -54,7 +56,7 @@ class ImageBuffer(Sliceable):
         self.seeds = seed_sequence
         self.loader = image_loader
 
-    def _get(self, index):
+    def _get(self, index=0):
         return self.loader.load(self.seeds[index])
 
     def _slice(self, shallow_copy, slice_range):
@@ -62,6 +64,55 @@ class ImageBuffer(Sliceable):
 
     def __len__(self):
         return len(self.seeds)
+
+    @property
+    def shape(self):
+        return len(self),
+
+
+class Image2FileSystemBuffer(Sliceable):
+    """
+    ===========
+    ImageSequence
+    ===========
+    An :class:`ImageSequence` is a buffer of predefined length which returns
+    images. Each seed refers to an image. In opposition to ImageBuffer, the images
+    are all preloaded at the construction of the ImageSequence object
+
+    The [int] operator returns an image
+    The [int:int] operator returns an :class:`ImageSequence`
+
+    Image class
+    -----------
+    By default, the images are :class:`PIL.Image`. Another format (Numpy,
+    openCV, etc.) can be chosen by providing the appropriate converter (see
+    :class:`ImageConverter`) to the image loader
+
+    Constructor parameters
+    ----------------------
+    seed_sequence : iterable of objects
+        A seed contains all the information required to load the image it spans
+    image_loader : :class:`ImageLoader`
+        An :class:`ImageLoader` instance which can work with the seeds given
+    working_path : string
+        The path in which the buffer can write its temporaries files
+    """
+    def __init__(self, seed_sequence, image_loader, working_path):
+        base_path = os.path.join(working_path, "buffered_images")
+        self._file_paths = [ image_loader.load_and_save(base_path, seed) for seed in seed_sequence ]
+
+    def _get(self, index=0):
+        return self._file_paths[index]
+
+    def _slice(self, shallow_copy, slice_range):
+        shallow_copy._file_paths = self._file_paths[slice_range]
+
+    def __len__(self):
+        return len(self._file_paths)
+
+    @property
+    def shape(self):
+        return len(self),
 
 
 class ImageLoader:
@@ -99,6 +150,32 @@ class ImageLoader:
             The corresponding image
         """
         pass
+
+    def load_and_save(self, base_path, seed=None, image_format="PNG"):
+        """
+        Load an image based on the seed and save it as a file in the given directory.
+        The file name is constructed from the seed and the completed filepath is returned.
+
+        Parameters
+        ----------
+        base_path: string
+            The path to which the files must be saved. If the directories don't exist, they are created
+        seed: ImageLoader dependant (default : None)
+            A seed to load the image
+        image_format: string (default: "PNG")
+            A string indicating the format in which the file must be saved
+        Return
+        ------
+        file_path : string
+            The full path of the saved file
+        """
+        if not os.path.isdir(base_path):
+            os.makedirs(base_path)
+
+        file_path = os.path.join(base_path, str(seed))
+        PILConverter().convert(self._load(seed)).save(file_path, image_format)
+
+        return file_path
 
     def load(self, seed=None):
         """

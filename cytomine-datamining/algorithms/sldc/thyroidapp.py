@@ -205,7 +205,8 @@ class ThyroidJob(CytomineJob):
         # Create Datastore
         data_store = ThyroidCytomineDataStore(cytomine_client,
                                               slide_ids,
-                                              zoom_sl)
+                                              zoom_sl,
+                                              working_path)
 
         # Create TileFilter
         tile_filter = StdFilter(tile_filter_min_std)

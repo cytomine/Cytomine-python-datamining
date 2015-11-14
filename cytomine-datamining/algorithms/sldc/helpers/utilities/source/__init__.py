@@ -14,12 +14,12 @@ __copyright__ = "Copyright 2010-2013 University of Liège, Belgium"
 __version__ = '0.1'
 
 
-from .imagebuffer import ImageBuffer, ImageLoader, PILLoader, NotCMapPILLoader
+from .imagebuffer import ImageBuffer, Image2FileSystemBuffer, ImageLoader, PILLoader, NotCMapPILLoader
 from .imagebuffer import  NumpyLoader
 from .slidebuffer import SlideBuffer
 from .tilestream import TileStream, UniqueTileStream, TileStreamBuilder
 
-__all__ = ["ImageBuffer", "ImageLoader", "PILLoader", "NotCMapPILLoader", 
+__all__ = ["ImageBuffer", "Image2FileSystemBuffer", "ImageLoader", "PILLoader", "NotCMapPILLoader",
 		   "NumpyLoader","SlideBuffer", "TileStream", "UniqueTileStream", 
 		   "TileStreamBuilder"]
 
