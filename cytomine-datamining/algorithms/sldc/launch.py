@@ -22,36 +22,29 @@ import thyroidapp
 # TODO replace accordingly
 from dummyclassifier import DummyClassifier
 
+
+HOST = "beta.cytomine.be"
+PUBLICKEY = "ad014190-2fba-45de-a09f-8665f803ee0b"
+PRIVATEKEY = "767512dd-e66f-4d3c-bb46-306fa413a5eb"
 SOFTWAREID = "152714969"
 PROJECTID = "151860018"
-#SLIDEIDS = ["151870700"]
-#SLIDEIDS = ["151870700", "151870615"]
-SLIDEIDS = ["151870700", "151870615", "151870539", "151870465", "151870433",
-            "151870321", "151870170", "151870070", "151869994", "151869936"]
+SLIDEIDS = ["151870700"]
+MODEL_PATH = "/home/vagrant/models"
+ARCH_CLASS = MODEL_PATH + "/arch_model.pkl"
+CELL_CLASS = MODEL_PATH + "/cell_model.pkl"
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser()
-    # parser.add_argument("-v" "--verbose", help="increase output verbosity",
-    #                 action="store_true")
-    parser.add_argument("public_key",
-                        help="User public key")
-    parser.add_argument("private_key",
-                        help="User Private key")
-
-    keys = parser.parse_args()
-
-    args = []
-    args.append("cell_classif")
-    args.append("arch_pattern_classif")
-    args.append("beta.cytomine.be")
-    args.append(keys.public_key)
-    args.append(keys.private_key)
+    args = list()
+    args.append(CELL_CLASS)
+    args.append(ARCH_CLASS)
+    args.append(HOST)
+    args.append(PUBLICKEY)
+    args.append(PRIVATEKEY)
     args.append(SOFTWAREID)
     args.append(PROJECTID)
     for slide_id in SLIDEIDS:
         args.append(slide_id)
-
 
     config = {
         "version": 1,
