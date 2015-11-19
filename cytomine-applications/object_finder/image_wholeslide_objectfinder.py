@@ -184,7 +184,7 @@ def main(argv):
                                                                       reader.window_position.y)
         image.save(tile_filename,"PNG")
         #Apply filtering
-        cv.SetData(cv_image, reader.result().tostring())
+        cv.SetData(cv_image, reader.result().tobytes())
         filtered_cv_image = filter.process(cv_image)
         i += 1
         #Detect connected components
