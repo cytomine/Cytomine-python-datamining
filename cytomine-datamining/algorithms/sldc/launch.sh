@@ -10,5 +10,4 @@ MODEL_PATH="/home/vagrant/models"
 ARCH_CLASS=$MODEL_PATH"/arch_model.pkl"
 CELL_CLASS=$MODEL_PATH"/cell_model.pkl"
 
-
 python thyroidapp.py $CELL_CLASS $ARCH_CLASS $HOST $PUBLICKEY $PRIVATEKEY $SOFTWAREID $PROJECTID $SLIDEIDS
