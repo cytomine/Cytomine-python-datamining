@@ -23,6 +23,13 @@
 
 # Pyxit Classification Model building using algorithms in Maree et al., TR 2014
 
+# CELL
+# ----
+#
+# All      : 676446, 676390, 676210, 676434, 676176
+# Positive : 676390
+# Excluded : 675999, 676026, 933004, 676407, 8844862, 8844845, 9444456, 15054705, 15054765, 15109451, 15109483, 15109489, 15109495, 22042230, 28792193, 30559888
+
 #1. Edit add_software.py and add the software to your Cytomine project if not existing yet
 
 
@@ -35,7 +42,7 @@ cytomine_id_project=716498
 cytomine_working_path=$HOME/downloaded
 cytomine_annotation_projects=716498
 cytomine_predict_terms=676390 #id of terms to be grouped into the positive class (e.g. tumor) separated by ,
-cytomine_excluded_terms=675999,676026,676176,933004,676407,8844862,8844845,9444456,15054705,15054765,15109451,15109483,15109489,15109495,22042230,28792193,30559888 #id of terms that will not be used (neither positive nor negative class) separated by ,
+cytomine_excluded_terms=675999,676026,933004,676407,8844862,8844845,9444456,15054705,15054765,15109451,15109483,15109489,15109495,22042230,28792193,30559888 #id of terms that will not be used (neither positive nor negative class) separated by ,
 model_file=cell_model.pkl
 zoom=1 #zoom_level at which annotations are dumped
 

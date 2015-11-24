@@ -25,6 +25,13 @@
 
 #1. Edit add_software.py and add the software to your Cytomine project if not existing yet
 
+# ARCH
+# ----
+#
+# All      : 675999, 676026, 933004
+# Positive : 676026, 933004
+# Excluded : 676446, 676390, 676210, 676434, 676176, 676407, 8844862, 8844845, 9444456, 15054705, 15054765, 15109451, 15109483, 15109489, 15109495, 22042230, 28792193, 30559888
+
 
 #2. Edit following XXX and 0 values with your cytomine identifiers
 cytomine_host="beta.cytomine.be"
