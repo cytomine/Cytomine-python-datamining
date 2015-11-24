@@ -81,7 +81,7 @@ class ThyroidJob(CytomineJob):
                  working_path="/tmp",
                  protocol="http://",
                  base_path="/api/",
-                 verbose=False,
+                 verbose=True,
                  timeout=120,
                  nb_jobs=1,
                  zoom_sl=1,
@@ -99,6 +99,8 @@ class ThyroidJob(CytomineJob):
                  disp2_cell_max_area=4000,
                  disp2_cell_min_circ=.85,
                  disp2_clust_min_cell_nb=1,
+                 cell_classes=None,
+                 arch_pattern_classes=None,
                  *args, **kwargs):
         """
         Create a standard thyroid application with the given parameters.
@@ -194,6 +196,12 @@ class ThyroidJob(CytomineJob):
             The minimum number of cells to form a cluster for the second
             dispatching. It must be consistent with the polygon coordinate
             system. In particular with the scale
+        cell_classes: list (default: None)
+            The list of terms ids if the cells classifier actually predicts the indexes of a term in this list. None
+            if the cells classifier predicts the terms ids directly.
+        arch_pattern_classes: list (default: None)
+            The list of terms ids if the pattern classifier actually predicts the indexes of a term in this list. None
+            if the pattern classifier predicts the terms ids directly.
         """
         # Create Cytomine instance
         cytomine_client = Cytomine(host, public_key, private_key,
@@ -239,8 +247,9 @@ class ThyroidJob(CytomineJob):
         dispatcher = ThyroidDispatcher(dispatch_algo,
                                        dispatcher_algo2)
         # Create Classifier
-        classifier = ThyroidClassifier(cell_classifier,
-                                       pattern_classifier)
+        classifier = ThyroidClassifier(cell_classifier, pattern_classifier,
+                                       cell_classes=cell_classes,
+                                       arch_pattern_classes=arch_pattern_classes)
         # Create TaskExecutor
         if nb_jobs == 1:
             task_executor = SerialExecutor()
@@ -353,7 +362,6 @@ def main(argv):
                         type=positive_float,
                         default=1)
 
-
     args = parser.parse_args(args=argv)
 
 
@@ -364,6 +372,8 @@ def main(argv):
         arch_pattern_classes = pickle.load(pattern_classif_file)
         arch_pattern_model = pickle.load(pattern_classif_file)
 
+    args.cell_classes = cell_classes
+    args.arch_pattern_classes = arch_pattern_classes
     args.cell_classifier = cell_model
     args.pattern_classifier = arch_pattern_model
 
