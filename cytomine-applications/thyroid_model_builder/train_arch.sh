@@ -43,7 +43,7 @@ cytomine_working_path=$HOME/downloaded
 cytomine_annotation_projects=716498
 cytomine_predict_terms=676026,933004 #id of terms to be grouped into the positive class (e.g. tumor) separated by ,
 cytomine_excluded_terms=676446,676390,676210,676434,676176,676407,8844862,8844845,9444456,15054705,15054765,15109451,15109483,15109489,15109495,22042230,28792193,30559888 #id of terms that will not be used (neither positive nor negative class) separated by ,
-model_file=arch_model.pkl
+model_file=arch_model_better.pkl
 zoom=1 #zoom_level at which annotations are dumped
 
 
@@ -52,10 +52,10 @@ windowsize=16 #resized_size for subwindows
 colorspace=2 #colorspace to encode pixel values
 njobs=4 #number of parallel threads
 interpolation=1 #interpolation method to rescale subwindows to fixed size
-nbt=10 #numer of extra-trees
-k=28 #tree node filterning parameter (number of tests) in extra-trees
+nbt=50 #numer of extra-trees
+k=40 #tree node filterning parameter (number of tests) in extra-trees
 nmin=10 #minimum node sample size in extra-trees
-subw=10 #number of extracted subwindows per annotation crop image
+subw=20 #number of extracted subwindows per annotation crop image
 min_size=0.1 #minimum size of subwindows (proportionnaly to image size: 0.1 means minimum size is 10% of min(width,height) of original image
 max_size=0.9 #maximum size of subwindows (...)
 

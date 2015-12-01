@@ -30,8 +30,8 @@ SOFTWAREID = "152714969"
 PROJECTID = "151860018"
 SLIDEIDS = ["151870700","151870615","151870539","151870465","151870433","151870321","151870170","151870070","151869994","151869936"]
 MODEL_PATH = "/home/vagrant/models"
-ARCH_CLASS = MODEL_PATH + "/arch_model.pkl"
-CELL_CLASS = MODEL_PATH + "/cell_model.pkl"
+ARCH_CLASS = MODEL_PATH + "/arch_model_better.pkl"
+CELL_CLASS = MODEL_PATH + "/cell_model_better.pkl"
 
 if __name__ == "__main__":
 
