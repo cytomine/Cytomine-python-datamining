@@ -34,7 +34,7 @@ from dummyclassifier import DummyClassifier
 
 
 from cytomine import Cytomine
-from helpers.workflow import SLDCWorkflow
+from helpers.workflow import SLDCWorkflow, SLWorkflow
 from helpers.datamining import StdFilter
 from helpers.datamining import CDSegmenter
 from helpers.datamining import ColorDeconvoluter
@@ -101,6 +101,7 @@ class ThyroidJob(CytomineJob):
                  disp2_clust_min_cell_nb=1,
                  cell_classes=None,
                  arch_pattern_classes=None,
+                 early_stopping=False,
                  *args, **kwargs):
         """
         Create a standard thyroid application with the given parameters.
@@ -259,19 +260,29 @@ class ThyroidJob(CytomineJob):
                 task_exec_verbosity = 10
             task_executor = ParallelExecutor(nb_jobs, task_exec_verbosity)
         # Create Miner
-        thyroid_miner = SLDCWorkflow(tile_filter, segmenter, locator,
-                                     merger_builder, dispatcher, classifier,
-                                     task_executor)
+
+        if early_stopping:
+            thyroid_miner = SLWorkflow(tile_filter, segmenter, locator,
+                                       merger_builder, task_executor=task_executor)
+        else:
+            thyroid_miner = SLDCWorkflow(tile_filter, segmenter, locator,
+                                         merger_builder, dispatcher, classifier,
+                                         task_executor)
 
         # Set the sl_worflow
         dispatcher.set_sl_workflow(thyroid_miner)
 
         self._miner = thyroid_miner
         self._store = data_store
+        self._early_stopping = early_stopping
 
     def run(self):
-        cell_classif, arch_pattern_classif = self._miner.process(self._store)
-        self._store.publish_results(cell_classif, arch_pattern_classif)
+        if self._early_stopping:
+            self._miner.process(self._store)
+            self._store.publish_raw_results()
+        else:
+            cell_classif, arch_pattern_classif = self._miner.process(self._store)
+            self._store.publish_results(cell_classif, arch_pattern_classif)
 
 def main(argv):
     print argv  #TODO remove
@@ -361,6 +372,10 @@ def main(argv):
                         help="Minimum number of cells in a cluster for the second dispatching",
                         type=positive_float,
                         default=1)
+    parser.add_argument("--early_stopping",
+                        help="True for stopping the worklow before dispatching and classification, False otherwise",
+                        type=bool,
+                        default=False)
 
     args = parser.parse_args(args=argv)
 

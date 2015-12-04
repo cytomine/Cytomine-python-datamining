@@ -13,6 +13,6 @@ __author__ = "Mormont Romain <r.mormont@student.ulg.ac.be>"
 __copyright__ = "Copyright 2010-2013 University of Liège, Belgium"
 __version__ = '0.1'
 
-from .sldcworkflow import SLDCWorkflow
+from .sldcworkflow import SLDCWorkflow, SLWorkflow
 
-__all__ = [ "SLDCWorkflow" ]
+__all__ = [ "SLDCWorkflow", "SLWorkflow" ]

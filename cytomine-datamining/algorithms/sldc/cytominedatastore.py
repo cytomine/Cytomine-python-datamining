@@ -131,11 +131,9 @@ class ThyroidCytomineDataStore(ThyroidDataStore):
         img_inst = self._img_inst[img_index]
         self._cells_to_classify.append((img_inst, polygon))
 
-
     def store_architectural_pattern(self, img_index, polygon):
         img_inst = self._img_inst[img_index]
         self._patterns_to_classify.append((img_inst, polygon))
-
 
     def store_aggregate(self, img_index, polygon):
         raise NotImplementedError("Not yet")
@@ -166,7 +164,7 @@ class ThyroidCytomineDataStore(ThyroidDataStore):
         factory = CropLoader(self._cytomine)
         return Image2FileSystemBuffer(self._patterns_to_classify, factory, self._working_path)
 
-    def _upload_annotation(self, img_inst, geometry, label):
+    def _upload_annotation(self, img_inst, geometry, label=None):
         image_id = img_inst.id
         # Transform in cartesian coordinates
         transfo = affine_transform(xx_coef=1,
@@ -177,7 +175,8 @@ class ThyroidCytomineDataStore(ThyroidDataStore):
         geometry = transfo(geometry)
 
         annotation = self._cytomine.add_annotation(geometry.wkt, image_id)
-        self._cytomine.add_annotation_term(annotation.id, label, label, 1.0, annotation_term_model=AlgoAnnotationTerm)
+        if label is not None:
+            self._cytomine.add_annotation_term(annotation.id, label, label, 1.0, annotation_term_model=AlgoAnnotationTerm)
 
     def publish_results(self, cell_classif, arch_pattern_classif):
         # TODO make smthg more efficient with add_annotations_with_terms
@@ -185,3 +184,8 @@ class ThyroidCytomineDataStore(ThyroidDataStore):
             self._upload_annotation(img_inst, polygon, int(label))
         for (img_inst, polygon), label in zip(self._patterns_to_classify, arch_pattern_classif):
             self._upload_annotation(img_inst, polygon, int(label))
+
+    def publish_raw_results(self):
+        for slide_id in self.dict_polygons:
+            for polygon in self.dict_polygons[slide_id]:
+                self._upload_annotation(self._img_inst[slide_id], polygon)
