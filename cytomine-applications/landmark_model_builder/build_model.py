@@ -187,6 +187,9 @@ if __name__ == "__main__":
 	#IMG = IMG[0:b]
 	clf = ExtraTreesClassifier(n_jobs=parameters['model_njobs'],n_estimators=parameters['model_ntrees'])
 	clf = clf.fit(DATA,REP)
+
+	job = cytomine_connection.update_job_status(job, status = job.RUNNING, progress = 90, status_comment = "Writing model...")
+
 	model_repo = parameters['model_save_to']
 	if(not os.path.isdir(model_repo)):
 		os.mkdir(model_repo)
@@ -207,3 +210,4 @@ if __name__ == "__main__":
 	F.write('window_size %d'%parameters['model_wsize'])
 	F.close()
 	job = cytomine_connection.update_job_status(job, status = job.TERMINATED, progress = 100, status_comment =  "Model built!")
+	print "Model built!"

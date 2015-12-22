@@ -184,6 +184,7 @@ if __name__ == "__main__":
 	job = cytomine_connection.update_job_status(job, status = job.RUNNING, progress = 0, status_comment = "Uploading annotations...")
 	job_parameters= {}
 	job_parameters['landmark_terms'] = ips
+	job_parameters['model_id_job'] = 0
 	job_parameters['landmark_r'] = Rs
 	job_parameters['landmark_rmax'] = RMAXs
 	job_parameters['landmark_p'] = proportions
@@ -234,3 +235,4 @@ if __name__ == "__main__":
 		n = n+1
 	
 	job = cytomine_connection.update_job_status(job, status = job.TERMINATED, progress = 100, status_comment =  "Annotations uploaded!")
+	print "Annotations uploaded!"

@@ -112,7 +112,8 @@ def main(argv):
 				(cx,cy) = poi.xy
 				xpos[(ann.term[0],image.id)] = int(cx[0])
 				ypos[(ann.term[0],image.id)] = image.height-int(cy[0])
-				terms[ann.term[0]]=1
+				term = cytomine_connection.get_term(ann.term[0])
+				terms[term.name]=1
 	key_t = terms.keys()
 	
 	job = cytomine_connection.update_job_status(job, status = job.RUNNING, status_comment = "Write in file", progress = 90)
@@ -139,6 +140,7 @@ def main(argv):
 	cytomine_connection.upload_job_data_file(job_data,'%s%s.csv'%(parameters['cytomine_working_path'],str(parameters['cytomine_id_project'])))
 
 	job = cytomine_connection.update_job_status(job, status = job.TERMINATED, status_comment = "File available", progress = 100)
+	print "File available"
 	
 if __name__ == '__main__':
 	main(sys.argv[1:])
