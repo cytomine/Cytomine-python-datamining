@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #
-# * Copyright (c) 2009-2015. Authors: see NOTICE file.
+# * Copyright (c) 2009-2016. Authors: see NOTICE file.
 # *
 # * Licensed under the Apache License, Version 2.0 (the "License");
 # * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 
 __author__          = "Vandaele Rémy <remy.vandaele@ulg.ac.be>"
 __contributors__    = ["Marée Raphaël <raphael.maree@ulg.ac.be>"]
-__copyright__       = "Copyright 2010-2015 University of Liège, Belgium, http://www.cytomine.be/"
+__copyright__       = "Copyright 2010-2016 University of Liège, Belgium, http://www.cytomine.be/"
 
 from validation import *
 from sklearn.externals import joblib
@@ -163,6 +163,10 @@ if __name__ == "__main__":
 	cm = np.cov(P)
 	
 	passe = False
+
+	progress = 0
+	delta = 80/len(images)
+
 	for times in range(parameters['model_ntimes']):
 		if(times==0):
 			rangrange=0
@@ -182,6 +186,10 @@ if __name__ == "__main__":
 			REP[b:be]=rep
 			b=be
 			be=be+height
+
+		progress += delta
+		job = cytomine_connection.update_job_status(job, status = job.RUNNING, status_comment = "Bulding model...", progress = progress)
+
 	REP = REP[0:b]
 	DATA = DATA[0:b,:]
 	#IMG = IMG[0:b]
