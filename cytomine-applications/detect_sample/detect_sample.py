@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #
-# * Copyright (c) 2009-2015. Authors: see NOTICE file.
+# * Copyright (c) 2009-2016. Authors: see NOTICE file.
 # *
 # * Licensed under the Apache License, Version 2.0 (the "License");
 # * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 
 __author__          = "Stévens Benjamin <b.stevens@ulg.ac.be>"
 __contributors__    = ["Marée Raphael <raphael.maree@ulg.ac.be>"]
-__copyright__       = "Copyright 2010-2015 University of Liège, Belgium, http://www.cytomine.be/"
+__copyright__       = "Copyright 2010-2016 University of Liège, Belgium, http://www.cytomine.be/"
 
 
 import numpy as np
@@ -300,7 +300,7 @@ def main(argv):
 
         job = conn.update_job_status(job, status = job.TERMINATED, progress = 100, status_comment =  "Finish Job..")
         job = None	
-
+        print "END."
 
 if __name__ == "__main__":
     import sys

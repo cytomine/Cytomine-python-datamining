@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #
-# * Copyright (c) 2009-2015. Authors: see NOTICE file.
+# * Copyright (c) 2009-2016. Authors: see NOTICE file.
 # *
 # * Licensed under the Apache License, Version 2.0 (the "License");
 # * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 
 __author__          = "Vandaele Rémy <remy.vandaele@ulg.ac.be>"
 __contributors__    = ["Marée Raphaël <raphael.maree@ulg.ac.be>"]
-__copyright__       = "Copyright 2010-2015 University of Liège, Belgium, http://www.cytomine.be/"
+__copyright__       = "Copyright 2010-2016 University of Liège, Belgium, http://www.cytomine.be/"
 
 from sklearn.externals import joblib
 from array import *
@@ -200,6 +200,9 @@ if __name__ == "__main__":
 	if run_by_user_job==False:
 	    job_parameters_values = cytomine_connection.add_job_parameters(user_job.job, cytomine_connection.get_software(id_software),job_parameters)
 
+	progress = 0
+	delta = 90/len(images)
+
 	for model in model_names:
 		F = open('%s%s.conf'%(model_repo,model))
 		par = {}
@@ -223,6 +226,10 @@ if __name__ == "__main__":
 		min_samples.append(2)
 		mx,my,cm = joblib.load('%s%s_cov.pkl'%(model_repo,model))
 		clf = joblib.load('%s%s.pkl'%(model_repo,model))
+
+		progress += delta
+		job = cytomine_connection.update_job_status(job, status = job.RUNNING, status_comment = "Analyzing models", progress = progress)
+
 		for f in os.listdir(repository):
 			if(f.endswith('.%s'%image_type)):
 				tab = f.split('.%s'%image_type)
