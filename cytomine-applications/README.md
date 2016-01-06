@@ -7,6 +7,7 @@ When using our software, you agree to cite our website url and related publicati
 - Logo: http://www.cytomine.be/logo/logo.png
 - Scientific paper: Raphaël Marée, Loïc Rollus, Benjamin Stévens, Renaud Hoyoux, Gilles Louppe, Rémy Vandaele, Jean-Michel Begon, Philipp Kainz, Pierre Geurts and Louis Wehenkel. Collaborative analysis of multi-gigapixel imaging data using Cytomine, Bioinformatics, 2016.
 
+# Cytomine-python-datamining
 
 This folder contains application examples for different image analysis tasks.
 These algorithms generally download image data from Cytomine-Core, process them
