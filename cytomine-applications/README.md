@@ -1,4 +1,10 @@
-Copyright 2010-2015 University of Liège, Belgium, http://www.cytomine.be/
+Copyright 2010-2016 University of Liège, Belgium, http://www.cytomine.be/
+
+
+If you use Cytomine in scientific publications, please cite it properly with both its URL and scientific paper:
+- URL: http://www.cytomine.be/
+- Scientific paper:
+Raphaël Marée, Loïc Rollus, Benjamin Stévens, Renaud Hoyoux, Gilles Louppe, Rémy Vandaele, Jean-Michel Begon, Philipp Kainz, Pierre Geurts and Louis Wehenkel. Collaborative analysis of multi-gigapixel images using Cytomine, Bioinformatics, 2016.
 
 
 This folder contains application examples for different image analysis tasks.
