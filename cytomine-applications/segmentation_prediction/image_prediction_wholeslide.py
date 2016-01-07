@@ -870,6 +870,7 @@ def main(argv):
                                                                                                                                          parameters['cytomine_union_max_point'], #union_maxPoint,
                                                                                                                                          parameters['cytomine_union_nb_zones_width'], #union_nbzonesWidth,
                                                                                                                                          parameters['cytomine_union_nb_zones_height']) #union_nbzonesHeight)
+                old_path = os.getcwd()
                 os.chdir(current_path)
                 print unioncommand
                 os.system(unioncommand)
@@ -878,6 +879,7 @@ def main(argv):
                 end = time.time()
                 print "Elapsed time UNION: %d s" %(end-start)
                 print "TIME : %s" %strftime("%Y-%m-%d %H:%M:%S", localtime())
+                os.chdir(old_path)
 
 
             #Perform classification of detected geometries using a classification model (pkl)
