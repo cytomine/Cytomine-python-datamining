@@ -22,6 +22,7 @@ from scipy.ndimage.filters import maximum_filter
 from scipy.ndimage.measurements import label
 from helpers.datamining.segmenter import BinarySegmenter
 from helpers.utilities.datatype.imageconverter import NumpyConverter
+from helpers.datamining.segmenter import otsu_threshold_with_mask
 
 
 class AggregateSegmenter(BinarySegmenter):
@@ -44,20 +45,6 @@ class AggregateSegmenter(BinarySegmenter):
         self._min_circularity = cell_min_circularity
         self._border = border
 
-    def _otsu_threshold_with_mask(image, mask, mode):
-
-        mask_indices = np.nonzero(mask)
-
-        temp = np.array([image[mask_indices]])
-
-        temp = temp[temp < 120]
-
-        otsu_threshold,_ = cv2.threshold( temp, 128, 255, cv2.THRESH_OTSU | mode)
-
-        _, image = cv2.threshold(image, otsu_threshold, 255, cv2.THRESH_BINARY_INV)
-
-        return otsu_threshold, image
-
     def segment(self, np_image):
         """
         Parameters
@@ -71,7 +58,7 @@ class AggregateSegmenter(BinarySegmenter):
         temp = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         im_dec = self._color_deconvoluter.transform(temp)
         temp = cv2.cvtColor(im_dec, cv2.COLOR_RGB2GRAY)
-        otsu_threshold, internal_binary = self._otsu_threshold_with_mask(temp, alpha, cv2.THRESH_BINARY_INV)
+        otsu_threshold, internal_binary = otsu_threshold_with_mask(temp, alpha, cv2.THRESH_BINARY_INV)
         internal_binary_copy = copy.copy(internal_binary)
         contours2, hierarchy = cv2.findContours(internal_binary_copy, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
 
