@@ -99,9 +99,13 @@ class Rasterizer:
     def alpha_rasterize(self, image, polygon):
         #Creating holder
         np_img = np.asarray(image)
-        width, height, depth = np_img.shape
-        depth += 1
-        np_results = np.zeros((width, height, depth), dtype=np.uint)
+        height, width, depth = np_img.shape
+        # there is already an alpha mask, replace it
+        if depth == 4 or depth == 2:
+            np_img = np_img[:,:,0:depth-1]
+        else:
+            depth += 1
+        np_results = np.zeros((height, width, depth), dtype=np.uint)
         np_results[:, :, 0:depth-1] = np_img
         #Rasterization
         polygon = crop_polygon(polygon, 0, 0, width, height)
