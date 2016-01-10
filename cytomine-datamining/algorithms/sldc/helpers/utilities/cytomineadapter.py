@@ -20,6 +20,7 @@ except:
 import cStringIO
 
 from shapely.geometry.polygon import Polygon
+from shapely.affinity import translate
 
 from cytomine.models import ImageInstance
 
@@ -177,14 +178,16 @@ class CytomineCropStream(TileStream):
 
     def next(self):
         try:
-            bounds_ = bounds(self._polygons[self._index])
+            curr_polygon = self._polygons[self._index]
+            bounds_ = bounds(curr_polygon)
             x = bounds_["x"]
             y = bounds_["y"]
             image = _get_crop(self._cytomine, self._img, bounds_)
             if self._rasterizer is None:
                 return Tile(image, x, y)
-            # Rasterize the polygon
-            masked_image = self._rasterizer.alpha_rasterize(image, self._polygons[self._index])
+            # Rasterize the polygon, translate the polygon so that it fits in the crop
+            trans_poly = translate(curr_polygon, -x, -y)
+            masked_image = self._rasterizer.alpha_rasterize(image, trans_poly)
             return Tile(masked_image, x, y)
         except IndexError:
             raise StopIteration
