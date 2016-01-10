@@ -68,14 +68,9 @@ def cropped_img_coords(polygon):
     dy = maxy
     return affine_transform(polygon, [a, b, d, e, dx, dy])
 
-
 def crop_polygon(polygon):
     minx, miny, maxx, maxy = polygon.bounds
-    return affine_transform(polygon, [0, 0, 0, 0, -minx, -miny])
-
-
-
-
+    return affine_transform(0, 0, 0, 0, -minx, -miny)(polygon)
 
 def affine_transform(xx_coef=1, xy_coef=0, yx_coef=0, yy_coef=1,
                      delta_x=0, delta_y=0):

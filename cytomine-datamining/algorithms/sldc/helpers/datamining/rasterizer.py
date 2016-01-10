@@ -102,7 +102,7 @@ class Rasterizer:
         width, height, depth = np_img.shape
         depth += 1
         np_results = np.zeros((width, height, depth), dtype=np.uint)
-        np_results[:, :, 0:depth-2] = np_img
+        np_results[:, :, 0:depth-1] = np_img
         #Rasterization
         polygon = crop_polygon(polygon)
         alpha = Image.new("L", (width, height), 255)
