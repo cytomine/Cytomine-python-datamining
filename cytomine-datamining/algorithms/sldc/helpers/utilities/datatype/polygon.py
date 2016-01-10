@@ -18,8 +18,7 @@ from functools import partial
 
 from .bounds import Bounds
 from shapely.affinity import affine_transform as aff_transfo
-
-
+from shapely.geometry import box
 
 def bounds(polygon):
     """
@@ -68,9 +67,9 @@ def cropped_img_coords(polygon):
     dy = maxy
     return affine_transform(polygon, [a, b, d, e, dx, dy])
 
-def crop_polygon(polygon):
-    minx, miny, maxx, maxy = polygon.bounds
-    return affine_transform(0, 0, 0, 0, -minx, -miny)(polygon)
+def crop_polygon(polygon, minx, miny, maxx, maxy):
+    b = box(minx,miny, maxx, maxy)
+    return b.intersection(polygon)
 
 def affine_transform(xx_coef=1, xy_coef=0, yx_coef=0, yy_coef=1,
                      delta_x=0, delta_y=0):

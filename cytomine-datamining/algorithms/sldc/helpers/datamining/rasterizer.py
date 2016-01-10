@@ -86,7 +86,7 @@ class Rasterizer:
     """
 
     def rasterize(self, polygon):
-        polygon = crop_polygon(polygon)
+        #polygon = crop_polygon(polygon)
         minx, miny, maxx, maxy = polygon.bounds
         width = maxx - minx + 1
         height = maxy - miny + 1
@@ -104,10 +104,10 @@ class Rasterizer:
         np_results = np.zeros((width, height, depth), dtype=np.uint)
         np_results[:, :, 0:depth-1] = np_img
         #Rasterization
-        polygon = crop_polygon(polygon)
-        alpha = Image.new("L", (width, height), 255)
+        polygon = crop_polygon(polygon, 0, 0, width, height)
+        alpha = Image.new("L", (width, height), 0)
         draw = ImageDraw.Draw(alpha)
         seq_pts = polygon.boundary.coords
-        draw.polygon(seq_pts, outline=0, fill=0)
+        draw.polygon(seq_pts, outline=0, fill=255)
         np_results[:, :, depth-1] = alpha
         return np_results
