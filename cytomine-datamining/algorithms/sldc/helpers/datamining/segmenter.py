@@ -19,7 +19,7 @@ import cv2
 
 def otsu_threshold_with_mask(image, mask, mode):
     """
-    Perform an Otsu threasholding on a masked grayscale image
+    Perform an Otsu thresholding on a masked grayscale image
     :param image: The image to threshold
     :param mask: The image mask
     :param mode: An additional mode to pass alongside TRESH_OTSU to cv2.threshold
@@ -27,10 +27,10 @@ def otsu_threshold_with_mask(image, mask, mode):
     """
     mask_indices = np.nonzero(mask)
     temp = np.array([image[mask_indices]])
-    temp = temp[temp < 120]
+    temp = temp[temp < 120] # to filter noise
     otsu_threshold,_ = cv2.threshold( temp, 128, 255, cv2.THRESH_OTSU | mode)
     _, image = cv2.threshold(image, otsu_threshold, 255, cv2.THRESH_BINARY_INV)
-    return otsu_threshold, image
+    return otsu_threshold, cv2.bitwise_and(image, mask)
 
 
 class Segmenter:
