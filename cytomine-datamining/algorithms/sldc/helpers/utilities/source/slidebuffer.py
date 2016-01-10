@@ -39,7 +39,7 @@ class SlideBuffer(Sliceable):
         self.seeds = seed_sequence
         self.builder = tile_stream_builder
 
-    def _get(self, index):
+    def _get(self, index=0):
         return self.builder.build(self.seeds[index])
 
     def _slice(self, shallow_copy, slice_range):

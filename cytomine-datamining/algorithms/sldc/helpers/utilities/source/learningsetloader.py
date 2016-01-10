@@ -33,7 +33,7 @@ class LearningSetBuffer(Sliceable):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def _get(self, index):
+    def _get(self, index=0):
         pass
 
     @abstractmethod
@@ -116,7 +116,7 @@ class LearningSetFromDir(LearningSetBuffer):
                     self.labels.append(int(c))
 
 
-    def _get(self, index):
+    def _get(self, index=0):
         return self.loader.load(self.image_paths[index]), self.labels[index]
 
     def _slice(self, shallow_copy, slice_range):
