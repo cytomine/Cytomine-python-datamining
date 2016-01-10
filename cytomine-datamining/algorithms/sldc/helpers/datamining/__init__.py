@@ -17,8 +17,8 @@ from .segmenter import Segmenter, BinarySegmenter, CDSegmenter
 from .rasterizer import AbstractRasterizer, Rasterizer
 from .tilefilter import TileFilter, StdFilter
 from .colordeconvoluter import ColorDeconvoluter
-from .merger import MergerFactory, RowOrderMerger
+from .merger import MergerFactory, RowOrderMerger, DoNothingMerger
 from .locator import CV2Locator
 
 __all__ = [ "Segmenter", "BinarySegmenter", "CDSegmenter", "AbstractRasterizer", "Rasterizer", "TileFilter",
-            "StdFilter", "ColorDeconvoluter", "MergerFactory", "RowOrderMerger", "CV2Locator"]
+            "StdFilter", "ColorDeconvoluter", "MergerFactory", "RowOrderMerger", "CV2Locator", "DoNothingMerger"]
