@@ -135,23 +135,78 @@ class ThyroidDispatcher(Dispatcher):
     Constructor parameters
     ----------------------
     thyroid_dispatcher_algo : :class:`ThyroidDispatcherAlgo`
-        Tne first dispatcher algorithm (filter in cells, aggregate and
-        architectural pattern)
-    thyroid_dispatcher_algo : :class:`ThyroidDispatcherAlgo`
-        Tne second dispatcher algorithm (identify cells in segmented aggregates)
+        Tne dispatcher algorithm
     """
 
-    def __init__(self, thyroid_dispatcher_algo,
-                 thyroid_dispatcher_algo2):
+    def __init__(self, thyroid_dispatcher_algo):
         Dispatcher.__init__(self)
         self._algo = thyroid_dispatcher_algo
+
+    def dispatch(self, datastore):
+        """
+        Dispatch the segmented polygons from the previous stage into
+        - cells
+        - aggregates
+        - architectural pattern
+        The dispatching is used using the dispatching algorithm provided by the user
+        Parameters
+        ----------
+        datastore : :class:`ThyroidDataStore`
+            The datastore from which to load the result of the segmentation
+            and where to save the result of dispatching
+        """
+        # Phase 1 : simple dispatch
+        for img_index, polygons in datastore.get_polygons().iteritems():
+            for polygon in polygons:
+                label = self._algo.dispatch(polygon)
+                self._save_polygon(datastore, label, img_index, polygon)
+
+    def _save_polygon(self, datastore, label, img_index, polygon):
+        """
+        Saves a polygon in a datastore according to its dispatch label.
+
+        Parameters
+        ----------
+        datastore : :class:`ThyroidDataStore`
+            The datastore from which to load the result of the segmentation
+            and where to save the result of dispatching
+        label: :enum:`DispatchEnum`
+            The predicted label for the given polygon
+        img_index: int
+            The index of the image in which is located the polygon
+        polygon:
+            The polygon to store
+        """
+        if label == DispatchEnum.CELL:
+            datastore.store_cell(img_index, polygon)
+        elif label == DispatchEnum.ARCHITECTURAL_PATTERN:
+            datastore.store_architectural_pattern(img_index, polygon)
+
+
+class FirstPassThyroidDispatcher(ThyroidDispatcher) :
+    """
+    =================
+    FirstPassThyroidDispatcher
+    =================
+    A :class:`Dispatcher` for the Thyroid cell classification application.
+    In addition to the dispatching, this dispatcher saves aggregate and architectural patterns into the datastore
+    for further segmentation.
+
+    Constructor parameters
+    ----------------------
+    dispatcher_algo: :class:`ThyroidDispatcherAlgo`
+        Tne dispatcher algorithm
+    """
+
+    def __init__(self, dispatcher_algo):
+        Dispatcher.__init__(self)
+        self._algo = dispatcher_algo
         self._sl_workflow = None
-        self._algo2 = thyroid_dispatcher_algo2
 
     def set_sl_workflow(self, sl_workflow):
         """
         Set the segment/locate workflow instance to use for the second
-        segmentation. 
+        segmentation.
 
         It *must* be set !
 
@@ -169,6 +224,9 @@ class ThyroidDispatcher(Dispatcher):
         - aggregates
         - architectural pattern
 
+        The aggregates and architectural patterns are saved into the datastore using store_crop_to_segment for
+        further segmentation.
+
         Parameters
         ----------
         datastore : :class:`ThyroidDataStore`
@@ -176,33 +234,18 @@ class ThyroidDispatcher(Dispatcher):
             and where to save the result of dispatching
         """
         dict_2_segment = {}
-        # Phase 1 : simple dispatch
+
         for img_index, polygons in datastore.get_polygons().iteritems():
-            polygons_2_sec = []
+            arch_or_aggr = []
             for polygon in polygons:
                 label = self._algo.dispatch(polygon)
-                if label == DispatchEnum.CELL:
-                    datastore.store_cell(img_index, polygon)
-                elif label == DispatchEnum.AGGREGATE:
-                    polygons_2_sec.append(polygon)
-                elif label == DispatchEnum.ARCHITECTURAL_PATTERN:
-                    datastore.store_architectural_pattern(img_index, polygon)
-                    polygons_2_sec.append(polygon)
-            if len(polygons_2_sec) > 0:
-                dict_2_segment[img_index] = polygons_2_sec
+                self._save_polygon(datastore, label, img_index, polygon)
 
+                # check whether the polygons must be saved for second segmentation
+                if label == DispatchEnum.AGGREGATE or label == DispatchEnum.ARCHITECTURAL_PATTERN:
+                    arch_or_aggr.append(polygon)
 
-        #Phase 2 : Redispatching
-        datastore.second_segmentation()
-        # Get crop from polygons (index correspond to the image)
+            if len(arch_or_aggr) > 0:
+                dict_2_segment[img_index] = arch_or_aggr
+
         datastore.store_crop_to_segment(dict_2_segment)
-        # Apply segmentation to crop and get new polygons of the cells
-        dict_polygons = {}
-#        dict_polygons = self._sl_workflow.segment_locate(datastore)
-        # Filter out non-cells
-        for img_index, polygons in dict_polygons.iteritems():
-
-            for polygon in polygons:
-                label = self._algo2.dispatch(polygon)
-                if label == DispatchEnum.CELL:
-                    datastore.store_cell(img_index, polygon)
