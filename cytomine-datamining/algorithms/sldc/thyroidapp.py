@@ -25,20 +25,17 @@ except ImportError:
     import pickle
 import argparse
 
-from dispatcher import ThyroidDispatcher, AreaDispatcher
+from dispatcher import FirstPassThyroidDispatcher, ThyroidDispatcher, AreaDispatcher
 from classifier import ThyroidClassifier
+from aggregatesegmenter import AggregateSegmenter
 from cytominedatastore import ThyroidCytomineDataStore
-# TODO replace accordingly
-from dummyclassifier import DummyClassifier
-
-
 
 from cytomine import Cytomine
-from helpers.workflow import SLDCWorkflow, SLWorkflow
+from helpers.workflow import SLDCWorkflow
 from helpers.datamining import StdFilter
 from helpers.datamining import CDSegmenter
 from helpers.datamining import ColorDeconvoluter
-from helpers.datamining import MergerFactory, RowOrderMerger
+from helpers.datamining import MergerFactory, RowOrderMerger, DoNothingMerger
 from helpers.datamining import CV2Locator
 
 from helpers.utilities.argparsing import positive_int, positive_float
@@ -211,21 +208,15 @@ class ThyroidJob(CytomineJob):
         CytomineJob.__init__(self, cytomine_client, software_id, project_id)
 
         # Create Datastore
-        data_store = ThyroidCytomineDataStore(cytomine_client,
-                                              slide_ids,
-                                              zoom_sl,
-                                              working_path)
+        data_store = ThyroidCytomineDataStore(cytomine_client, slide_ids, zoom_sl, working_path)
 
         # Create TileFilter
         tile_filter = StdFilter(tile_filter_min_std)
 
-        # Create Segmenter
+        # Create Segmenter's
         deconvoluter = ColorDeconvoluter()
         deconvoluter.set_kernel(deconv_kernel)
-        segmenter = CDSegmenter(deconvoluter,
-                                seg_threshold,
-                                seg_struct_elem,
-                                seg_nb_morph_iter)
+        segmenter = CDSegmenter(deconvoluter, seg_threshold, seg_struct_elem,  seg_nb_morph_iter)
 
         # Create Locator
         locator = CV2Locator()
@@ -233,23 +224,15 @@ class ThyroidJob(CytomineJob):
         # Create MergerBuilder
         merger_builder = MergerFactory(merg_boundary_thickness, RowOrderMerger)
 
-        # Create Dispatcher
-        dispatch_algo = AreaDispatcher(disp1_cell_min_area,
-                                       disp1_cell_max_area,
-                                       disp1_cell_min_circ,
-                                       disp1_clust_min_cell_nb)
+        # Create Dispatcher's
+        first_pass_dispatch_algo = AreaDispatcher(disp1_cell_min_area, disp1_cell_max_area,
+                                                  disp1_cell_min_circ, disp1_clust_min_cell_nb)
+        first_pass_dispatcher = FirstPassThyroidDispatcher(first_pass_dispatch_algo)
 
-        dispatcher_algo2 = AreaDispatcher(disp2_cell_min_area,
-                                          disp2_cell_max_area,
-                                          disp2_cell_min_circ,
-                                          disp2_clust_min_cell_nb)
-
-        dispatcher = ThyroidDispatcher(dispatch_algo,
-                                       dispatcher_algo2)
         # Create Classifier
-        classifier = ThyroidClassifier(cell_classifier, pattern_classifier,
-                                       cell_classes=cell_classes,
+        classifier = ThyroidClassifier(cell_classifier, pattern_classifier, cell_classes=cell_classes,
                                        arch_pattern_classes=arch_pattern_classes)
+
         # Create TaskExecutor
         if nb_jobs == 1:
             task_executor = SerialExecutor()
@@ -259,20 +242,43 @@ class ThyroidJob(CytomineJob):
                 task_exec_verbosity = 10
             task_executor = ParallelExecutor(nb_jobs, task_exec_verbosity)
 
-        # Create Miner
-        thyroid_miner = SLDCWorkflow(tile_filter, segmenter, locator,
-                                     merger_builder, dispatcher, classifier,
-                                     task_executor)
+        # Create first pass Miner's
+        thyroid_miner = SLDCWorkflow(tile_filter, segmenter, locator, merger_builder,
+                                     first_pass_dispatcher, classifier, task_executor)
 
         # Set the sl_worflow
-        dispatcher.set_sl_workflow(thyroid_miner)
+        first_pass_dispatcher.set_sl_workflow(thyroid_miner)
 
-        self._miner = thyroid_miner
+        # Create second pass Miner
+        second_pass_dispatch_algo = AreaDispatcher(disp2_cell_min_area, disp2_cell_max_area,
+                                                   disp2_cell_min_circ, disp2_clust_min_cell_nb)
+
+        second_pass_dispatcher = ThyroidDispatcher(second_pass_dispatch_algo)
+
+        aggregate_segmenter = AggregateSegmenter(deconvoluter, get_standard_struct_elem(),
+                                                 cell_max_area=disp2_cell_max_area,
+                                                 cell_min_circularity=disp2_cell_min_circ)
+
+        aggregate_merger_builder = MergerFactory(merg_boundary_thickness, DoNothingMerger)
+
+        aggregate_miner = SLDCWorkflow(tile_filter, aggregate_segmenter, locator, aggregate_merger_builder,
+                                       second_pass_dispatcher, classifier, task_executor)
+
+
+        self._miners = [thyroid_miner, aggregate_miner]
         self._store = data_store
 
     def run(self):
-        cell_classif, arch_pattern_classif = self._miner.process(self._store)
-        self._store.publish_results(cell_classif, arch_pattern_classif)
+        cells_classes, archs_classes = np.array([]), np.array([])
+        for miner in self._miners:
+            cell_classif, arch_pattern_classif = miner.process(self._store)
+            cells_classes = np.concatenate((cells_classes, cell_classif))
+            archs_classes = np.concatenate((archs_classes, arch_pattern_classif))
+            self._store.second_segmentation()
+        self._store.publish_results(cells_classes, archs_classes)
+
+def arr2str(arr):
+    return "".join(str(arr).strip("[]").split(","))
 
 def main(argv):
     print argv  #TODO remove
