@@ -201,7 +201,7 @@ if __name__ == "__main__":
 	    job_parameters_values = cytomine_connection.add_job_parameters(user_job.job, cytomine_connection.get_software(id_software),job_parameters)
 
 	progress = 0
-	delta = 90/len(images)
+	delta = 90/len(model_names)
 
 	for model in model_names:
 		F = open('%s%s.conf'%(model_repo,model))

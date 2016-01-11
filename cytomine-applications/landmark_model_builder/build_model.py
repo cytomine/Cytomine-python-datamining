@@ -165,7 +165,7 @@ if __name__ == "__main__":
 	passe = False
 
 	progress = 0
-	delta = 80/len(images)
+	delta = 80/parameters['model_ntimes']
 
 	for times in range(parameters['model_ntimes']):
 		if(times==0):
