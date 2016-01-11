@@ -26,7 +26,7 @@ from array import *
 from shapely.geometry.polygon import Polygon
 from shapely.geometry import Point
 import sys,optparse
-sys.path.append('../landmark_model_builder/')
+sys.path.append('/software_router/algo/landmark_model_builder/')
 from validation import *
 from download import *
 import cytomine
