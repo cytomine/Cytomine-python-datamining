@@ -116,7 +116,7 @@ class ThyroidCytomineDataStore(ThyroidDataStore):
             key = image_id => sequence of polygons
         """
         self.dict_polygons = {}
-        scale_factor = pow(2, self._zoom_sl)
+        scale_factor = pow(2, self._zoom_sl if self._first_segmentation else 0)
         scaler = affine_transform(xx_coef=scale_factor, yy_coef=scale_factor)
         for slide_id, polygons in dict_polygons.iteritems():
             tmp = []
