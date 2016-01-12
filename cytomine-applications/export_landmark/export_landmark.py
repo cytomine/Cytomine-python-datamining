@@ -113,7 +113,7 @@ def main(argv):
 				xpos[(ann.term[0],image.id)] = int(cx[0])
 				ypos[(ann.term[0],image.id)] = image.height-int(cy[0])
 				term = cytomine_connection.get_term(ann.term[0])
-				terms[term.name]=1
+				terms[term.id]=term.name
 	key_t = terms.keys()
 	
 	job = cytomine_connection.update_job_status(job, status = job.RUNNING, status_comment = "Write in file", progress = 90)
@@ -125,7 +125,7 @@ def main(argv):
 	
 	csv.write('ID_IMAGE;')
 	for i in range(len(key_t)):
-		csv.write('%s_x;%s_y;'%(str(key_t[i]),str(key_t[i])))
+		csv.write('%s_x;%s_y;'%(str(terms[key_t[i]]),str(terms[key_t[i]])))
 	csv.write('\n')
 
 	for image in images:
