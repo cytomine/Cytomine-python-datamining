@@ -118,6 +118,9 @@ def main(argv):
 	
 	job = cytomine_connection.update_job_status(job, status = job.RUNNING, status_comment = "Write in file", progress = 90)
 	
+	if not os.path.exists(parameters['cytomine_working_path']):
+		os.makedirs(parameters['cytomine_working_path'])
+
 	csv = open('%s%s.csv'%(parameters['cytomine_working_path'],str(parameters['cytomine_id_project'])),'w')
 	
 	csv.write('ID_IMAGE;')
