@@ -174,7 +174,9 @@ class ThyroidCytomineDataStore(ThyroidDataStore):
                                    delta_y=img_inst.height)
         geometry = transfo(geometry)
 
-        annotation = self._cytomine.add_annotation(geometry.wkt, image_id)
+        annotation = None
+        while annotation is None:
+            annotation = self._cytomine.add_annotation(geometry.wkt, image_id)
         if label is not None:
             self._cytomine.add_annotation_term(annotation.id, label, label, 1.0, annotation_term_model=AlgoAnnotationTerm)
 
