@@ -52,7 +52,7 @@ class DispatchEnum:
     ARTIFACT = 4
 
 
-class ThyroidDispatcherAlgo(object):
+class PolygonDispatcher(object):
     """
     =====================
     ThyroidDispatcherAlgo
@@ -75,7 +75,7 @@ class ThyroidDispatcherAlgo(object):
         pass
 
 
-class AreaDispatcher(ThyroidDispatcherAlgo):
+class AreaDispatcher(PolygonDispatcher):
     """
     ==============
     AreaDispatcher
@@ -199,8 +199,7 @@ class FirstPassThyroidDispatcher(ThyroidDispatcher) :
     """
 
     def __init__(self, dispatcher_algo):
-        Dispatcher.__init__(self)
-        self._algo = dispatcher_algo
+        ThyroidDispatcher.__init__(self, dispatcher_algo)
         self._sl_workflow = None
 
     def set_sl_workflow(self, sl_workflow):
