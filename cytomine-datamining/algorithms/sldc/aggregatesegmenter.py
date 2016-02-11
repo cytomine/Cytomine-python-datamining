@@ -29,18 +29,20 @@ class AggregateSegmenter(BinarySegmenter):
     A :class:`Segmenter` for segmenting cells in aggregate and architectural
     pattern
     """
-    def __init__(self, color_deconvoluter, struct_elem, cell_max_area=4000, cell_min_circularity=.8):
+    def __init__(self, color_deconvoluter, struct_elem, cell_max_area=4000, cell_min_circularity=.8, border=7):
         self._color_deconvoluter = color_deconvoluter
         self._struct_elem = struct_elem
         self._cell_max_area = cell_max_area
         self._min_circularity = cell_min_circularity
         self._small_struct_element = np.array([
-            [0, 1, 1, 1, 0],
-            [1, 1, 1, 1, 1],
-            [1, 1, 1, 1, 1],
-            [1, 1, 1, 1, 1],
-            [0, 1, 1, 1, 0]
+            [0, 1, 1, 1, 1, 0],
+            [1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1],
+            [0, 1, 1, 1, 1, 0]
         ]).astype(np.uint8)
+        self._border = border
 
     def segment(self, np_image):
         """
@@ -99,14 +101,9 @@ class AggregateSegmenter(BinarySegmenter):
         #    -> find local maximum of the distance transform
         #    -> create a mask for the markers : (255) for the markers, and (0) for the rest
         #  2)
-        # TODO test dt on dilated internal_binary
         dt = cv2.distanceTransform(internal_binary, cv2.cv.CV_DIST_L2, 3)
 
-        #image_dec[internal_binary == 0] = [255,255,255] # (????)
-
-        # Create borders to be added to the markers' image
-        borders = cv2.dilate(internal_binary, self._struct_elem, iterations=1)
-        borders = borders - cv2.erode(borders, None)
+        image_dec[internal_binary == 0] = [255,255,255]
 
         # Detection maxima locaux
         local_max_ind = maximum_filter(dt, size=9) == dt
@@ -117,24 +114,39 @@ class AggregateSegmenter(BinarySegmenter):
         markers[internal_binary == 0] = 0
 
         # Dilate marker to make them more homogeneous
-        markers = cv2.dilate(markers, self._small_struct_element, iterations = 2)
+        # Custom : "markers = cv2.dilate(markers, self._small_struct_element, iterations = 2)" instead of
+        markers = cv2.dilate(markers, self._struct_elem, iterations = 2)
         markers = markers.astype(np.int32)
 
         # Differentiates the colors of the markers (labelling)
         markers, nb_labels = label(markers, np.ones((3,3)))
-        # Use 255 as color for borders to distinguish pixels from the background
-        if nb_labels < 255:
-            markers[markers == 255] = 256
-            markers[borders == 255] = 255
-        else:
-            markers[markers == 255] = nb_labels + 1
-            markers[borders == 255] = 255
 
-        # Execute watershed
+        # Create borders to be added to the markers' image
+        borders = cv2.dilate(internal_binary, self._struct_elem, iterations=1)
+        # Custom : "borders = borders - cv2.erode(borders, None)" : instead of
+        borders = borders - internal_binary
+
+        # Color code in 'markers' :
+        #  - borders in 255
+        #  - background in 0
+        #  - integers in ]0,255[ and ]255,...[ for labels
+        # marker_color is computed to avoid overlapping when there are more than 255 labels
+        border_color = 255
+        marker_color = 256 if nb_labels < 255 else (nb_labels + 1)
+        markers[markers == border_color] = marker_color
+        markers[borders == 255] = border_color
+
         cv2.watershed(image_dec, markers)
 
-        # Remove barriers produced by watershed
-        markers[markers == -1] = 0
-        markers[markers == 255] = 0
+        # Post-process makers matrix to match output format of segment()
+        # -> background 0 (belongs to background : borders (added for watershed), -1 introduced by watershed, initial background
+        # -> foreground 255 (shed labels)
+        markers[np.logical_or(markers < 0, markers == 255)] = 0
         markers[markers > 0] = 255
+        markers = markers.astype("uint8")
+
+        # erosion and dilation for making the separation between cell more obvious
+        markers = cv2.morphologyEx(markers, cv2.MORPH_ERODE, self._struct_elem, iterations=1)
+        markers = cv2.morphologyEx(markers, cv2.MORPH_DILATE, self._small_struct_element, iterations=1)
+
         return markers.astype(np.uint8)
