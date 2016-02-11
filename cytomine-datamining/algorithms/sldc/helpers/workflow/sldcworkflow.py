@@ -57,6 +57,17 @@ class MiningWorkflow(object):
         """
         return self.__verbose
 
+    def set_verbosity(self, verbose):
+        """
+        Activate or deactivate the verbosity level of the mining worklflow
+
+        Parameters
+        ---------
+        verbose : boolean
+            True for activating the verbose mode, SLFalse otherwise
+        """
+        self.__verbose = verbose
+
     def submit_to_executor(self, function, data, *args, **kwargs):
         """
         Delegates to the instance :class:`TaskExecutor` (see the
