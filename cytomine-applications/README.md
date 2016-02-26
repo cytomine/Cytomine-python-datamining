@@ -5,7 +5,7 @@ When using our software, you agree to cite our website url and related publicati
 
 - URL: http://www.cytomine.be/
 - Logo: http://www.cytomine.be/logo/logo.png
-- Scientific paper: Raphaël Marée, Loïc Rollus, Benjamin Stévens, Renaud Hoyoux, Gilles Louppe, Rémy Vandaele, Jean-Michel Begon, Philipp Kainz, Pierre Geurts and Louis Wehenkel. Collaborative analysis of multi-gigapixel imaging data using Cytomine, Bioinformatics, 2016.
+- Scientific paper: Raphaël Marée, Loïc Rollus, Benjamin Stévens, Renaud Hoyoux, Gilles Louppe, Rémy Vandaele, Jean-Michel Begon, Philipp Kainz, Pierre Geurts and Louis Wehenkel. Collaborative analysis of multi-gigapixel imaging data using Cytomine, Bioinformatics, 2016. DOI: 10.1093/bioinformatics/btw013, 2016. http://bioinformatics.oxfordjournals.org/cgi/content/abstract/btw013?ijkey=dQzEgmXVozFRPPf&keytype=ref
 
 # Cytomine-python-datamining
 
@@ -24,12 +24,14 @@ be proofread using Review modules on Cytomine-WebUI.
 * Typical application: object (e.g. cell) classification algorithm evaluation.
 
 * Based on:
-Towards generic image classification: an extensive empirical study
-Marée et al., TR 2014 http://orbi.ulg.ac.be/handle/2268/175525
+"Towards Generic Image Classification using Tree-based Learning: an Extensive Empirical Study".
+Raphael Maree, Pierre Geurts, Louis Wehenkel.
+Pattern Recognition Letters, DOI: 10.1016/j.patrec.2016.01.006, 2016. 
 
 * Used in (Note: Another previous implementation/variants were used):
-Towards generic image classification: an extensive empirical study
-Marée et al., TR 2014 http://orbi.ulg.ac.be/handle/2268/175525
+"Towards Generic Image Classification using Tree-based Learning: an Extensive Empirical Study".
+Raphael Maree, Pierre Geurts, Louis Wehenkel.
+Pattern Recognition Letters, DOI: 10.1016/j.patrec.2016.01.006, 2016. 
 
 ---------------------------------------------------------------------------------
 2) classification_model_builder:
