@@ -41,8 +41,9 @@ Pattern Recognition Letters, DOI: 10.1016/j.patrec.2016.01.006, 2016.
 * Typical application: object (e.g. cell) classification in cytology slides.
 
 * Based on:
-- Towards generic image classification: an extensive empirical study
-Marée et al., TR 2014 http://orbi.ulg.ac.be/handle/2268/175525
+- "Towards Generic Image Classification using Tree-based Learning: an Extensive Empirical Study".
+Raphael Maree, Pierre Geurts, Louis Wehenkel.
+Pattern Recognition Letters, DOI: 10.1016/j.patrec.2016.01.006, 2016. 
 
 * Used in (Note: Another previous implementation/variants were used):
 - Phenotype Classification of Zebrafish Embryos by Supervised Learning
@@ -61,8 +62,9 @@ terms (in a userjob layer).
 * Typical application: cell classification in cytology slides.
 
 * Based on:
-- Towards generic image classification: an extensive empirical study
-Marée et al., TR 2014 http://orbi.ulg.ac.be/handle/2268/175525
+- "Towards Generic Image Classification using Tree-based Learning: an Extensive Empirical Study".
+Raphael Maree, Pierre Geurts, Louis Wehenkel.
+Pattern Recognition Letters, DOI: 10.1016/j.patrec.2016.01.006, 2016. 
 
 * Used in (Note: Another previous implementation/variants were used):
 - Phenotype Classification of Zebrafish Embryos by Supervised Learning
