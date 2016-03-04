@@ -15,13 +15,13 @@ __version__ = '0.1'
 
 
 from .bounds import Bounds
-from .polygon import bounds, crop_polygon, image_coords, affine_transform
+from .polygon import bounds, crop_polygon, affine_transform
 from .tile import Tile
 from .imageconverter import OverflowManager, ClipOverflow, HistogramEqualizer
 from .imageconverter import ImageConverter, NumpyConverter, PILConverter
 from .imageconverter import CVConverter
 
 
-__all__ = ["Tile", "Bounds", "bounds", "crop_polygon", "image_coords",
+__all__ = ["Tile", "Bounds", "bounds", "crop_polygon",
 		   "ImageConverter", "OverflowManager", "ClipOverflow", "NumpyConverter",
 		   "HistogramEqualizer", "PILConverter", "CVConverter", "affine_transform"]
