@@ -12,6 +12,7 @@ from scipy.ndimage.measurements import label
 from helpers.datamining.segmenter import otsu_threshold_with_mask
 from dispatching_rules import CellRule
 
+
 class AggregateSegmenter(Segmenter):
     """
     ==================
