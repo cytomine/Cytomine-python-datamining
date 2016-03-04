@@ -1,18 +1,13 @@
 # -*- coding: utf-8 -*-
 import cStringIO
-
+import numpy as np
+from sldc.image import Image, Tile, TileBuilder
+from PIL import Image as PILImage
+from helpers.utilities.datatype.polygon import bounds
 from shapely.geometry import Polygon, MultiPolygon, box
 
 __author__ = "Mormont Romain <romain.mormont@gmail.com>"
 __version__ = "0.1"
-
-from sldc.image import Image, Tile
-from PIL import Image as PILImage
-
-
-def to_lower_left(polygon)
-
-
 
 
 def _get_crop(cytomine, image_inst, geometry):
@@ -88,10 +83,57 @@ class CytomineSlide(Image):
 
 
 class CytomineTile(Tile):
+    """
+    A tile from a cytomine slide
+    """
+    def __init__(self, cytomine, parent, offset, width, height, tile_identifier=None):
+        """Constructor for CytomineTile objects
+
+        Parameters
+        ----------
+        cytomine: cytomine.Cytomine
+            An initialized instance of the cytomine client
+        parent: Image
+            The image from which is extracted the tile
+        offset: (int, int)
+            The x and y coordinates of the pixel at the origin point of the slide in the parent image.
+            Coordinates order is the following : (x, y).
+        width: int
+            The width of the tile
+        height: int
+            The height of the tile
+        tile_identifier: int, optional (default: None)
+            A integer identifier that identifies uniquely the tile among a set of tiles
+
+        Notes
+        -----
+        The coordinates origin is the leftmost pixel at the top of the slide
+        """
+        Tile.__init__(self, parent, offset, width, height, tile_identifier=tile_identifier)
+        self._cytomine = cytomine
 
     def get_numpy_repr(self):
-        _get_crop(self._parent.cytomine, self._parent.image_instance, self._tile_box())
+        pil_image = _get_crop(self._cytomine, self._parent.image_instance, self._tile_box())
+        return np.asarray(pil_image)
 
     def _tile_box(self):
         return box(self.offset_x, self.offset_y, self.offset_x + self.width, self.offset_y + self.height)
 
+
+class CytomineTileBuilder(TileBuilder):
+    """
+    A builder for CytomineTile objects
+    """
+
+    def __init__(self, cytomine):
+        """Construct CytomineTileBuilder objects
+
+        Parameters
+        ----------
+        cytomine: cytomine.Cytomine
+            The initialized cytomine client
+        """
+        self._cytomine = cytomine
+
+    def build(self, image, offset, width, height):
+        return CytomineTile(self._cytomine, image, offset, width, height)
