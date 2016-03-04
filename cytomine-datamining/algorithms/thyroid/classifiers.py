@@ -76,18 +76,25 @@ class PyxitClassifierAdapter(PolygonClassifier):
     @staticmethod
     def build_from_pickle(model_path, tile_builder, working_path):
         """Builds a PyxitClassifierAdapter object from a pickled model
-        The first object pickled in the file in the path 'model_path' is an array
-        containing the classes, and the second is the PyxitClassifier object
 
         Parameters
         ----------
         model_path: string
-            The path in which is stored the pickled model
+            The path to which is stored the pickled model
         tile_builder: TileBuilder
             A tile builder object
         working_path: string
             The path in which temporary files can be written
-        :return:
+
+        Returns
+        -------
+        adapter: PyxitClassifierAdapter
+            The built classifier adapter
+
+        Notes
+        -----
+        The first object pickled in the file in the path 'model_path' is an array
+        containing the classes, and the second is the PyxitClassifier object
         """
         with open(model_path, "rb") as model_file:
             classes = pickle.load(model_file)
