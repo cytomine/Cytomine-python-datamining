@@ -45,31 +45,10 @@ def bounds(polygon):
     return Bounds(minx, miny, width, height)
 
 
-def image_coords(polygon):
-    raise NotImplementedError("Need revision")
-    minx, miny, maxx, maxy = polygon.bounds
-    a = 1
-    b = 0
-    d = 0
-    e = -1
-    dx = 0
-    dy = 0
-    return affine_transform(polygon, [a, b, d, e, dx, dy])
-
-def cropped_img_coords(polygon):
-    raise NotImplementedError("need revision")
-    minx, miny, maxx, maxy = polygon.bounds
-    a = 1
-    b = 0
-    d = 0
-    e = -1
-    dx = -minx
-    dy = maxy
-    return affine_transform(polygon, [a, b, d, e, dx, dy])
-
 def crop_polygon(polygon, minx, miny, maxx, maxy):
     b = box(minx,miny, maxx, maxy)
     return b.intersection(polygon)
+
 
 def affine_transform(xx_coef=1, xy_coef=0, yx_coef=0, yy_coef=1,
                      delta_x=0, delta_y=0):
