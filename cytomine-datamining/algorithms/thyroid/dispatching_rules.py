@@ -9,57 +9,57 @@ from sldc import DispatchingRule
 
 class AggregateRule(DispatchingRule):
 
-    def __init__(self, cell_max_area, cluster_min_cell_nb):
+    def __init__(self, cell_max_area, aggregate_min_cell_nb):
         """Constructor for AggregateRule object
 
-        Constructor
-        -----------
+        Parameters
+        ----------
         cell_max_area : float
             The cells maximum area. It must be consistent with the polygon
             coordinate system. In particular with the scale
-        cluster_min_cell_nb : int
+        aggregate_min_cell_nb : int
             The minimum number of cells to form a cluster. It must be consistent
             with the polygon coordinate system. In particular with the scale
         """
         self._cell_max_area = cell_max_area
-        self._cluster_min_cell_nb = cluster_min_cell_nb
+        self._aggregate_min_cell_nb = aggregate_min_cell_nb
 
     def evaluate(self, polygon):
-        return polygon.area >= self._cluster_min_cell_nb * self._cell_max_area
+        return polygon.area >= self._aggregate_min_cell_nb * self._cell_max_area
 
 
 class SmallClusterRule(DispatchingRule):
 
-    def __init__(self, cell_min_area, cell_max_area, cluster_min_cell_nb):
+    def __init__(self, cell_min_area, cell_max_area, aggregate_min_cell_nb):
         """Constructor for SmallClusterRule object
 
-        Constructor
-        -----------
+        Parameters
+        ----------
         cell_min_area : float
             The cells minimum area. It must be consistent with the polygon
             coordinate system. In particular with the scale
         cell_max_area : float
             The cells maximum area. It must be consistent with the polygon
             coordinate system. In particular with the scale
-        cluster_min_cell_nb : int
+        aggregate_min_cell_nb : int
             The minimum number of cells to form a cluster. It must be consistent
             with the polygon coordinate system. In particular with the scale
         """
         self._cell_max_area = cell_max_area
         self._cell_min_area = cell_min_area
-        self._cluster_min_cell_nb = cluster_min_cell_nb
+        self._aggregate_min_cell_nb = aggregate_min_cell_nb
 
     def evaluate(self, polygon):
-        return self._cell_max_area < polygon.area < self._cluster_min_cell_nb * self._cell_max_area
+        return self._cell_max_area < polygon.area < self._aggregate_min_cell_nb * self._cell_max_area
 
 
 class CellRule(DispatchingRule):
 
-    def __init__(self, cell_min_area, cell_max_area, cell_min_circularity, cluster_min_cell_nb):
+    def __init__(self, cell_min_area, cell_max_area, cell_min_circularity, aggregate_min_cell_nb):
         """Constructor for CellRule object
 
-        Constructor parameters
-        ----------------------
+        Parameters
+        ----------
         cell_min_area : float
             The cells minimum area. It must be consistent with the polygon
             coordinate system. In particular with the scale
@@ -69,14 +69,14 @@ class CellRule(DispatchingRule):
         cell_min_circularity : float
             The cells minimum circularity. It must be consistent with the polygon
             coordinate system. In particular with the scale
-        cluster_min_cell_nb : int
+        aggregate_min_cell_nb : int
             The minimum number of cells to form a cluster. It must be consistent
             with the polygon coordinate system. In particular with the scale
         """
         self._cell_max_area = cell_max_area
         self._cell_min_area = cell_min_area
         self._cell_min_circularity = cell_min_circularity
-        self._cluster_min_cell_nb = cluster_min_cell_nb
+        self._aggregate_min_cell_nb = aggregate_min_cell_nb
 
     def evaluate(self, polygon):
         circularity = 4 * np.pi * polygon.area / (polygon.length * polygon.length)
