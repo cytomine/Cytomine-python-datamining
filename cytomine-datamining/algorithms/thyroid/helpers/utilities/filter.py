@@ -1,0 +1,65 @@
+# -*- coding: utf-8 -*-
+
+"""
+Copyright 2010-2013 University of Liège, Belgium.
+
+This software is provided 'as-is', without any express or implied warranty.
+In no event will the authors be held liable for any damages arising from the use of this software.
+
+Permission is only granted to use this software for non-commercial purposes.
+"""
+
+__author__          = "Stévens Benjamin <b.stevens@ulg.ac.be>"
+__contributors__    = ["Marée Raphaël <raphael.maree@ulg.ac.be>", "Rollus Loïc <lrollus@ulg.ac.be"]
+__copyright__       = "Copyright 2010-2013 University of Liège, Belgium"
+__version__         = '0.1'
+
+import numpy as np
+import cv
+
+class Filter(object):
+
+    def __init__(self):
+        return
+
+    def process(self, image):
+        raise NotImplementedError( "Should have implemented this" )
+
+class AdaptiveThresholdFilter(Filter):
+
+    def __init__(self, block_size = 71, c = 3):
+        super(Filter, self).__init__()
+        self.block_size = block_size
+        self.c = c
+
+    def process(self, image):
+        image_gray = cv.CreateImage(cv.GetSize(image), cv.IPL_DEPTH_8U, 1)
+        cv.CvtColor(image,image_gray, cv.CV_BGR2GRAY)
+        cv.AdaptiveThreshold(image_gray, image_gray, 255, cv.CV_ADAPTIVE_THRESH_MEAN_C, cv.CV_THRESH_BINARY_INV, self.block_size, self.c)
+        return image_gray
+
+class BinaryFilter(Filter):
+
+    def __init__(self, threshold = 128):
+        super(Filter, self).__init__()
+        self.threshold = threshold
+
+
+    def process(self, image):
+        image_gray = cv.CreateImage(cv.GetSize(image), cv.IPL_DEPTH_8U, 1)
+        cv.CvtColor(image,image_gray, cv.CV_BGR2GRAY)
+        cv.Threshold( image_gray, image_gray, self.threshold, 255, cv.CV_THRESH_BINARY_INV)
+        return image_gray
+
+class OtsuFilter(Filter):
+
+    def __init__(self, threshold = 128):
+        super(Filter, self).__init__()
+        self.threshold = threshold
+
+
+    def process(self, image):
+        image_gray = cv.CreateImage(cv.GetSize(image), cv.IPL_DEPTH_8U, 1)
+        cv.CvtColor(image,image_gray, cv.CV_BGR2GRAY)
+        cv.Threshold( image_gray, image_gray, self.threshold, 255, cv.CV_THRESH_BINARY_INV | cv.CV_THRESH_OTSU)
+        return image_gray

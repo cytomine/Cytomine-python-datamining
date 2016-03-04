@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Copyright 2010-2013 University of LiÃ¨ge, Belgium.
+Copyright 2010-2013 University of Liège, Belgium.
 
 This software is provided 'as-is', without any express or implied warranty.
 In no event will the authors be held liable for any damages arising from the
@@ -11,14 +11,14 @@ Permission is only granted to use this software for non-commercial purposes.
 """
 
 __author__ = "Begon Jean-Michel <jm.begon@gmail.com>"
-__copyright__ = "Copyright 2010-2013 University of LiÃ¨ge, Belgium"
+__copyright__ = "Copyright 2010-2013 University of Liège, Belgium"
 __version__ = '0.1'
 
 from functools import partial
-from bounds import Bounds
+
+from .bounds import Bounds
 from shapely.affinity import affine_transform as aff_transfo
 from shapely.geometry import box
-
 
 def bounds(polygon):
     """
@@ -45,20 +45,42 @@ def bounds(polygon):
     return Bounds(minx, miny, width, height)
 
 
+def image_coords(polygon):
+    raise NotImplementedError("Need revision")
+    minx, miny, maxx, maxy = polygon.bounds
+    a = 1
+    b = 0
+    d = 0
+    e = -1
+    dx = 0
+    dy = 0
+    return affine_transform(polygon, [a, b, d, e, dx, dy])
+
+def cropped_img_coords(polygon):
+    raise NotImplementedError("need revision")
+    minx, miny, maxx, maxy = polygon.bounds
+    a = 1
+    b = 0
+    d = 0
+    e = -1
+    dx = -minx
+    dy = maxy
+    return affine_transform(polygon, [a, b, d, e, dx, dy])
+
 def crop_polygon(polygon, minx, miny, maxx, maxy):
     b = box(minx,miny, maxx, maxy)
     return b.intersection(polygon)
 
-
-def affine_transform(xx_coef=1, xy_coef=0, yx_coef=0, yy_coef=1, delta_x=0, delta_y=0):
+def affine_transform(xx_coef=1, xy_coef=0, yx_coef=0, yy_coef=1,
+                     delta_x=0, delta_y=0):
     """
     Represents a 2D affine trasnformation:
 
     x' = xx_coef * x + xy_coef * y + delta_x
     y' = yx_coef * x + yy_coef * y + delta_y
 
-    Parameters
-    ----------
+    Constructor parameters
+    ----------------------
     xx_coef : float (default : 1)
         The x from x coefficient
     xy_coef : float (default : 0)
