@@ -1,7 +1,8 @@
 import cv2
 import numpy as np
-from sldc import Segmenter, DispatcherClassifier
-from dispatching_rules import CellRule, AggregateRule, SmallClusterRule
+from sldc import Segmenter, DispatcherClassifier, SLDCWorkflow
+from dispatching_rules import CellRule, AggregateRule
+from helpers.datamining.colordeconvoluter import ColorDeconvoluter
 
 
 class SlideSegmenter(Segmenter):
@@ -100,3 +101,46 @@ class SlideDispatcherClassifier(DispatcherClassifier):
         classifiers = [cell_classifier, aggregate_classifier]
         DispatcherClassifier.__init__(self, rules, classifiers)
 
+
+class SlideProcessingWorkflow(SLDCWorkflow):
+    """
+    The workflow for performing the first processing of a whole slide
+    """
+
+    def __init__(self, tile_builder, cell_min_area, cell_max_area, cell_min_circularity, aggregate_min_cell_nb,
+                 cell_classifier, aggregate_classifier, tile_max_width=1024, tile_max_height=1024, overlap=15):
+        """Constructor for SlideProcessingWorkflow objects
+
+        Parameters
+        ----------
+        tile_builder: TileBuilder
+
+        cell_min_area : float
+            The cells minimum area. It must be consistent with the polygon
+            coordinate system. In particular with the scale
+        cell_max_area : float
+            The cells maximum area. It must be consistent with the polygon
+            coordinate system. In particular with the scale
+        cell_min_circularity : float
+            The cells minimum circularity. It must be consistent with the polygon
+            coordinate system. In particular with the scale
+        aggregate_min_cell_nb : int
+            The minimum number of cells to form a cluster. It must be consistent
+            with the polygon coordinate system. In particular with the scale
+        cell_classifier: PolygonClassifier
+            The classifiers for cells
+        aggregate_classifier: PolygonClassifier
+            The classifiers for aggregates
+        tile_max_width: int
+            The maximum width of the tile to use when iterating over the images
+        tile_max_height: int
+            The maximum height of the tile to use when iterating over the images
+        overlap: int
+            The number of pixels of overlap between the tiles when iterating over the images
+        """
+        color_deconvoluter = ColorDeconvoluter()
+        segmenter = SlideSegmenter(color_deconvoluter)
+        dispatcher_classifier = SlideDispatcherClassifier(cell_min_area, cell_max_area, cell_min_circularity,
+                                                          aggregate_min_cell_nb, aggregate_classifier, cell_classifier)
+        SLDCWorkflow.__init__(self, segmenter, dispatcher_classifier, tile_builder,
+                              tile_max_width=tile_max_width, tile_max_height=tile_max_height, tile_overlap=overlap)
