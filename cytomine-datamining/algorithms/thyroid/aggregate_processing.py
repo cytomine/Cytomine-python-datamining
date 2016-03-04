@@ -6,11 +6,11 @@ __version__ = "0.1"
 import cv2
 import copy
 import numpy as np
-from sldc import Segmenter
+from sldc import Segmenter, DispatcherClassifier
 from scipy.ndimage.filters import maximum_filter
 from scipy.ndimage.measurements import label
 from helpers.datamining.segmenter import otsu_threshold_with_mask
-
+from dispatching_rules import CellRule
 
 class AggregateSegmenter(Segmenter):
     """
@@ -63,8 +63,6 @@ class AggregateSegmenter(Segmenter):
         #   contours2 is somtimes so big that calling enumerate on it causes freezes
         #   this pre-filtering to prevent from enumerating this big object
         contour_idx = [i for i, h in enumerate(hierarchy[0]) if h[3] >= 0]
-
-        mask = np.zeros(internal_binary.shape)
 
         for i in contour_idx:
             contour = contours2[i] # fetch the contour to evaluate
@@ -142,3 +140,34 @@ class AggregateSegmenter(Segmenter):
         markers = cv2.morphologyEx(markers, cv2.MORPH_DILATE, self._small_struct_element, iterations=1)
 
         return markers.astype(np.uint8)
+
+
+class AggregateDispatcherClassifier(DispatcherClassifier):
+    def __init__(self, cell_min_area, cell_max_area, cell_min_circularity, aggregate_min_cell_nb,
+                 cell_classifier, aggregate_classifier):
+        """Constructor for SlideDispatcherClassifier objects
+        Objects which aren't cells are classified None
+
+        Parameters
+        ----------
+        cell_min_area : float
+            The cells minimum area. It must be consistent with the polygon
+            coordinate system. In particular with the scale
+        cell_max_area : float
+            The cells maximum area. It must be consistent with the polygon
+            coordinate system. In particular with the scale
+        cell_min_circularity : float
+            The cells minimum circularity. It must be consistent with the polygon
+            coordinate system. In particular with the scale
+        aggregate_min_cell_nb : int
+            The minimum number of cells to form a cluster. It must be consistent
+            with the polygon coordinate system. In particular with the scale
+        cell_classifier: PolygonClassifier
+            The classifiers for cells
+        aggregate_classifier: PolygonClassifier
+            The classifiers for aggregates
+        """
+        rules = [CellRule(cell_min_area, cell_max_area, cell_min_circularity, aggregate_min_cell_nb)]
+        classifiers = [cell_classifier]
+        DispatcherClassifier.__init__(self, rules, classifiers)
+
