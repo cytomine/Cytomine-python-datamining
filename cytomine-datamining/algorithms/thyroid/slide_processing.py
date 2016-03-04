@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
-from sldc import Segmenter, SLDCWorkflow
+from sldc import Segmenter, DispatcherClassifier
+from dispatching_rules import CellRule, AggregateRule, SmallClusterRule
 
 
 class SlideSegmenter(Segmenter):
@@ -69,4 +70,33 @@ class SlideSegmenter(Segmenter):
         return binary
 
 
+class SlideDispatcherClassifier(DispatcherClassifier):
+    def __init__(self, cell_min_area, cell_max_area, cell_min_circularity, aggregate_min_cell_nb,
+                 cell_classifier, aggregate_classifier):
+        """Constructor for SlideDispatcherClassifier objects
+        Objects which aren't neither cells, nor aggregate are classified None
+
+        Parameters
+        ----------
+        cell_min_area : float
+            The cells minimum area. It must be consistent with the polygon
+            coordinate system. In particular with the scale
+        cell_max_area : float
+            The cells maximum area. It must be consistent with the polygon
+            coordinate system. In particular with the scale
+        cell_min_circularity : float
+            The cells minimum circularity. It must be consistent with the polygon
+            coordinate system. In particular with the scale
+        aggregate_min_cell_nb : int
+            The minimum number of cells to form a cluster. It must be consistent
+            with the polygon coordinate system. In particular with the scale
+        cell_classifier: PolygonClassifier
+            The classifiers for cells
+        aggregate_classifier: PolygonClassifier
+            The classifiers for aggregates
+        """
+        rules = [CellRule(cell_min_area, cell_max_area,cell_min_circularity, aggregate_min_cell_nb),
+                 AggregateRule(cell_max_area, aggregate_min_cell_nb)]
+        classifiers = [cell_classifier, aggregate_classifier]
+        DispatcherClassifier.__init__(self, rules, classifiers)
 
