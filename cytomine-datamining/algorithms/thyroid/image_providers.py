@@ -7,7 +7,7 @@ from sldc import ImageProvider, WorkflowLinker
 from image_adapter import CytomineSlide
 
 
-class CytomineImageProvider(ImageProvider):
+class SlideProvider(ImageProvider):
 
     def __init__(self, cytomine, images):
         ImageProvider.__init__(self, silent_fail=True)
