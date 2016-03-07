@@ -5,6 +5,14 @@ from dispatching_rules import CellRule, AggregateRule
 from helpers.datamining.colordeconvoluter import ColorDeconvoluter
 
 
+def get_standard_kernel():
+    """Return the standard color deconvolution kernel"""
+    kernel = np.array([[56.24850493, 71.98403122, 22.07749587],
+                       [48.09104103, 62.02717516, 37.36866958],
+                       [9.17867488, 10.89206473, 5.99225756]])
+    return kernel
+
+
 class SlideSegmenter(Segmenter):
     """
     A segmenter performing :
@@ -139,6 +147,7 @@ class SlideProcessingWorkflow(SLDCWorkflow):
             The number of pixels of overlap between the tiles when iterating over the images
         """
         color_deconvoluter = ColorDeconvoluter()
+        color_deconvoluter.set_kernel(get_standard_kernel())
         segmenter = SlideSegmenter(color_deconvoluter)
         dispatcher_classifier = SlideDispatcherClassifier(cell_min_area, cell_max_area, cell_min_circularity,
                                                           aggregate_min_cell_nb, aggregate_classifier, cell_classifier)
