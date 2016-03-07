@@ -34,22 +34,62 @@ class PyxitClassifierAdapter(PolygonClassifier):
     def predict(self, image, polygon):
         # Pyxit classifier takes images from the filesystem
         # So store the crop into a file before passing the path to the classifier
+        tile, tile_path = self._extract_tile(image, polygon)
+        np_image = tile.get_numpy_repr()
+        fromarray(np_image).save(tile_path)
+        return self._predict(np.array([tile_path]))[0]
+
+    def predict_batch(self, image, polygons):
+        # Pyxit classifier takes images from the filesystem
+        # So store the crops into files before passing the paths to the classifier
+        paths = list()
+        for i, polygon in enumerate(polygons):
+            tile, tile_path = self._extract_tile(image, polygon)
+            np_image = tile.get_numpy_repr()
+            fromarray(np_image).save(tile_path)
+            paths.append(tile_path)
+        return self._predict(np.array(paths))
+
+    def _predict(self, X):
+        """Call predict on the classifier with the filepaths of X
+
+        Parameters
+        ----------
+        X: list of string
+            The path to the image to classify
+
+        Returns
+        -------
+        Predictions:
+            Return
+        """
+        probas = self._pyxit_classifier.predict_proba(X)
+        best_index = np.argmax(probas, axis=1)
+        return self._classes.take(best_index, axis=0)
+
+    def _extract_tile(self, image, polygon):
+        """Given an image and a polygon, extract the crop tile and tile path
+
+        Parameters
+        ----------
+        image: Image
+            An image object
+        polygon: shapely.geometry.Polygon
+            A polygon fitting in the image and for which the crop must be extracted
+        Returns
+        -------
+        tile: Tile
+            The crop tile
+        tile_path: string
+            The path in which should be stored the crop for learning
+        """
         minx, miny, maxx, maxy = polygon.bounds
         offset = (minx, miny)
         width = int(maxx - minx) + 1
         height = int(maxy - miny) + 1
         tile = image.tile(self._tile_builder, offset, width, height)
-        np_image = tile.get_numpy_repr()
-
         tile_path = self._tile_path(image, offset, width, height)
-        fromarray(np_image).save(tile_path)
-
-        # actually predict
-        X = np.array([tile_path])
-        probas = self._pyxit_classifier.predict_proba(X)
-        best_index = np.argmax(probas, axis=1)
-        results = self._classes.take(best_index, axis=0)
-        return results[0]
+        return tile, tile_path
 
     def _tile_path(self, image, offset, width, height):
         """Return the path where to store the tile
