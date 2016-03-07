@@ -28,3 +28,24 @@ class PolygonClassifier(object):
             An integer code indicating the predicted class
         """
         pass
+
+    def predict_batch(self, image, polygons):
+        """Predict the classes associated with the given polygons
+
+        Parameters
+        ----------
+        image: Image
+            The image to which belongs the polygons
+        polygons: list of shapely.geometry.Polygon
+            The polygons of which the class must be predicted
+
+        Returns
+        -------
+        predictions: list of int
+            A list of integer codes indicating the predicted classes
+
+        Note
+        ----
+        Default implementation simply loops over the polygons and call predict(image, polygons[i])
+        """
+        return [self.predict(image, polygon) for polygon in polygons]
