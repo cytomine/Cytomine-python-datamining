@@ -45,7 +45,7 @@ class PyxitClassifierAdapter(PolygonClassifier):
         fromarray(np_image).save(tile_path)
 
         # actually predict
-        X = [tile_path]
+        X = np.array([tile_path])
         probas = self._pyxit_classifier.predict_proba(X)
         best_index = np.argmax(probas, axis=1)
         results = self._classes.take(best_index, axis=0)
