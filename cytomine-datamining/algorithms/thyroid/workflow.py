@@ -29,7 +29,7 @@ class CytominePostProcessor(PostProcessor):
     def post_process(self, image, polygons_classes):
         for polygon, cls in polygons_classes:
             if cls is not None:
-                self._upload_annotation(image.image_instance, polygon, cls)
+                self._upload_annotation(image.image_instance, polygon, int(cls))
 
     def _upload_annotation(self, img_inst, polygon, label=None):
         image_id = img_inst.id
@@ -40,36 +40,16 @@ class CytominePostProcessor(PostProcessor):
         while annotation is None:
             annotation = self._cytomine.add_annotation(polygon.wkt, image_id)
         if label is not None:
-            self._cytomine.add_annotation_term(annotation.id, label, label,
-                                               1.0, annotation_term_model=AlgoAnnotationTerm)
+            self._cytomine.add_annotation_term(annotation.id, label, label, 1.0, annotation_term_model=AlgoAnnotationTerm)
 
 
 class ThyroidJob(CytomineJob):
 
-    def __init__(self,
-                 cell_classifier,
-                 aggregate_classifier,
-                 host,
-                 public_key,
-                 private_key,
-                 software_id,
-                 project_id,
-                 slide_ids,
-                 working_path="/tmp",
-                 protocol="http://",
-                 base_path="/api/",
-                 verbose=True,
-                 timeout=120,
-                 nb_jobs=1,
-                 disp1_cell_min_area=600,
-                 disp1_cell_max_area=2000,
-                 disp1_cell_min_circ=.7,
-                 disp1_clust_min_cell_nb=3,
-                 disp2_cell_min_area=800,
-                 disp2_cell_max_area=4000,
-                 disp2_cell_min_circ=.85,
-                 disp2_clust_min_cell_nb=1,
-                 *args, **kwargs):
+    def __init__(self, cell_classifier, aggregate_classifier, host, public_key, private_key, software_id, project_id,
+                 slide_ids, working_path="/tmp", protocol="http://", base_path="/api/", verbose=True, timeout=120,
+                 nb_jobs=1, disp1_cell_min_area=600, disp1_cell_max_area=2000, disp1_cell_min_circ=.7,
+                 disp1_clust_min_cell_nb=3, disp2_cell_min_area=800, disp2_cell_max_area=4000, disp2_cell_min_circ=.85,
+                 disp2_clust_min_cell_nb=1, *args, **kwargs):
         """
         Create a standard thyroid application with the given parameters.
         Standard implies :
@@ -169,8 +149,8 @@ class ThyroidJob(CytomineJob):
         cytomine = Cytomine(host, public_key, private_key, working_path, protocol, base_path, verbose, timeout)
         CytomineJob.__init__(self, cytomine, software_id, project_id)
         tile_builder = CytomineTileBuilder(cytomine)
-        cell_classifier = PyxitClassifierAdapter.build_from_pickle(cell_classifier, tile_builder, working_path)
         aggr_classifier = PyxitClassifierAdapter.build_from_pickle(aggregate_classifier, tile_builder, working_path)
+        cell_classifier = PyxitClassifierAdapter.build_from_pickle(cell_classifier, tile_builder, working_path)
         image_provider = SlideProvider(cytomine, slide_ids)
         slide_workflow = SlideProcessingWorkflow(tile_builder, disp1_cell_min_area, disp1_cell_max_area,
                                                  disp1_cell_min_circ, disp1_clust_min_cell_nb, cell_classifier,
@@ -190,94 +170,34 @@ def main(argv):
     print argv  # TODO remove
     # ----------Parsing command line args----------- #
     parser = argparse.ArgumentParser()  # TODO desc.
-    parser.add_argument("cell_classifier",
-                        help="File where the cell classifier has been pickled")
-    parser.add_argument("pattern_classifier",
-                        help="File where the architectural pattern classifier has been pickled")
-    parser.add_argument("host",
-                        help="Cytomine server host URL")
-    parser.add_argument("public_key",
-                        help="User public key")
-    parser.add_argument("private_key",
-                        help="User Private key")
-    parser.add_argument("software_id",
-                        help="Identifier of the software on the Cytomine server")
-    parser.add_argument("project_id",
-                        help="Identifier of the project to process on the Cytomine server")
-    parser.add_argument("slide_ids",
-                        help="Sequence of ids of the slides to process",
-                        nargs="+", type=int)
-    parser.add_argument("--working_path",
-                        help="Directory for caching temporary files",
-                        default="/tmp")
-    parser.add_argument("--protocol",
-                        help="Communication protocol",
-                        default="http://")
-    parser.add_argument("--base_path",
-                        help="n/a",
-                        default="/api/")
-    parser.add_argument("--timeout",
-                        help="Timeout time for connection (in seconds)",
-                        type=positive_int,
-                        default="120")
-    # parser.add_argument("-v" "--verbose", help="increase output verbosity",
-    #                 action="store_true")
-    parser.add_argument("--nb_jobs",
-                        help="Number of core to use",
-                        type=not_zero,
-                        default=1)
-    parser.add_argument("-z", "--zoom_sl",
-                        help="Zoom level for the first segmentation",
-                        type=positive_int,
-                        default=1)
-    parser.add_argument("--tile_filter_min_std",
-                        help="Minimum standard deviation needed by a tile to be treated",
-                        type=positive_float,
-                        default=10)
-    parser.add_argument("--seg_threshold",
-                        help="Threshold used in the first segmentation",
-                        type=range0_255,
-                        default=120)
-    parser.add_argument("--merg_boundary_thickness",
-                        help="Boundary thickness for the merging",
-                        type=positive_int,
-                        default=2)
-    parser.add_argument("--disp1_cell_min_area",
-                        help="Cell minimum area for the first dispatching",
-                        type=positive_float,
-                        default=600)
-    parser.add_argument("--disp1_cell_max_area",
-                        help="Cell maximum area for the first dispatching",
-                        type=positive_float,
-                        default=2000)
-    parser.add_argument("--disp1_cell_min_circ",
-                        help="Cell minimum circularity for the first dispatching",
-                        type=positive_float,
-                        default=.70)
-    parser.add_argument("--disp1_clust_min_cell_nb",
-                        help="Minimum number of cells in a cluster for the first dispatching",
-                        type=positive_int,
-                        default=3)
-    parser.add_argument("--disp2_cell_min_area",
-                        help="Cell minimum area for the second dispatching",
-                        type=positive_float,
-                        default=800)
-    parser.add_argument("--disp2_cell_max_area",
-                        help="Cell maximum area for the second dispatching",
-                        type=positive_float,
-                        default=4000)
-    parser.add_argument("--disp2_cell_min_circ",
-                        help="Cell minimum circularity for the second dispatching",
-                        type=positive_float,
-                        default=.85)
-    parser.add_argument("--disp2_clust_min_cell_nb",
-                        help="Minimum number of cells in a cluster for the second dispatching",
-                        type=positive_float,
-                        default=1)
+    parser.add_argument("cell_classifier",           help="File where the cell classifier has been pickled")
+    parser.add_argument("aggregate_classifier",      help="File where the architectural pattern classifier has been pickled")
+    parser.add_argument("host",                      help="Cytomine server host URL")
+    parser.add_argument("public_key",                help="User public key")
+    parser.add_argument("private_key",               help="User Private key")
+    parser.add_argument("software_id",               help="Identifier of the software on the Cytomine server")
+    parser.add_argument("project_id",                help="Identifier of the project to process on the Cytomine server")
+    parser.add_argument("slide_ids",                 help="Sequence of ids of the slides to process", nargs="+", type=int)
+    parser.add_argument("--working_path",            help="Directory for caching temporary files", default="/tmp")
+    parser.add_argument("--protocol",                help="Communication protocol",default="http://")
+    parser.add_argument("--base_path",               help="n/a", default="/api/")
+    parser.add_argument("--timeout",                 help="Timeout time for connection (in seconds)", type=positive_int, default="120")
+    parser.add_argument("--verbose",                 help="increase output verbosity", action="store_true", default=True)
+    parser.add_argument("--nb_jobs",                 help="Number of core to use", type=not_zero, default=1)
+    parser.add_argument("--disp1_cell_min_area",     help="Cell minimum area for the first dispatching", type=positive_float, default=600)
+    parser.add_argument("--disp1_cell_max_area",     help="Cell maximum area for the first dispatching", type=positive_float, default=2000)
+    parser.add_argument("--disp1_cell_min_circ",     help="Cell minimum circularity for the first dispatching", type=positive_float, default=.70)
+    parser.add_argument("--disp1_clust_min_cell_nb", help="Minimum number of cells in a cluster for the first dispatching", type=positive_int, default=3)
+    parser.add_argument("--disp2_cell_min_area",     help="Cell minimum area for the second dispatching", type=positive_float, default=800)
+    parser.add_argument("--disp2_cell_max_area",     help="Cell maximum area for the second dispatching", type=positive_float, default=4000)
+    parser.add_argument("--disp2_cell_min_circ",     help="Cell minimum circularity for the second dispatching", type=positive_float, default=.85)
+    parser.add_argument("--disp2_clust_min_cell_nb", help="Minimum number of cells in a cluster for the second dispatching", type=positive_float, default=1)
 
     args = parser.parse_args(args=argv)
 
-    with ThyroidJob(**vars(args)) as job:
+    with ThyroidJob(args.cell_classifier, args.aggregate_classifier, args.host,
+                    args.public_key, args.private_key, args.software_id,
+                    args.project_id, args.slide_ids) as job:
         job.run()
 
 
