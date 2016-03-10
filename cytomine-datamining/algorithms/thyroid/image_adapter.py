@@ -81,6 +81,9 @@ class CytomineSlide(Image):
     def channels(self):
         return 3
 
+    def __str__(self):
+        return "CytomineSlide (#{})".format(self._img_instance.id)
+
 
 class CytomineTile(Tile):
     """
@@ -111,10 +114,11 @@ class CytomineTile(Tile):
         """
         Tile.__init__(self, parent, offset, width, height, tile_identifier=tile_identifier)
         self._cytomine = cytomine
+        self._np_image = np.asarray(_get_crop(self._cytomine, self._parent.image_instance, self._tile_box()))
 
-    def get_numpy_repr(self):
-        pil_image = _get_crop(self._cytomine, self._parent.image_instance, self._tile_box())
-        return np.asarray(pil_image)
+    @property
+    def np_image(self):
+        return self._np_image
 
     def _tile_box(self):
         return box(self.offset_x, self.offset_y, self.offset_x + self.width, self.offset_y + self.height)

@@ -35,7 +35,7 @@ class PyxitClassifierAdapter(PolygonClassifier):
         # Pyxit classifier takes images from the filesystem
         # So store the crop into a file before passing the path to the classifier
         tile, tile_path = self._extract_tile(image, polygon)
-        np_image = tile.get_numpy_repr()
+        np_image = tile.np_image
         fromarray(np_image).save(tile_path)
         return self._predict(np.array([tile_path]))[0]
 
@@ -45,7 +45,7 @@ class PyxitClassifierAdapter(PolygonClassifier):
         paths = list()
         for i, polygon in enumerate(polygons):
             tile, tile_path = self._extract_tile(image, polygon)
-            np_image = tile.get_numpy_repr()
+            np_image = tile.np_image
             fromarray(np_image).save(tile_path)
             paths.append(tile_path)
         return self._predict(np.array(paths))
