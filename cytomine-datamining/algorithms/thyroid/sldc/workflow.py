@@ -63,11 +63,11 @@ class SLDCWorkflow(object):
         tile_topology = image.tile_topology(max_width=self._tile_max_width,
                                             max_height=self._tile_max_height,
                                             overlap=self._tile_overlap)
-        tile_iterator = TileTopologyIterator(self._tile_builder, tile_topology, skip_on_error=True)
+        tile_iterator = TileTopologyIterator(self._tile_builder, tile_topology, silent_fail=True)
         polygons_tiles = [(tile, self._segment_locate(tile)) for tile in tile_iterator]
         polygons = self._merger.merge(polygons_tiles, tile_topology)
         return zip(polygons, self._dispatch_classifier.dispatch_classify_batch(image, polygons))
 
     def _segment_locate(self, tile):
-        segmented = self._segmenter.segment(tile.get_numpy_repr())
+        segmented = self._segmenter.segment(tile.np_image)
         return self._locator.locate(segmented, offset=tile.offset)

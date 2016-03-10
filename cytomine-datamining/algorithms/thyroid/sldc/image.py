@@ -55,6 +55,10 @@ class Image(object):
         np_image: array-like
             A number representation of the image
 
+        Raises
+        ------
+        ImageExtractionError: when the image cannot be extracted (and so is its representation)
+
         Notes
         -----
         This property should be used carefully as it will load the whole image into memory.
@@ -351,7 +355,7 @@ class TileTopologyIterator(object):
     An object to iterate over an image tile per tile
     """
 
-    def __init__(self, builder, tile_topology, skip_on_error=False):
+    def __init__(self, builder, tile_topology, silent_fail=False):
         """Constructor for TilesIterator objects
 
         Parameters
@@ -360,6 +364,8 @@ class TileTopologyIterator(object):
             The builder to user for actually constructing the tiles while iterating over the image
         tile_topology: TileTopology
             The topology on which must iterate the iterator
+        silent_fail: bool (optional, default: False)
+            True for skipping tiles that cannot be constructed silently, otherwise, an error is raised
 
         Notes
         -----
@@ -367,15 +373,15 @@ class TileTopologyIterator(object):
         """
         self._builder = builder
         self._topology = tile_topology
-        self._skip_on_error = skip_on_error
+        self._silent_fail = silent_fail
 
     def __iter__(self):
         for tile_identifier in range(1, self._topology.tile_count + 1):
             try:
                 yield self._topology.tile(tile_identifier, self._builder)
-            except TileExtractionError:
-                if self._skip_on_error:
-                    continue
+            except TileExtractionError, e:
+                if not self._silent_fail:
+                    raise e
 
 
 class TileTopology(object):
