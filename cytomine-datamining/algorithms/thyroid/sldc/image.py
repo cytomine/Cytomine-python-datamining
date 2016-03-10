@@ -295,20 +295,6 @@ class Tile(ImageWindow):
     def identifier(self, value):
         self._identifier = value
 
-    @abstractmethod
-    def get_numpy_repr(self):
-        """Return a numpy representation of the tile
-        Returns
-        -------
-        numpy_repr: array-like, shape = [width, heigth{, channels}]
-            The array-like representation of the tile image.
-
-        Raises
-        ------
-        TileExtractionError: when the tile cannot be extracted (and so is its representation)
-        """
-        pass
-
 
 class TileBuilder(object):
     """
