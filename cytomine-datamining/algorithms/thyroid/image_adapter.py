@@ -82,7 +82,7 @@ class CytomineSlide(Image):
         return 3
 
     def __str__(self):
-        return "CytomineSlide (#{})".format(self._img_instance.id)
+        return "CytomineSlide (#{}) ({} x {})".format(self._img_instance.id, self.width, self.height)
 
 
 class CytomineTile(Tile):
