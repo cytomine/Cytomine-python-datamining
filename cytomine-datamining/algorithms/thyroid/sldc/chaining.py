@@ -2,6 +2,8 @@
 
 from abc import ABCMeta, abstractmethod
 
+from timing import SLDCTiming
+
 __author__ = "Romain Mormont <r.mormont@student.ulg.ac.be>"
 
 
@@ -152,16 +154,19 @@ class WorkflowChain(object):
         image: Image
             The image to process
         """
+        timing = SLDCTiming()
         polygons_classes = list()
-        prev = self._first_workflow.process(image)
+        prev = self._first_workflow.process(image, timing)
         polygons_classes.extend(prev)
 
         for workflow, linker in zip(self._workflows, self._linkers):
             sub_images = linker.get_images(image, prev)
             curr = list()
             for sub_image in sub_images:
-                curr.extend(workflow.process(sub_image))
+                curr.extend(workflow.process(sub_image, timing))
             polygons_classes.extend(curr)
             prev = curr
 
         self._post_processor.post_process(image, polygons_classes)
+        timing.report(image, polygons_classes)
+

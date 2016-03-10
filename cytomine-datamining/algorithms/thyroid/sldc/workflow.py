@@ -3,6 +3,7 @@
 from image import Image, TileBuilder, TileTopologyIterator
 from merger import Merger
 from locator import Locator
+from timing import SLDCTiming
 
 __author__ = "Romain Mormont <r.mormont@student.ulg.ac.be>"
 
@@ -43,7 +44,7 @@ class SLDCWorkflow(object):
         self._merger = Merger(boundary_thickness)
         self._dispatch_classifier = dispatcher_classifier
 
-    def process(self, image):
+    def process(self, image, timing=None):
         """Process the image using the SLDCWorkflow
         Parameters
         ----------
@@ -60,14 +61,36 @@ class SLDCWorkflow(object):
         This method doesn't modify the image passed as parameter.
         This method doesn't modify the object's attributes.
         """
+        if timing is None:
+            timing = SLDCTiming()
+
         tile_topology = image.tile_topology(max_width=self._tile_max_width,
                                             max_height=self._tile_max_height,
                                             overlap=self._tile_overlap)
         tile_iterator = TileTopologyIterator(self._tile_builder, tile_topology, silent_fail=True)
-        polygons_tiles = [(tile, self._segment_locate(tile)) for tile in tile_iterator]
-        polygons = self._merger.merge(polygons_tiles, tile_topology)
-        return zip(polygons, self._dispatch_classifier.dispatch_classify_batch(image, polygons))
 
-    def _segment_locate(self, tile):
+        polygons_tiles = list()
+        timing.start_fetching()
+        for tile in tile_iterator:
+            timing.end_fetching()
+            polygons_tiles.append((tile, self._segment_locate(tile, timing)))
+            timing.start_fetching()
+
+        timing.start_merging()
+        polygons = self._merger.merge(polygons_tiles, tile_topology)
+        timing.end_merging()
+
+        timing.start_dispatch_classify()
+        dispatch_classified = self._dispatch_classifier.dispatch_classify_batch(image, polygons)
+        timing.end_dispatch_classify()
+
+        return zip(polygons, dispatch_classified)
+
+    def _segment_locate(self, tile, timing):
+        timing.start_segment()
         segmented = self._segmenter.segment(tile.np_image)
-        return self._locator.locate(segmented, offset=tile.offset)
+        timing.end_segment()
+        timing.start_location()
+        located = self._locator.locate(segmented, offset=tile.offset)
+        timing.end_location()
+        return located

@@ -8,6 +8,7 @@ from .workflow import SLDCWorkflow
 from .classifier import PolygonClassifier
 from .errors import ImageExtractionError, TileExtractionError
 from .chaining import ImageProvider, WorkflowLinker, WorkflowChain, PostProcessor
+from .timing import SLDCTiming
 
 __author__ = "Romain Mormont <r.mormont@student.ulg.ac.be>"
 
