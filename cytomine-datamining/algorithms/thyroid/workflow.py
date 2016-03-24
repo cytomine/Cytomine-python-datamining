@@ -36,17 +36,15 @@ class CytominePostProcessor(PostProcessor):
         # Transform in cartesian coordinates
         polygon = affine_transform(xx_coef=1, xy_coef=0, yx_coef=0, yy_coef=-1, delta_y=img_inst.height)(polygon)
 
-        annotation = None
-        while annotation is None:
-            annotation = self._cytomine.add_annotation(polygon.wkt, image_id)
-        if label is not None:
+        annotation = self._cytomine.add_annotation(polygon.wkt, image_id)
+        if label is not None and annotation is not None:
             self._cytomine.add_annotation_term(annotation.id, label, label, 1.0, annotation_term_model=AlgoAnnotationTerm)
 
 
 class ThyroidJob(CytomineJob):
 
     def __init__(self, cell_classifier, aggregate_classifier, host, public_key, private_key, software_id, project_id,
-                 slide_ids, working_path="/tmp", protocol="http://", base_path="/api/", verbose=True, timeout=120,
+                 slide_ids, working_path="/tmp", protocol="http://", base_path="/api/", verbose=False, timeout=120,
                  nb_jobs=1, disp1_cell_min_area=600, disp1_cell_max_area=2000, disp1_cell_min_circ=.7,
                  disp1_clust_min_cell_nb=3, disp2_cell_min_area=800, disp2_cell_max_area=4000, disp2_cell_min_circ=.85,
                  disp2_clust_min_cell_nb=1, *args, **kwargs):
@@ -146,6 +144,7 @@ class ThyroidJob(CytomineJob):
             system. In particular with the scale
         """
         # Create Cytomine instance
+        tile_max_width, tile_max_height = 1024, 1024
         cytomine = Cytomine(host, public_key, private_key, working_path, protocol, base_path, verbose, timeout)
         CytomineJob.__init__(self, cytomine, software_id, project_id)
         tile_builder = CytomineTileBuilder(cytomine)
@@ -154,7 +153,8 @@ class ThyroidJob(CytomineJob):
         image_provider = SlideProvider(cytomine, slide_ids)
         slide_workflow = SlideProcessingWorkflow(tile_builder, disp1_cell_min_area, disp1_cell_max_area,
                                                  disp1_cell_min_circ, disp1_clust_min_cell_nb, cell_classifier,
-                                                 aggr_classifier)
+                                                 aggr_classifier, tile_max_width=tile_max_width,
+                                                 tile_max_height=tile_max_height)
         post_processor = CytominePostProcessor(cytomine)
         self._chain = WorkflowChain(image_provider, slide_workflow, post_processor)
 
