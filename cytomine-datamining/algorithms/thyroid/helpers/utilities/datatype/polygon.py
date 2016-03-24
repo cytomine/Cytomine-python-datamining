@@ -45,7 +45,7 @@ def bounds(polygon):
     return Bounds(minx, miny, width, height)
 
 
-def crop_polygon(polygon, minx, miny, maxx, maxy):
+def clamp_polygon(polygon, minx, miny, maxx, maxy):
     b = box(minx,miny, maxx, maxy)
     return b.intersection(polygon)
 
