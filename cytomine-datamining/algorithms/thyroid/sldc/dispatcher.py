@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import numpy as np
 
 __author__ = "Romain Mormont <r.mormont@student.ulg.ac.be>"
 
@@ -21,6 +22,24 @@ def emplace(src, dest, mapping):
         dest[index] = value
 
 
+def take(src, idx):
+    """Generate a list containing the elements of src of which the index is contained in idx
+
+    Parameters
+    ----------
+    src: list (size: n)
+        Source list from which elements must be taken
+    idx: list (size: m)
+        Index list (indexes should be integers in [0, n[
+
+    Returns
+    -------
+    list: list
+        The list of taken elements
+    """
+    return [src[i] for i in idx]
+
+
 class DispatchingRule(object):
     """
     An object for dispatching polygons
@@ -28,11 +47,13 @@ class DispatchingRule(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def evaluate(self, polygon):
+    def evaluate(self, image, polygon):
         """Evaluate a polygon
 
         Parameters
         ----------
+        image: Image
+            The image from which is extracted the polygon
         polygon: shapely.geometry.Polygon
             The polygon to evaluate
 
@@ -42,6 +63,23 @@ class DispatchingRule(object):
             True if the dispatching rule matched the polygon, False otherwise.
         """
         pass
+
+    def evaluate_batch(self, image, polygons):
+        """Evaluate the polygons
+
+        Parameters
+        ----------
+        image: Image
+            The image from which is extracted the polygons
+        polygons: list
+            The list of polygons to dispatch
+
+        Returns
+        -------
+        result: list of bool
+            List of which the ith element is True if the ith polygon is evaluated to True, False otherwise
+        """
+        return [self.evaluate(image, polygon) for polygon in polygons]
 
 
 class DispatcherClassifier(object):
@@ -88,7 +126,7 @@ class DispatcherClassifier(object):
             by the fail callback for the given polygon. Especially, if no fail callback was registered,
             None is returned.
         """
-        matching_rule = self._dispatch_index(polygon)
+        matching_rule = self._dispatch_index(image, polygon)
         if matching_rule == -1:
             return self._fail_callback(polygon)
         else:
@@ -114,10 +152,21 @@ class DispatcherClassifier(object):
         """
         match_dict = dict()  # maps rule indexes with matching polygons
         poly_ind_dict = dict()  # maps rule indexes with index of the polygons in the passed array
-        for i, polygon in enumerate(polygons):
-            match_index = self._dispatch_index(polygon)
-            match_dict[match_index] = match_dict.get(match_index, []) + [polygon]
-            poly_ind_dict[match_index] = poly_ind_dict.get(match_index, []) + [i]
+        indexes = np.arange(len(polygons))
+        # check which rule matched the polygons
+        for i, rule in enumerate(self._predicates):
+            if indexes.shape[0] == 0:  # if there are no more elements to evaluate
+                break
+            match, no_match = self._split_by_rule(image, rule, polygons, indexes)
+            match_dict[i] = match_dict.get(i, []) + take(polygons, match)
+            poly_ind_dict[i] = poly_ind_dict.get(i, []) + list(match)
+            indexes = np.setdiff1d(indexes, match, True)
+
+        # add all polygons that didn't match any rule
+        match_dict[-1] = take(polygons, indexes)
+        poly_ind_dict[-1] = indexes
+
+        # compute the prediction
         predict_list = [None] * len(polygons)
         for index in match_dict.keys():
             if index == -1:
@@ -127,10 +176,38 @@ class DispatcherClassifier(object):
             emplace(predictions, predict_list, poly_ind_dict[index])
         return predict_list
 
-    def _dispatch_index(self, polygon):
+    def _split_by_rule(self, image, rule, polygons, poly_indexes):
+        """Given a rule, splits all the poly_indexes list into two lists. The first list contains
+        the indexes corresponding to the polygons that were evaluated True by the rule, the indexes that
+        were evaluated False by the rule.
+
+        Parameters
+        ----------
+        image: Image
+            The image from which were extracted the polygons
+        rule: DispatchingRule
+            The rule with which the polygons must be evaluated
+        polygons: list of Polygon
+            The list of polygons
+        poly_indexes: list of int
+            The indexes of the polygons from the list polygons to process
+
+        Returns
+        -------
+        true_list: list of int
+            The indexes that were evaluated true
+        false_list: list of int
+            The indexes that were evaluated false
+        """
+        polygons_to_evaluate = take(polygons, poly_indexes)
+        eval_results = rule.evaluate_batch(image, polygons_to_evaluate)
+        np_indexes = np.array(poly_indexes)
+        return np_indexes[np.where(eval_results)], np_indexes[np.where(np.logical_not(eval_results))]
+
+    def _dispatch_index(self, image, polygon):
         """Return the index of the first rule that matched the polygon. Return -1 if none of the rules matched.
         """
         for i, rule in enumerate(self._predicates):
-            if rule.evaluate(polygon):
+            if rule.evaluate(image, polygon):
                 return i
         return -1
