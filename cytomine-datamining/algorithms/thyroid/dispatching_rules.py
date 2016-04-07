@@ -24,7 +24,7 @@ class AggregateRule(DispatchingRule):
         self._cell_max_area = cell_max_area
         self._aggregate_min_cell_nb = aggregate_min_cell_nb
 
-    def evaluate(self, polygon):
+    def evaluate(self, image, polygon):
         return polygon.area >= self._aggregate_min_cell_nb * self._cell_max_area
 
 
@@ -49,7 +49,7 @@ class SmallClusterRule(DispatchingRule):
         self._cell_min_area = cell_min_area
         self._aggregate_min_cell_nb = aggregate_min_cell_nb
 
-    def evaluate(self, polygon):
+    def evaluate(self, image, polygon):
         return self._cell_max_area < polygon.area < self._aggregate_min_cell_nb * self._cell_max_area
 
 
@@ -78,6 +78,6 @@ class CellRule(DispatchingRule):
         self._cell_min_circularity = cell_min_circularity
         self._aggregate_min_cell_nb = aggregate_min_cell_nb
 
-    def evaluate(self, polygon):
+    def evaluate(self, image, polygon):
         circularity = 4 * np.pi * polygon.area / (polygon.length * polygon.length)
         return self._cell_min_area <= polygon.area <= self._cell_max_area and circularity > self._cell_min_circularity
