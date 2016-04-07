@@ -5,7 +5,7 @@ from sldc import PostProcessor, WorkflowChain
 from helpers.utilities.datatype.polygon import affine_transform
 from image_providers import SlideProvider
 from slide_processing import SlideProcessingWorkflow
-from image_adapter import CytomineTileBuilder
+from image_adapter import CytomineTileBuilder, TileCache
 from classifiers import PyxitClassifierAdapter
 from cytomine import Cytomine
 from cytomine.models import AlgoAnnotationTerm
@@ -148,8 +148,9 @@ class ThyroidJob(CytomineJob):
         cytomine = Cytomine(host, public_key, private_key, working_path, protocol, base_path, verbose, timeout)
         CytomineJob.__init__(self, cytomine, software_id, project_id)
         tile_builder = CytomineTileBuilder(cytomine)
-        aggr_classifier = PyxitClassifierAdapter.build_from_pickle(aggregate_classifier, tile_builder, working_path)
-        cell_classifier = PyxitClassifierAdapter.build_from_pickle(cell_classifier, tile_builder, working_path)
+        tile_cache = TileCache(tile_builder)
+        aggr_classifier = PyxitClassifierAdapter.build_from_pickle(aggregate_classifier, tile_cache, working_path)
+        cell_classifier = PyxitClassifierAdapter.build_from_pickle(cell_classifier, tile_cache, working_path)
         image_provider = SlideProvider(cytomine, slide_ids)
         slide_workflow = SlideProcessingWorkflow(tile_builder, disp1_cell_min_area, disp1_cell_max_area,
                                                  disp1_cell_min_circ, disp1_clust_min_cell_nb, cell_classifier,
