@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
 import cStringIO
+import os
+
 import numpy as np
+from PIL.Image import fromarray
+
 from sldc.image import Image, Tile, TileBuilder
 from PIL import Image as PILImage
 from helpers.utilities.datatype.polygon import bounds
 from shapely.geometry import Polygon, MultiPolygon, box
+from helpers.datamining.rasterizer import alpha_rasterize
 
 __author__ = "Mormont Romain <romain.mormont@gmail.com>"
 __version__ = "0.1"
@@ -141,3 +146,106 @@ class CytomineTileBuilder(TileBuilder):
 
     def build(self, image, offset, width, height):
         return CytomineTile(self._cytomine, image, offset, width, height)
+
+
+class TileCache(object):
+    """A class for fetching crops of polygons as Tile objects and caching the fetched image for later retrieval
+    """
+    def __init__(self, tile_builder):
+        self._cache = dict()
+        self._tile_builder = tile_builder
+
+    def get_tile(self, image, polygon):
+        """Get a tile cropping the given polygon
+
+        Parameters
+        ----------
+        image: Image
+            The image from which the crop must be extracted
+        polygon: Polygon
+            The polygon that should be cropped
+
+        Returns
+        -------
+        tile: Tile
+            The tile cropping the polygon either fetched from cache or from the server on cache miss.
+        """
+        minx, miny, maxx, maxy = polygon.bounds
+        offset = (int(minx), int(miny))
+        width = int(maxx - minx) + 1
+        height = int(maxy - miny) + 1
+        key = TileCache._cache_key(image, offset[0], offset[1], width, height)
+        if key in self._cache:
+            return self._cache[key]
+        else:
+            tile = self._tile_builder.build(image, offset, width)
+            self._cache[key] = tile
+            return tile
+
+    def save_tile(self, image, polygon, base_path, alpha=False):
+        """Fetch and save in the filesystem a tile cropping the given polygon
+
+        Parameters
+        ----------
+        image: Image
+            The image from which the crop must be extracted
+        polygon: Polygon
+            The polygon that should be cropped
+        base_path: string
+            The path of the folder in which the image file should be stored
+        alpha: bool (optional, default: False)
+            True for applying an alpha mask on the image before saving it, false for storing the image as such
+            The alpha mask is shaped like the polygon.
+        Returns
+        -------
+        tile: Tile
+            The tile object
+        path: string
+            The full path where the file was stored
+        """
+        tile = self.get_tile(image, polygon)
+        path = TileCache._tile_path(image, tile, base_path)
+        np_image = alpha_rasterize(tile.np_image, polygon) if alpha else tile.np_image
+        fromarray(np_image).save(path)
+        return tile, path
+
+    @staticmethod
+    def _tile_path(image, tile, base_path):
+        """Return the path where to store the tile
+
+        Parameters
+        ----------
+        image: Image
+            The image object from which the tile was extracted
+        tile: Tile
+            The tile object containing the image to store
+        base_path: string
+            The path in which the crop image file should be stored
+
+        Returns
+        -------
+        path: string
+            The path in which to store the image
+        """
+        filename = "{}_{}_{}_{}_{}.png".format(image.image_instance.id, tile.offset_x,
+                                               tile.offset_y, tile.width, tile.height)
+        return os.path.join(base_path, filename)
+
+    @staticmethod
+    def _cache_key(image, offset_x, offset_y, width, height):
+        """Given tile extraction parameters, create a unique identifier for the tile to use a key of the cache)
+
+        Parameters
+        ----------
+        image: Image
+        offset_x: int
+        offset_y: int
+        width: int
+        height: int
+
+        Return
+        ------
+        key: tuple
+            A unique tuple identifying the tile
+        """
+        return image.image_instance.id, offset_x, offset_y, width, height
