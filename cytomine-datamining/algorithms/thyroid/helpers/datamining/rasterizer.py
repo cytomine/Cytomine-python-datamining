@@ -8,6 +8,7 @@ use of this software.
 
 Permission is only granted to use this software for non-commercial purposes.
 """
+from shapely.geometry.base import BaseMultipartGeometry
 
 __author__ = "Begon Jean-Michel <jm.begon@gmail.com>"
 __copyright__ = "Copyright 2010-2013 University of LiÃ¨ge, Belgium"
@@ -55,8 +56,14 @@ def alpha_rasterize(image, polygon):
     polygon = clamp_polygon(polygon, 0, 0, width, height)
     alpha = Image.new("L", (width, height), 0)
     draw = ImageDraw.Draw(alpha)
-    seq_pts = polygon.boundary.coords
-    draw.polygon(seq_pts, outline=0, fill=255)
+    boundary = polygon.boundary
+    if isinstance(boundary, BaseMultipartGeometry):  # handle multi-part geometries
+        for sub_boundary in boundary.geoms:
+            seq_pts = sub_boundary.coords
+            draw.polygon(seq_pts, outline=0, fill=255)
+    else:
+        seq_pts = polygon.boundary.coords
+        draw.polygon(seq_pts, outline=0, fill=255)
     np_results[:, :, depth-1] = alpha
     return np_results
 
