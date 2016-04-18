@@ -2,8 +2,10 @@
 import cStringIO
 import os
 
+import math
 import numpy as np
 from PIL.Image import fromarray
+from shapely.affinity import translate
 
 from sldc.image import Image, Tile, TileBuilder
 from PIL import Image as PILImage
@@ -171,14 +173,16 @@ class TileCache(object):
             The tile cropping the polygon either fetched from cache or from the server on cache miss.
         """
         minx, miny, maxx, maxy = polygon.bounds
-        offset = (int(minx), int(miny))
-        width = int(maxx - minx) + 1
-        height = int(maxy - miny) + 1
+        fminx, fminy = int(math.floor(minx)), int(math.floor(miny))
+        cmaxx, cmaxy = int(math.ceil(maxx)), int(math.ceil(maxy))
+        offset = (fminx, fminy)
+        width = cmaxx - fminx
+        height = cmaxy - fminy
         key = TileCache._cache_key(image, offset[0], offset[1], width, height)
         if key in self._cache:
             return self._cache[key]
         else:
-            tile = self._tile_builder.build(image, offset, width)
+            tile = self._tile_builder.build(image, offset, width, height)
             self._cache[key] = tile
             return tile
 
@@ -205,8 +209,14 @@ class TileCache(object):
         """
         tile = self.get_tile(image, polygon)
         path = TileCache._tile_path(image, tile, base_path)
-        np_image = alpha_rasterize(tile.np_image, polygon) if alpha else tile.np_image
-        fromarray(np_image).save(path)
+        if alpha:
+            # translate polygon into tile coordinate system
+            minx, miny, _, _ = polygon.bounds
+            translated_polygon = translate(polygon, -minx, -miny)
+            np_image = alpha_rasterize(tile.np_image, translated_polygon)
+        else:
+            np_image = tile.np_image
+        fromarray(np_image.astype('uint8')).save(path)
         return tile, path
 
     @staticmethod
