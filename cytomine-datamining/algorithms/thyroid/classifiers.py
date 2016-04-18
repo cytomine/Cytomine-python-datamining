@@ -37,7 +37,7 @@ class PyxitClassifierAdapter(PolygonClassifier):
     def predict_batch(self, image, polygons):
         # Pyxit classifier takes images from the filesystem
         # So store the crops into files before passing the paths to the classifier
-        paths = [self._tile_cache.save_tile(image, polygon)[1] for polygon in polygons]
+        paths = [self._tile_cache.save_tile(image, polygon, self._working_path)[1] for polygon in polygons]
         for polygon in polygons:
             _, tile_path = self._tile_cache.save_tile(image, polygon, self._working_path, alpha=True)
             paths.append(tile_path)
