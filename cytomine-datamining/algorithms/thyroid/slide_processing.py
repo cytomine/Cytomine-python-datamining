@@ -80,32 +80,24 @@ class SlideSegmenter(Segmenter):
 
 
 class SlideDispatcherClassifier(DispatcherClassifier):
-    def __init__(self, cell_min_area, cell_max_area, cell_min_circularity, aggregate_min_cell_nb,
-                 cell_classifier, aggregate_classifier):
+    def __init__(self, cell_classifier, aggregate_classifier, cell_dispatch_classifier, aggregate_dispatch_classifier):
         """Constructor for SlideDispatcherClassifier objects
         Objects which aren't neither cells, nor aggregate are classified None
 
         Parameters
         ----------
-        cell_min_area : float
-            The cells minimum area. It must be consistent with the polygon
-            coordinate system. In particular with the scale
-        cell_max_area : float
-            The cells maximum area. It must be consistent with the polygon
-            coordinate system. In particular with the scale
-        cell_min_circularity : float
-            The cells minimum circularity. It must be consistent with the polygon
-            coordinate system. In particular with the scale
-        aggregate_min_cell_nb : int
-            The minimum number of cells to form a cluster. It must be consistent
-            with the polygon coordinate system. In particular with the scale
         cell_classifier: PolygonClassifier
             The classifiers for cells
         aggregate_classifier: PolygonClassifier
             The classifiers for aggregates
+        cell_dispatch_classifier: PyxitClassifierAdapter
+            The classifier for dispatching cells
+        aggregate_dispatch_classifier: PyxitClassifierAdapater
+            The classifier for dispaching aggregates
         """
-        rules = [CellRule(cell_min_area, cell_max_area,cell_min_circularity, aggregate_min_cell_nb),
-                 AggregateRule(cell_max_area, aggregate_min_cell_nb)]
+        cell_rule = CellRule(cell_dispatch_classifier)
+        aggregate_rule = AggregateRule(aggregate_dispatch_classifier)
+        rules = [cell_rule, aggregate_rule]
         classifiers = [cell_classifier, aggregate_classifier]
         DispatcherClassifier.__init__(self, rules, classifiers)
 
@@ -115,30 +107,22 @@ class SlideProcessingWorkflow(SLDCWorkflow):
     The workflow for performing the first processing of a whole slide
     """
 
-    def __init__(self, tile_builder, cell_min_area, cell_max_area, cell_min_circularity, aggregate_min_cell_nb,
-                 cell_classifier, aggregate_classifier, tile_max_width=1024, tile_max_height=1024, overlap=15):
+    def __init__(self, tile_builder, cell_classifier, aggregate_classifier, cell_dispatch_classifier,
+                 aggregate_dispatch_classifier, tile_max_width=1024, tile_max_height=1024, overlap=15):
         """Constructor for SlideProcessingWorkflow objects
 
         Parameters
         ----------
         tile_builder: TileBuilder
-
-        cell_min_area : float
-            The cells minimum area. It must be consistent with the polygon
-            coordinate system. In particular with the scale
-        cell_max_area : float
-            The cells maximum area. It must be consistent with the polygon
-            coordinate system. In particular with the scale
-        cell_min_circularity : float
-            The cells minimum circularity. It must be consistent with the polygon
-            coordinate system. In particular with the scale
-        aggregate_min_cell_nb : int
-            The minimum number of cells to form a cluster. It must be consistent
-            with the polygon coordinate system. In particular with the scale
+            The tile builder
         cell_classifier: PolygonClassifier
-            The classifiers for cells
+            The classifier for cells
         aggregate_classifier: PolygonClassifier
-            The classifiers for aggregates
+            The classifier for aggregates
+        cell_dispatch_classifier: PyxitClassifierAdapter
+            The classifier for dispatching cells
+        aggregate_dispatch_classifier: PyxitClassifierAdapater
+            The classifier for dispaching aggregates
         tile_max_width: int
             The maximum width of the tile to use when iterating over the images
         tile_max_height: int
@@ -149,7 +133,7 @@ class SlideProcessingWorkflow(SLDCWorkflow):
         color_deconvoluter = ColorDeconvoluter()
         color_deconvoluter.set_kernel(get_standard_kernel())
         segmenter = SlideSegmenter(color_deconvoluter)
-        dispatcher_classifier = SlideDispatcherClassifier(cell_min_area, cell_max_area, cell_min_circularity,
-                                                          aggregate_min_cell_nb, aggregate_classifier, cell_classifier)
+        dispatcher_classifier = SlideDispatcherClassifier(cell_dispatch_classifier, aggregate_dispatch_classifier,
+                                                          aggregate_classifier, cell_classifier)
         SLDCWorkflow.__init__(self, segmenter, dispatcher_classifier, tile_builder,
                               tile_max_width=tile_max_width, tile_max_height=tile_max_height, tile_overlap=overlap)

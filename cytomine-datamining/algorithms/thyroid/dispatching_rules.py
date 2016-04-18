@@ -3,81 +3,48 @@
 __author__ = "Mormont Romain <romain.mormont@gmail.com>"
 __version__ = "0.1"
 
-import numpy as np
 from sldc import DispatchingRule
+from classifiers import PyxitClassifierAdapter
 
 
-class AggregateRule(DispatchingRule):
+class BinaryClassifierRule(DispatchingRule):
+    def __init__(self, pyxit_classifier_adapter):
+        """Constructor for BinaryClassifierRule object
+        The evaluate returns true if the classifier predicts 1, it returns false otherwise
 
-    def __init__(self, cell_max_area, aggregate_min_cell_nb):
+        Parameters
+        ----------
+        pyxit_classifier_adapter: PyxitClassifierAdapter
+            A pyxit binary classifier
+        """
+        self._classifier = pyxit_classifier_adapter
+
+    def evaluate(self, image, polygon):
+        return self._classifier.predict(image, polygon) > 0.5
+
+    def evaluate_batch(self, image, polygons):
+        return self._classifier.predict_batch(image, polygons) > 0.5
+
+
+class AggregateRule(BinaryClassifierRule):
+    def __init__(self, pyxit_classifier_adapter):
         """Constructor for AggregateRule object
 
         Parameters
         ----------
-        cell_max_area : float
-            The cells maximum area. It must be consistent with the polygon
-            coordinate system. In particular with the scale
-        aggregate_min_cell_nb : int
-            The minimum number of cells to form a cluster. It must be consistent
-            with the polygon coordinate system. In particular with the scale
+        pyxit_classifier_adapter: PyxitClassifierAdapter
+            A pyxit binary classifier predicting 1 for aggregate and 0 for others
         """
-        self._cell_max_area = cell_max_area
-        self._aggregate_min_cell_nb = aggregate_min_cell_nb
-
-    def evaluate(self, image, polygon):
-        return polygon.area >= self._aggregate_min_cell_nb * self._cell_max_area
+        BinaryClassifierRule.__init__(self, pyxit_classifier_adapter)
 
 
-class SmallClusterRule(DispatchingRule):
-
-    def __init__(self, cell_min_area, cell_max_area, aggregate_min_cell_nb):
-        """Constructor for SmallClusterRule object
-
-        Parameters
-        ----------
-        cell_min_area : float
-            The cells minimum area. It must be consistent with the polygon
-            coordinate system. In particular with the scale
-        cell_max_area : float
-            The cells maximum area. It must be consistent with the polygon
-            coordinate system. In particular with the scale
-        aggregate_min_cell_nb : int
-            The minimum number of cells to form a cluster. It must be consistent
-            with the polygon coordinate system. In particular with the scale
-        """
-        self._cell_max_area = cell_max_area
-        self._cell_min_area = cell_min_area
-        self._aggregate_min_cell_nb = aggregate_min_cell_nb
-
-    def evaluate(self, image, polygon):
-        return self._cell_max_area < polygon.area < self._aggregate_min_cell_nb * self._cell_max_area
-
-
-class CellRule(DispatchingRule):
-
-    def __init__(self, cell_min_area, cell_max_area, cell_min_circularity, aggregate_min_cell_nb):
+class CellRule(BinaryClassifierRule):
+    def __init__(self, pyxit_classifier_adapter):
         """Constructor for CellRule object
 
         Parameters
         ----------
-        cell_min_area : float
-            The cells minimum area. It must be consistent with the polygon
-            coordinate system. In particular with the scale
-        cell_max_area : float
-            The cells maximum area. It must be consistent with the polygon
-            coordinate system. In particular with the scale
-        cell_min_circularity : float
-            The cells minimum circularity. It must be consistent with the polygon
-            coordinate system. In particular with the scale
-        aggregate_min_cell_nb : int
-            The minimum number of cells to form a cluster. It must be consistent
-            with the polygon coordinate system. In particular with the scale
+        pyxit_classifier_adapter: PyxitClassifierAdapter
+            A pyxit binary classifier predicting 1 for cells and 0 for others
         """
-        self._cell_max_area = cell_max_area
-        self._cell_min_area = cell_min_area
-        self._cell_min_circularity = cell_min_circularity
-        self._aggregate_min_cell_nb = aggregate_min_cell_nb
-
-    def evaluate(self, image, polygon):
-        circularity = 4 * np.pi * polygon.area / (polygon.length * polygon.length)
-        return self._cell_min_area <= polygon.area <= self._cell_max_area and circularity > self._cell_min_circularity
+        BinaryClassifierRule.__init__(self, pyxit_classifier_adapter)
