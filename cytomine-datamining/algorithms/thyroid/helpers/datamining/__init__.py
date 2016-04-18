@@ -14,7 +14,6 @@ __copyright__ = "Copyright 2010-2013 University of Liège, Belgium"
 __version__ = '0.1'
 
 from .segmenter import Segmenter, BinarySegmenter, CDSegmenter
-from .rasterizer import AbstractRasterizer, Rasterizer
 from .tilefilter import TileFilter, StdFilter
 from .colordeconvoluter import ColorDeconvoluter
 from .merger import MergerFactory, RowOrderMerger, DoNothingMerger
