@@ -8,7 +8,8 @@ from image_adapter import CytomineSlide
 
 
 class SlideProvider(ImageProvider):
-
+    """An image provider which generates CytomineSlides base on image instance ids
+    """
     def __init__(self, cytomine, images):
         ImageProvider.__init__(self, silent_fail=True)
         self._cytomine = cytomine
@@ -19,23 +20,15 @@ class SlideProvider(ImageProvider):
 
 
 class AggregateLinker(WorkflowLinker):
-
-    def __init__(self, cytomine, cluster_rule, aggregate_rule):
+    """WorkflowLinker for extracting window images of aggregates
+    """
+    def __init__(self, cytomine):
         WorkflowLinker.__init__(self)
         self._cytomine = cytomine
-        self._cluster_rule = cluster_rule
-        self._aggregate_rule = aggregate_rule
 
-    def get_images(self, image, polygons_classes):
+    def get_images(self, image, workflow_info_collection):
         images = []
-        for polygon, cls in polygons_classes:
-            if self._to_process(polygon):
-                minx, miny, maxx, maxy = polygon.bounds
-                offset = (minx, miny)
-                width = maxx - minx
-                height = maxy - miny
-                images.append(image.window(offset, width, height))
+        for polygon, dispatch, cls in workflow_info_collection.polygons():
+            if dispatch == 2:  # is aggregate
+                images.append(image.window_from_polygon(polygon))
         return images
-
-    def _to_process(self, polygon):
-        return self._cluster_rule(polygon) or self._aggregate_rule(polygon)

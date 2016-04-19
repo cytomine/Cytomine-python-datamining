@@ -2,7 +2,6 @@
 import cStringIO
 import os
 
-import math
 import numpy as np
 from PIL.Image import fromarray
 from shapely.affinity import translate
@@ -172,12 +171,7 @@ class TileCache(object):
         tile: Tile
             The tile cropping the polygon either fetched from cache or from the server on cache miss.
         """
-        minx, miny, maxx, maxy = polygon.bounds
-        fminx, fminy = int(math.floor(minx)), int(math.floor(miny))
-        cmaxx, cmaxy = int(math.ceil(maxx)), int(math.ceil(maxy))
-        offset = (fminx, fminy)
-        width = cmaxx - fminx
-        height = cmaxy - fminy
+        offset, width, height = Image.polygon_box(polygon)
         key = TileCache._cache_key(image, offset[0], offset[1], width, height)
         if key in self._cache:
             return self._cache[key]
