@@ -162,9 +162,10 @@ class DispatcherClassifier(object):
             if indexes.shape[0] == 0:  # if there are no more elements to evaluate
                 break
             match, no_match = self._split_by_rule(image, rule, polygons, indexes)
-            match_dict[i] = match_dict.get(i, []) + take(polygons, match)
-            poly_ind_dict[i] = poly_ind_dict.get(i, []) + list(match)
-            indexes = np.setdiff1d(indexes, match, True)
+            if len(match) > 0: # skip if there are no match
+                match_dict[i] = match_dict.get(i, []) + take(polygons, match)
+                poly_ind_dict[i] = poly_ind_dict.get(i, []) + list(match)
+                indexes = np.setdiff1d(indexes, match, True)
 
         # add all polygons that didn't match any rule
         match_dict[-1] = take(polygons, indexes)
