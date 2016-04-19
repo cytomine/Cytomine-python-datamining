@@ -202,7 +202,7 @@ class WorkflowInformationCollection(object):
         """
         self._items.append(value)
 
-    def polygons_iterator(self, filter_classes=None, filter_dispatch=None):
+    def polygons(self, filter_classes=None, filter_dispatch=None):
         """An iterator that goes through all the polygons stored in the collection
         The yielded value is a tuple containing the polygon, the dispatch index and the predicted
         class
