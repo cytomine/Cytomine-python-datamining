@@ -37,7 +37,7 @@ class PyxitClassifierAdapter(PolygonClassifier):
     def predict_batch(self, image, polygons):
         # Pyxit classifier takes images from the filesystem
         # So store the crops into files before passing the paths to the classifier
-        paths = [self._tile_cache.save_tile(image, polygon, self._working_path)[1] for polygon in polygons]
+        paths = []
         for polygon in polygons:
             _, tile_path = self._tile_cache.save_tile(image, polygon, self._working_path, alpha=True)
             paths.append(tile_path)
@@ -58,7 +58,7 @@ class PyxitClassifierAdapter(PolygonClassifier):
         """
         probas = self._pyxit_classifier.predict_proba(X)
         best_index = np.argmax(probas, axis=1)
-        return self._classes.take(best_index, axis=0)
+        return self._classes.take(best_index, axis=0).astype('int')
 
     @staticmethod
     def build_from_pickle(model_path, tile_builder, working_path):
