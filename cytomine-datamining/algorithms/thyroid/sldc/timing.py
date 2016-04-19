@@ -7,7 +7,7 @@ __author__ = "Mormont Romain <romain.mormont@gmail.com>"
 __version__ = "0.1"
 
 
-class SLDCTiming(object):
+class WorkflowTiming(object):
 
     FETCHING = "fetching"
     SEGMENTATION = "segmentation"
@@ -17,43 +17,43 @@ class SLDCTiming(object):
 
     def __init__(self):
         self._durations = {
-            SLDCTiming.FETCHING: [],
-            SLDCTiming.SEGMENTATION: [],
-            SLDCTiming.MERGING: [],
-            SLDCTiming.LOCATION: [],
-            SLDCTiming.DISPATCH_CLASSIFY: []
+            WorkflowTiming.FETCHING: [],
+            WorkflowTiming.SEGMENTATION: [],
+            WorkflowTiming.MERGING: [],
+            WorkflowTiming.LOCATION: [],
+            WorkflowTiming.DISPATCH_CLASSIFY: []
         }
         self._start_dict = dict()
 
     def start_fetching(self):
-        self._record_start(SLDCTiming.FETCHING)
+        self._record_start(WorkflowTiming.FETCHING)
 
     def end_fetching(self):
-        self._record_end(SLDCTiming.FETCHING)
+        self._record_end(WorkflowTiming.FETCHING)
 
     def start_segment(self):
-        self._record_start(SLDCTiming.SEGMENTATION)
+        self._record_start(WorkflowTiming.SEGMENTATION)
 
     def end_segment(self):
-        self._record_end(SLDCTiming.SEGMENTATION)
+        self._record_end(WorkflowTiming.SEGMENTATION)
 
     def start_location(self):
-        self._record_start(SLDCTiming.LOCATION)
+        self._record_start(WorkflowTiming.LOCATION)
 
     def end_location(self):
-        self._record_end(SLDCTiming.LOCATION)
+        self._record_end(WorkflowTiming.LOCATION)
 
     def start_dispatch_classify(self):
-        self._record_start(SLDCTiming.DISPATCH_CLASSIFY)
+        self._record_start(WorkflowTiming.DISPATCH_CLASSIFY)
 
     def end_dispatch_classify(self):
-        self._record_end(SLDCTiming.DISPATCH_CLASSIFY)
+        self._record_end(WorkflowTiming.DISPATCH_CLASSIFY)
 
     def start_merging(self):
-        self._record_start(SLDCTiming.MERGING)
+        self._record_start(WorkflowTiming.MERGING)
 
     def end_merging(self):
-        self._record_end(SLDCTiming.MERGING)
+        self._record_end(WorkflowTiming.MERGING)
 
     def stats(self):
         stats = dict()

@@ -3,7 +3,8 @@
 from image import Image, TileBuilder, TileTopologyIterator
 from merger import Merger
 from locator import Locator
-from timing import SLDCTiming
+from information import WorkflowInformation
+from timing import WorkflowTiming
 
 __author__ = "Romain Mormont <r.mormont@student.ulg.ac.be>"
 
@@ -44,7 +45,7 @@ class SLDCWorkflow(object):
         self._merger = Merger(boundary_thickness)
         self._dispatch_classifier = dispatcher_classifier
 
-    def process(self, image, timing=None):
+    def process(self, image):
         """Process the image using the SLDCWorkflow
         Parameters
         ----------
@@ -61,9 +62,7 @@ class SLDCWorkflow(object):
         This method doesn't modify the image passed as parameter.
         This method doesn't modify the object's attributes.
         """
-        if timing is None:
-            timing = SLDCTiming()
-
+        timing = WorkflowTiming()
         tile_topology = image.tile_topology(max_width=self._tile_max_width,
                                             max_height=self._tile_max_height,
                                             overlap=self._tile_overlap)
@@ -81,10 +80,10 @@ class SLDCWorkflow(object):
         timing.end_merging()
 
         timing.start_dispatch_classify()
-        dispatch_classified = self._dispatch_classifier.dispatch_classify_batch(image, polygons)
+        predictions, dispatch_indexes = self._dispatch_classifier.dispatch_classify_batch(image, polygons)
         timing.end_dispatch_classify()
 
-        return zip(polygons, dispatch_classified)
+        return WorkflowInformation(polygons, dispatch_indexes, predictions, timing, metadata=self.get_metadata())
 
     def _segment_locate(self, tile, timing):
         timing.start_segment()
@@ -94,3 +93,13 @@ class SLDCWorkflow(object):
         located = self._locator.locate(segmented, offset=tile.offset)
         timing.end_location()
         return located
+
+    def get_metadata(self):
+        """Return the metadata associated with this workflow
+        The metadata should be a way for the implementor to document the results of the workflow execution.
+        Returns
+        -------
+        metadata: string
+            The workflow metadata
+        """
+        return "Workflow class: {}\n".format(self.__class__.__name__)

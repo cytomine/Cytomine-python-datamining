@@ -2,7 +2,7 @@
 
 from abc import ABCMeta, abstractmethod
 
-from timing import SLDCTiming
+from information import ChainInformation, WorkflowInformationCollection
 
 __author__ = "Romain Mormont <r.mormont@student.ulg.ac.be>"
 
@@ -53,7 +53,7 @@ class WorkflowLinker(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def get_images(self, image, polygons_classes):
+    def get_images(self, image, workflow_information):
         """Given result of the application of an instance of the sldc workflow, produces images objects for the next
         steps
 
@@ -61,10 +61,8 @@ class WorkflowLinker(object):
         ----------
         image: Image
             The image processed by the previous step
-        polygons_classes: Array of tuples
-            The polygons and their predicted classes as produced by the previous class. Tuples are structured
-            as (polygon, class) when polygon is an instance of shapely.geometry.Polygon and class is an integer
-            code representing the actual class
+        workflow_information: WorkflowInformationCollection
+            The information about the execution of the workflow until now
         """
         pass
 
@@ -76,17 +74,15 @@ class PostProcessor(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def post_process(self, image, polygons_classes):
+    def post_process(self, image, workflow_information):
         """Actually process the results
 
         Parameters
         ----------
         image: Image
             The image processed by the previous step
-        polygons_classes: Array of tuples
-            The polygons and their predicted classes as produced by the previous class. Tuples are structured
-            as (polygon, class) when polygon is an instance of shapely.geometry.Polygon and class is an integer
-            code representing the actual class
+        workflow_information: WorkflowInformationCollection
+            The information about the execution of the workflow
         """
         pass
 
@@ -121,6 +117,7 @@ class WorkflowChain(object):
         self._image_provider = image_provider
         self._first_workflow = workflow
         self._workflows = list()
+        self._chain_information = ChainInformation()
         self._linkers = list()
         self._n_jobs = n_jobs
 
@@ -143,10 +140,10 @@ class WorkflowChain(object):
         """
         images = self._image_provider.get_images()
 
-        for image in images:
-            self._process_image(image)
+        for i, image in enumerate(images):
+            self._process_image(image, i)
 
-    def _process_image(self, image):
+    def _process_image(self, image, image_nb):
         """
         Execute one image's processing
         Parameters
@@ -154,19 +151,15 @@ class WorkflowChain(object):
         image: Image
             The image to process
         """
-        timing = SLDCTiming()
-        polygons_classes = list()
-        prev = self._first_workflow.process(image, timing)
-        polygons_classes.extend(prev)
+        # execute the first workflow and save the extracted information
+        collection = WorkflowInformationCollection()
+        collection.append(self._first_workflow.process(image))
 
+        # execute the subsebsequent workflows
         for workflow, linker in zip(self._workflows, self._linkers):
-            sub_images = linker.get_images(image, prev)
-            curr = list()
+            sub_images = linker.get_images(image, collection)
             for sub_image in sub_images:
-                curr.extend(workflow.process(sub_image, timing))
-            polygons_classes.extend(curr)
-            prev = curr
+                collection.append(workflow.process(sub_image))
 
-        self._post_processor.post_process(image, polygons_classes)
-        timing.report(image, polygons_classes)
-
+        self._post_processor.post_process(image, collection)
+        self._chain_information.register_workflow_collection(collection, image_nb)  # TODO thread safe

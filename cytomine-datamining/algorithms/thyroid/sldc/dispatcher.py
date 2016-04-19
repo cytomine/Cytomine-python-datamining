@@ -125,12 +125,14 @@ class DispatcherClassifier(object):
             If none of the dispatching rules matched a polygon, the value returned is the one produced
             by the fail callback for the given polygon. Especially, if no fail callback was registered,
             None is returned.
+        dispatch: int
+            The index of the dispatch rule that matched the polygon, -1 if none did
         """
         matching_rule = self._dispatch_index(image, polygon)
         if matching_rule == -1:
-            return self._fail_callback(polygon)
+            return self._fail_callback(polygon), matching_rule
         else:
-            return self._classifiers[matching_rule].predict(image, polygon)
+            return self._classifiers[matching_rule].predict(image, polygon), matching_rule
 
     def dispatch_classify_batch(self, image, polygons):
         """Apply the dispatching and classification steps to an ensemble of polygons.
@@ -149,6 +151,8 @@ class DispatcherClassifier(object):
             If none of the dispatching rules matched the polygon, the prediction associated with it is the one produced
             by the fail callback for the given polygon. Especially, if no fail callback was registered, None is
             returned.
+        dispatches: list of int
+            A list of integers of which the ith one is the index of first rule that matched the ith polygon.
         """
         match_dict = dict()  # maps rule indexes with matching polygons
         poly_ind_dict = dict()  # maps rule indexes with index of the polygons in the passed array
@@ -168,13 +172,17 @@ class DispatcherClassifier(object):
 
         # compute the prediction
         predict_list = [None] * len(polygons)
+        dispatch_list = [None] * len(polygons)
         for index in match_dict.keys():
             if index == -1:
                 predictions = [self._fail_callback(polygon) for polygon in match_dict[index]]
             else:
                 predictions = self._classifiers[index].predict_batch(image, match_dict[index])
+            # emplace prediction in prediction list
             emplace(predictions, predict_list, poly_ind_dict[index])
-        return predict_list
+            # emplace dispatch id in dispatch list
+            emplace(np.full((len(predictions),), index), dispatch_list, poly_ind_dict[index])
+        return predict_list, dispatch_list
 
     def _split_by_rule(self, image, rule, polygons, poly_indexes):
         """Given a rule, splits all the poly_indexes list into two lists. The first list contains
