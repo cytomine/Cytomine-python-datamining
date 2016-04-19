@@ -67,7 +67,7 @@ class Image(object):
         pass
 
     def window(self, offset, max_width, max_height):
-        """Build an image object represeting an window of the image
+        """Build an image object representing a window of the image
 
         Parameters
         ----------
@@ -77,11 +77,39 @@ class Image(object):
             The maximum width of the window
         max_height:
             The maximum height of the window
+
+        Returns
+        -------
+        window: ImageWindow
+            The resulting image window
         """
         # width are bound to the current window size, not the parent one
         width = min(max_width, self.width - offset[0])
         height = min(max_height, self.height - offset[1])
         return ImageWindow(self, offset, width, height)
+
+    def window_from_polygon(self, polygon):
+        """Build and return a window fitting the passed polygon.
+        At least a part of the polygon should fit the image
+
+        Parameters
+        ----------
+        polygon: Polygon
+            The polygon of which the bounding window should be returned
+
+        Returns
+        -------
+        window: ImageWindow
+            The resulting image window
+
+        Raises
+        ------
+        IndexError: if the polygon box offset is not inside the image
+        """
+        offset, width, height = Image.polygon_box(polygon)
+        if not self._check_tile_offset(offset):
+            raise IndexError("Offset {} is out of the image.".format(offset))
+        return self.window(offset, width, height)
 
     def tile(self, tile_builder, offset, max_width, max_height):
         """Extract a tile from the image
@@ -112,6 +140,29 @@ class Image(object):
         width = min(max_width, self.width - offset[0])
         height = min(max_height, self.height - offset[1])
         return tile_builder.build(self, offset, width, height)
+
+    def tile_from_polygon(self, tile_builder, polygon):
+        """Build a tile boxing the passed polygon
+
+        Parameters
+        ----------
+        tile_builder: TileBuilder
+            The builder for effectively building the tile
+        polygon: Polygon
+            The polygon of which the bounding tile should be returned
+
+        Returns
+        -------
+        tile: Tile
+            The bounding tile
+
+        Raises
+        ------
+        IndexError: if the offset is not inside the image
+        TileExtractionError: if the tile cannot be extracted
+        """
+        offset, width, height = Image.polygon_box(polygon)
+        return self.tile(tile_builder, offset, width, height)
 
     def tile_iterator(self, builder, max_width=1024, max_height=1024, overlap=0):
         """Build and return a tile iterator that iterates over the image
@@ -168,6 +219,33 @@ class Image(object):
             True if the offset is valid, False otherwise
         """
         return 0 <= offset[0] < self.width and 0 <= offset[1] < self.height
+
+    @staticmethod
+    def polygon_box(polygon):
+        """From a shapely polygon, return the information about the polygon bounding box.
+        These information are offset (x, y), width and height.
+
+        Parameters
+        ----------
+        polygon: Polygon
+            The polygon of which the bounding box should be computed
+
+        Returns
+        -------
+        offset: tuple (int, int)
+            The offset of the polygon bounding box
+        width: int
+            The bounding box width
+        height
+            The bounding box heigth
+        """
+        minx, miny, maxx, maxy = polygon.bounds
+        fminx, fminy = int(math.floor(minx)), int(math.floor(miny))
+        cmaxx, cmaxy = int(math.ceil(maxx)), int(math.ceil(maxy))
+        offset = (fminx, fminy)
+        width = cmaxx - fminx
+        height = cmaxy - fminy
+        return offset, width, height
 
 
 class ImageWindow(Image):
@@ -334,6 +412,28 @@ class TileBuilder(object):
         The coordinates origin is the leftmost pixel at the top of the slide
         """
         pass
+
+    def build_from_polygon(self, image, polygon):
+        """Build a tile boxing the given polygon in the image
+
+        Parameters
+        ----------
+        image: Image
+            The image from which the tile should be extracted
+        polygon: Polygon
+            The polygon of which the bounding tile should be returned
+
+        Returns
+        -------
+        tile: Tile
+            The bounding tile
+
+        Errors
+        ------
+        TypeError: when the reference image is not set
+        TileExtractionImage: when the tile cannot be extracted
+        """
+        return image.tile_from_polygon(self, polygon)
 
 
 class TileTopologyIterator(object):
