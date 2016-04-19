@@ -133,7 +133,7 @@ class SlideProcessingWorkflow(SLDCWorkflow):
         color_deconvoluter = ColorDeconvoluter()
         color_deconvoluter.set_kernel(get_standard_kernel())
         segmenter = SlideSegmenter(color_deconvoluter)
-        dispatcher_classifier = SlideDispatcherClassifier(cell_dispatch_classifier, aggregate_dispatch_classifier,
-                                                          aggregate_classifier, cell_classifier)
+        dispatcher_classifier = SlideDispatcherClassifier(aggregate_classifier, cell_classifier,
+                                                          cell_dispatch_classifier, aggregate_dispatch_classifier)
         SLDCWorkflow.__init__(self, segmenter, dispatcher_classifier, tile_builder,
                               tile_max_width=tile_max_width, tile_max_height=tile_max_height, tile_overlap=overlap)
