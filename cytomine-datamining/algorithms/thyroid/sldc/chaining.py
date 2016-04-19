@@ -53,7 +53,7 @@ class WorkflowLinker(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def get_images(self, image, workflow_information):
+    def get_images(self, image, workflow_info_collection):
         """Given result of the application of an instance of the sldc workflow, produces images objects for the next
         steps
 
@@ -61,7 +61,7 @@ class WorkflowLinker(object):
         ----------
         image: Image
             The image processed by the previous step
-        workflow_information: WorkflowInformationCollection
+        workflow_info_collection: WorkflowInformationCollection
             The information about the execution of the workflow until now
         """
         pass
@@ -74,14 +74,14 @@ class PostProcessor(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def post_process(self, image, workflow_information):
+    def post_process(self, image, workflow_info_collection):
         """Actually process the results
 
         Parameters
         ----------
         image: Image
             The image processed by the previous step
-        workflow_information: WorkflowInformationCollection
+        workflow_info_collection: WorkflowInformationCollection
             The information about the execution of the workflow
         """
         pass
