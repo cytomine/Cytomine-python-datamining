@@ -6,6 +6,7 @@ from helpers.utilities.datatype.polygon import affine_transform
 from image_providers import SlideProvider
 from slide_processing import SlideProcessingWorkflow
 from image_adapter import CytomineTileBuilder, TileCache
+from ontology import ThyroidOntology
 from classifiers import PyxitClassifierAdapter
 from cytomine import Cytomine
 from cytomine.models import AlgoAnnotationTerm
@@ -26,10 +27,19 @@ class CytominePostProcessor(PostProcessor):
     def __init__(self, cytomine):
         self._cytomine = cytomine
 
-    def post_process(self, image, polygons_classes):
-        for polygon, cls in polygons_classes:
-            if cls is not None:
-                self._upload_annotation(image.image_instance, polygon, int(cls))
+    def post_process(self, image, workflow_info_collection):
+        for polygon, dispatch, cls in workflow_info_collection.polygons():
+            upload_fn = self._upload_fn(image, polygon)
+            if dispatch == 0:  # cell
+                upload_fn(ThyroidOntology.CELL_INCL if cls == 1 else ThyroidOntology.CELL_NORM)
+            elif dispatch == 1:  # pattern
+                upload_fn(ThyroidOntology.PATTERN_PROLIF if cls == 1 else ThyroidOntology.PATTERN_NORM)
+
+    def _upload_fn(self, image, polygon):
+        """Return a callable taking one parameter. This callable uploads the polygon as annotation for the given image.
+        The callable parameter is the label to associate to the annotation
+        """
+        return lambda cls: self._upload_annotation(image.image_instance, polygon, label=cls)
 
     def _upload_annotation(self, img_inst, polygon, label=None):
         image_id = img_inst.id
@@ -191,14 +201,6 @@ def main(argv):
     parser.add_argument("--timeout",                 help="Timeout time for connection (in seconds)", type=positive_int, default="120")
     parser.add_argument("--verbose",                 help="increase output verbosity", action="store_true", default=True)
     parser.add_argument("--nb_jobs",                 help="Number of core to use", type=not_zero, default=1)
-    # parser.add_argument("--disp1_cell_min_area",     help="Cell minimum area for the first dispatching", type=positive_float, default=600)
-    # parser.add_argument("--disp1_cell_max_area",     help="Cell maximum area for the first dispatching", type=positive_float, default=2000)
-    # parser.add_argument("--disp1_cell_min_circ",     help="Cell minimum circularity for the first dispatching", type=positive_float, default=.70)
-    # parser.add_argument("--disp1_clust_min_cell_nb", help="Minimum number of cells in a cluster for the first dispatching", type=positive_int, default=3)
-    # parser.add_argument("--disp2_cell_min_area",     help="Cell minimum area for the second dispatching", type=positive_float, default=800)
-    # parser.add_argument("--disp2_cell_max_area",     help="Cell maximum area for the second dispatching", type=positive_float, default=4000)
-    # parser.add_argument("--disp2_cell_min_circ",     help="Cell minimum circularity for the second dispatching", type=positive_float, default=.85)
-    # parser.add_argument("--disp2_clust_min_cell_nb", help="Minimum number of cells in a cluster for the second dispatching", type=positive_float, default=1)
 
     args = parser.parse_args(args=argv)
 
