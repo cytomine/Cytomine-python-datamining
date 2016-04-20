@@ -191,7 +191,8 @@ def main(argv):
     with ThyroidJob(options.cell_classifier, options.aggregate_classifier, options.cell_dispatch_classifier,
                     options.aggregate_dispatch_classifier, options.host, options.public_key, options.private_key,
                     options.software_id, options.project_id, str2list(options.slide_ids),
-                    verbose=str2bool(options.verbose), n_jobs=options.n_jobs,
+                    verbose=str2bool(options.verbose), n_jobs=options.n_jobs, protocol=options.protocol,
+                    base_path=options.base_path, working_path=options.working_path,
                     tile_max_height=options.tile_max_height, tile_max_width=options.tile_max_width) as job:
         job.run()
 
