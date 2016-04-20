@@ -99,7 +99,8 @@ class Locator(object):
                 if len(exterior) > 3:
                     polygon = Polygon(exterior, interiors)
                     polygon = transform(polygon)
-                    components.append(polygon)
+                    if polygon.is_valid:  # some polygons might be invalid
+                        components.append(polygon)
 
                 # check if there is another top contour
                 if hierarchy[0][top_index][0] != -1:
