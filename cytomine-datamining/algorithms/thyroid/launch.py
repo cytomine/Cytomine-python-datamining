@@ -13,38 +13,40 @@ __author__ = "Begon Jean-Michel <jm.begon@gmail.com>"
 __copyright__ = "Copyright 2010-2013 University of Liège, Belgium"
 __version__ = '0.1'
 
-
 import workflow
 
-
-HOST = "beta.cytomine.be"
-PUBLICKEY = "ad014190-2fba-45de-a09f-8665f803ee0b"
-PRIVATEKEY = "767512dd-e66f-4d3c-bb46-306fa413a5eb"
-SOFTWAREID = "152714969"
-PROJECTID = "186829908"
-SLIDEIDS = [ "186859011", "186858563", "186851426", "186851134", "186850855", "186850602", "186850322", "186849981",
-             "186849450", "186848900", "186848552", "186847588", "186847313", "186845954", "186845730", "186845571",
-             "186845377", "186845164", "186844820", "186844344", "186843839", "186843325", "186842882", "186842285",
-             "186842002", "186841715", "186841154", "186840535" ]
-MODEL_PATH = "/home/mass/GRD/r.mormont/models"
-ARCH_CLASS = MODEL_PATH + "/patterns_prolif_vs_norm.pkl"
-CELL_CLASS = MODEL_PATH + "/cells_inclusion_vs_norm.pkl"
-DISP_CELL = MODEL_PATH + "/cells_reduced_vs_all.pkl"
-DISP_ARCH = MODEL_PATH + "/patterns_vs_all.pkl"
-
 if __name__ == "__main__":
-
     args = list()
-    args.append(CELL_CLASS)
-    args.append(ARCH_CLASS)
-    args.append(DISP_CELL)
-    args.append(DISP_ARCH)
-    args.append(HOST)
-    args.append(PUBLICKEY)
-    args.append(PRIVATEKEY)
-    args.append(SOFTWAREID)
-    args.append(PROJECTID)
-    for slide_id in SLIDEIDS:
-        args.append(slide_id)
-
+    args.append("--cell_classifier")
+    args.append("/home/mass/GRD/r.mormont/models/patterns_prolif_vs_norm.pkl")
+    args.append("--aggregate_classifier")
+    args.append("/home/mass/GRD/r.mormont/models/cells_inclusion_vs_norm.pkl")
+    args.append("--cell_dispatch_classifier")
+    args.append("/home/mass/GRD/r.mormont/models/cells_reduced_vs_all.pkl" )
+    args.append("--aggregate_dispatch_classifier")
+    args.append("/home/mass/GRD/r.mormont/models/patterns_vs_all.pkl")
+    args.append("--host")
+    args.append("beta.cytomine.be")
+    args.append("--public_key")
+    args.append("ad014190-2fba-45de-a09f-8665f803ee0b")
+    args.append("--private_key")
+    args.append("767512dd-e66f-4d3c-bb46-306fa413a5eb")
+    args.append("--software_id")
+    args.append("152714969")
+    args.append("--project_id")
+    args.append("186829908")
+    args.append("--slide_ids")
+    args.append("186859011,186858563,186851426,186851134,186850855,186850602,186850322,186849981,186849450,186848900,186848552,186847588,186847313")
+    args.append("--tile_max_height")
+    args.append("2048")
+    args.append("--tile_max_width")
+    args.append("2048")
+    args.append("--working_path")
+    args.append("$HM/tmp/sldc/")
+    args.append("--base_path")
+    args.append("/api/")
+    args.append("--verbose")
+    args.append("1")
+    args.append("--n_jobs")
+    args.append("1")
     workflow.main(args)
