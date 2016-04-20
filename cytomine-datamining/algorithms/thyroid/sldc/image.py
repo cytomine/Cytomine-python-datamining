@@ -316,6 +316,14 @@ class ImageWindow(Image):
         return self._width
 
     @property
+    def base_image(self):
+        return self._parent.base_image if isinstance(self._parent, ImageWindow) else self._parent
+
+    @property
+    def parent(self):
+        return self._parent
+
+    @property
     def np_image(self):
         minx = self.offset_x
         miny = self.offset_y
