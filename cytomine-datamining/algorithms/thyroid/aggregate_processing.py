@@ -158,29 +158,18 @@ class AggregateSegmenter(Segmenter):
 
 
 class AggregateDispatcherClassifier(DispatcherClassifier):
-    def __init__(self, cell_min_area, cell_max_area, cell_min_circularity, aggregate_min_cell_nb,
-                 cell_classifier):
+    def __init__(self, cell_classifier, cell_dispatch_classifier):
         """Constructor for SlideDispatcherClassifier objects
         Objects which aren't cells are classified None
 
         Parameters
         ----------
-        cell_min_area : float
-            The cells minimum area. It must be consistent with the polygon
-            coordinate system. In particular with the scale
-        cell_max_area : float
-            The cells maximum area. It must be consistent with the polygon
-            coordinate system. In particular with the scale
-        cell_min_circularity : float
-            The cells minimum circularity. It must be consistent with the polygon
-            coordinate system. In particular with the scale
-        aggregate_min_cell_nb : int
-            The minimum number of cells to form a cluster. It must be consistent
-            with the polygon coordinate system. In particular with the scale
         cell_classifier: PolygonClassifier
             The classifiers for cells
+        cell_dispatch_classifier: PyxitClassifierAdapter
+            The classifier for dispatching cells
         """
-        rules = [CellRule(cell_min_area, cell_max_area, cell_min_circularity, aggregate_min_cell_nb)]
+        rules = [CellRule(cell_dispatch_classifier)]
         classifiers = [cell_classifier]
         DispatcherClassifier.__init__(self, rules, classifiers)
 
@@ -190,28 +179,18 @@ class AggregateProcessingWorkflow(SLDCWorkflow):
     A workflow for processing aggregates
     """
 
-    def __init__(self, tile_builder, cell_min_area, cell_max_area, cell_min_circularity, aggregate_min_cell_nb,
-                 cell_classifier, tile_max_width=1024, tile_max_height=1024, overlap=15):
+    def __init__(self, tile_builder, cell_classifier, cell_dispatch_classifier,
+                 tile_max_width=1024, tile_max_height=1024, overlap=15):
         """Constructor for AggregateProcessingWorkflow objects
 
         Parameters
         ----------
         tile_builder: TileBuilder
-
-        cell_min_area : float
-            The cells minimum area. It must be consistent with the polygon
-            coordinate system. In particular with the scale
-        cell_max_area : float
-            The cells maximum area. It must be consistent with the polygon
-            coordinate system. In particular with the scale
-        cell_min_circularity : float
-            The cells minimum circularity. It must be consistent with the polygon
-            coordinate system. In particular with the scale
-        aggregate_min_cell_nb : int
-            The minimum number of cells to form a cluster. It must be consistent
-            with the polygon coordinate system. In particular with the scale
+            A tile builder
         cell_classifier: PolygonClassifier
             The classifiers for cells
+        cell_dispatch_classifier: PyxitClassifierAdapter
+            The classifier for dispatching cells
         tile_max_width: int
             The maximum width of the tile to use when iterating over the images
         tile_max_height: int
@@ -221,7 +200,6 @@ class AggregateProcessingWorkflow(SLDCWorkflow):
         """
         color_deconvoluter = ColorDeconvoluter()
         segmenter = AggregateSegmenter(color_deconvoluter, struct_elem=get_standard_struct_elem())
-        dispatcher_classifier = AggregateDispatcherClassifier(cell_min_area, cell_max_area, cell_min_circularity,
-                                                              aggregate_min_cell_nb, cell_classifier)
+        dispatcher_classifier = AggregateDispatcherClassifier(cell_classifier, cell_dispatch_classifier)
         SLDCWorkflow.__init__(self, segmenter, dispatcher_classifier, tile_builder, tile_max_width=tile_max_width,
                               tile_max_height=tile_max_height, tile_overlap=overlap)

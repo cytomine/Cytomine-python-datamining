@@ -3,9 +3,10 @@ import optparse
 
 from sldc import PostProcessor, WorkflowChain
 from helpers.utilities.datatype.polygon import affine_transform
-from image_providers import SlideProvider
+from image_providers import SlideProvider, AggregateLinker
 from slide_processing import SlideProcessingWorkflow
 from image_adapter import CytomineTileBuilder, TileCache
+from aggregate_processing import AggregateProcessingWorkflow
 from ontology import ThyroidOntology
 from classifiers import PyxitClassifierAdapter
 from cytomine import Cytomine
@@ -26,12 +27,24 @@ class CytominePostProcessor(PostProcessor):
         self._cytomine = cytomine
 
     def post_process(self, image, workflow_info_collection):
-        for polygon, dispatch, cls in workflow_info_collection.polygons():
+        if len(workflow_info_collection) != 2:
+            raise RuntimeError("Two executions expected, got {}.".format(len(workflow_info_collection)))
+
+        # extract polygons from first run
+        slide_processing = workflow_info_collection[0]
+        for polygon, dispatch, cls in slide_processing.iterator():
             upload_fn = self._upload_fn(image, polygon)
             if dispatch == 0:  # cell
                 upload_fn(ThyroidOntology.CELL_INCL if cls == 1 else ThyroidOntology.CELL_NORM)
             elif dispatch == 1:  # pattern
                 upload_fn(ThyroidOntology.PATTERN_PROLIF if cls == 1 else ThyroidOntology.PATTERN_NORM)
+
+        # extract polygons from second run
+        aggre_processing = workflow_info_collection[1]
+        for polygon, dispatch, cls in aggre_processing.iterator():
+            upload_fn = self._upload_fn(image, polygon)
+            if dispatch == 0:
+                upload_fn(ThyroidOntology.CELL_INCL if cls == 1 else ThyroidOntology.CELL_NORM)
 
     def _upload_fn(self, image, polygon):
         """Return a callable taking one parameter. This callable uploads the polygon as annotation for the given image.
@@ -113,6 +126,7 @@ class ThyroidJob(CytomineJob):
         CytomineJob.__init__(self, cytomine, software_id, project_id)
         tile_builder = CytomineTileBuilder(cytomine)
         tile_cache = TileCache(tile_builder)
+        # build useful classifiers
         aggr_classifier = PyxitClassifierAdapter.build_from_pickle(aggregate_classifier, tile_cache, working_path,
                                                                    n_jobs=n_jobs, verbose=verbose)
         cell_classifier = PyxitClassifierAdapter.build_from_pickle(cell_classifier, tile_cache, working_path,
@@ -121,12 +135,19 @@ class ThyroidJob(CytomineJob):
                                                                  working_path, n_jobs=n_jobs, verbose=verbose)
         cell_dispatch = PyxitClassifierAdapter.build_from_pickle(cell_dispatch_classifier, tile_cache, working_path,
                                                                  n_jobs=n_jobs, verbose=verbose)
+        # build workflow chain components
         image_provider = SlideProvider(cytomine, slide_ids)
         slide_workflow = SlideProcessingWorkflow(tile_builder, cell_classifier, aggr_classifier, cell_dispatch,
                                                  aggr_dispatch, tile_max_width=tile_max_width,
                                                  tile_max_height=tile_max_height)
+        workflow_linker = AggregateLinker(cytomine)
+        aggre_workflow = AggregateProcessingWorkflow(tile_builder, cell_classifier, cell_dispatch_classifier,
+                                                     tile_max_width=tile_max_width, tile_max_height=tile_max_height)
         post_processor = CytominePostProcessor(cytomine)
+
+        # build the workflow chain
         self._chain = WorkflowChain(image_provider, slide_workflow, post_processor)
+        self._chain.append_workflow(aggre_workflow, workflow_linker)
 
     def run(self):
         self._chain.execute()
