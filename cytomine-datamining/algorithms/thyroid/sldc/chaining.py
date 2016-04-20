@@ -2,7 +2,7 @@
 
 from abc import ABCMeta, abstractmethod
 
-from information import ChainInformation, WorkflowInformationCollection
+from information import ChainInformation, WorkflowInformationCollection, WorkflowInformation
 
 __author__ = "Romain Mormont <r.mormont@student.ulg.ac.be>"
 
@@ -157,9 +157,11 @@ class WorkflowChain(object):
 
         # execute the subsebsequent workflows
         for workflow, linker in zip(self._workflows, self._linkers):
+            workflow_information = WorkflowInformation([], [], [], None)
             sub_images = linker.get_images(image, collection)
             for sub_image in sub_images:
-                collection.append(workflow.process(sub_image))
+                workflow_information.merge(workflow.process(sub_image))
+            collection.append(workflow_information)
 
         self._post_processor.post_process(image, collection)
         self._chain_information.register_workflow_collection(collection, image_nb)  # TODO thread safe

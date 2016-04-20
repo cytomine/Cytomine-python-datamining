@@ -81,6 +81,30 @@ class WorkflowTiming(object):
             return 0, 0, 0, 0, 0
         return round(np.sum(durations), 5), round(np.min(durations), 5), round(np.mean(durations), 5), round(np.max(durations), 5), count
 
+    @classmethod
+    def merge_timings(cls, timing1, timing2):
+        """Merge the two timings into a new timing object
+        Parameters
+        ----------
+        timing1: WorkflowTiming
+            The first timing object to merge
+        timing2: WorkflowTiming
+            The second timing object to merge
+        Returns
+        -------
+        timing: WorkflowTiming
+            A new timing object containing the merging of the passed timing
+        """
+        if timing1 is None and timing2 is None:
+            return WorkflowTiming()
+        elif timing1 is None or timing2 is None:
+            return timing1 if timing1 is not None else timing2
+
+        timing = WorkflowTiming()
+        for key in timing._durations.keys():
+            timing._durations[key] = timing1._durations.get(key, []) + timing2._durations.get(key, [])
+        return timing
+
     def report(self, image, polygons_classes):
         print "========================================"
         print "Image {}".format(str(image))

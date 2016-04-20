@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from timing import WorkflowTiming
+
 __author__ = "Mormont Romain <romain.mormont@gmail.com>"
 __version__ = "0.1"
 
@@ -167,6 +169,28 @@ class WorkflowInformation(object):
                     (filter_classes is None or cls not in filter_classes):
                 yield polygon, dispatch, cls
         return
+
+    def merge(self, other):
+        """Merge the other workflow information object into the current one. The id and metadata of the first are kept
+        if they are set. Otherwise, the metadata and id of the other object are also merged
+
+        Parameters
+        ----------
+        other: WorkflowInformation
+            The workflow information object to merge
+        """
+        if other is None:
+            return
+
+        self._polygons += other.polygons
+        self._dispatch += other.dispatch
+        self._classes += other.classes
+        self._timing = WorkflowTiming.merge_timings(self._timing, other.timing)
+
+        if self._metadata is None:
+            self._metadata = other.metadata
+        if self._id is None:
+            self._id = other.id
 
 
 class WorkflowInformationCollection(object):
