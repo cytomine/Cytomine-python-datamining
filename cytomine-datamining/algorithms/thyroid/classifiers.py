@@ -61,7 +61,7 @@ class PyxitClassifierAdapter(PolygonClassifier):
         return self._classes.take(best_index, axis=0).astype('int')
 
     @staticmethod
-    def build_from_pickle(model_path, tile_builder, working_path):
+    def build_from_pickle(model_path, tile_builder, working_path, n_jobs=1, verbose=False):
         """Builds a PyxitClassifierAdapter object from a pickled model
 
         Parameters
@@ -72,6 +72,10 @@ class PyxitClassifierAdapter(PolygonClassifier):
             A tile builder object
         working_path: string
             The path in which temporary files can be written
+        n_jobs: int
+            The number of jobs on which the classifiers should run
+        verbose: bool
+            The verbosity of the models
 
         Returns
         -------
@@ -86,6 +90,8 @@ class PyxitClassifierAdapter(PolygonClassifier):
         with open(model_path, "rb") as model_file:
             classes = pickle.load(model_file)
             classifier = pickle.load(model_file)
-            classifier.n_jobs = 1
-            classifier.verbose = 0
+            classifier.n_jobs = n_jobs
+            classifier.verbose = 10 if verbose else 0
+            classifier.base_estimator.n_jobs = n_jobs
+            classifier.base_estimator.verbose = 10 if verbose else 0
         return PyxitClassifierAdapter(classifier, tile_builder, classes, working_path)

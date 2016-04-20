@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import argparse
+import optparse
 
 from sldc import PostProcessor, WorkflowChain
 from helpers.utilities.datatype.polygon import affine_transform
@@ -10,8 +10,6 @@ from ontology import ThyroidOntology
 from classifiers import PyxitClassifierAdapter
 from cytomine import Cytomine
 from cytomine.models import AlgoAnnotationTerm
-from helpers.utilities.argparsing import positive_int, positive_float
-from helpers.utilities.argparsing import not_zero, range0_255
 from helpers.utilities.cytominejob import CytomineJob
 
 
@@ -56,7 +54,7 @@ class ThyroidJob(CytomineJob):
     def __init__(self, cell_classifier, aggregate_classifier, cell_dispatch_classifier, aggregate_dispatch_classifier,
                  host, public_key, private_key, software_id, project_id,
                  slide_ids, working_path="/tmp", protocol="http://", base_path="/api/", verbose=False, timeout=120,
-                 nb_jobs=1, *args, **kwargs):
+                 n_jobs=1, tile_max_width=1024, tile_max_height=1024):
         """
         Create a standard thyroid application with the given parameters.
         Standard implies :
@@ -100,72 +98,29 @@ class ThyroidJob(CytomineJob):
             n/a
         timeout : int (default : 120)
             The timeout time (in seconds)
-        nb_jobs : int (!=0) (Default : 1)
+        n_jobs : int (!=0) (Default : 1)
             The number of core to use.
                 If >0 : the parallelization factor.
                 If <0 : nb_tasks = #cpu+nb_cores+1
                 Set to -1 to use the maximum number of core
-        zoom_sl : int >= 0 (default : 1)
-            The zoom level for the segment-locate part
-        tile_filter_min_std : float (default : 10.)
-            The minimum standard deviation needed by a tile to be treated
-        deconv_kernel : 3x3 float np.ndarray (default :
-        :meth:`get_standard_kernel`)
-            The kernel for the color deconvolution
-        seg_threshold : int in [0, 255] (default : 120)
-            The threshold used in the first segmentation
-        seg_struct_elem : binary 2D np.ndarray
-                         (default : :meth:`get_standard_struct_elem`)
-            The structural element for the morphological operations
-        seg_nb_morph_iter : a list of 3 int (default : [1, 3, 7])
-            The sequence of morphological operations. see :class:`CDSegmenter`
-        merg_boundary_thickness : int (default : 2)
-            The boundary thickness. That is, the distance at which an object
-            is considered as touching the boundary. See :class:`Merger` for
-            more information
-        disp1_cell_min_area : float
-            The cells minimum area for the first dispatching. It must be
-            consistent with the polygon coordinate system. In particular
-            with the scale
-        disp1_cell_max_area : float
-            The cells maximum area for the first dispatching. It must be
-            consistent with the polygon coordinate system. In particular
-            with the scale
-        disp1_cell_min_circ : float
-            The cells minimum circularity for the first dispatching. It
-            must be consistent with the polygon coordinate system. In
-            particular with the scale
-        disp1_clust_min_cell_nb : int
-            The minimum number of cells to form a cluster for the first
-            dispatching. It must be consistent with the polygon coordinate
-            system. In particular with the scale
-        disp2_cell_min_area : float
-            The cells minimum area for the second dispatching. It must be
-            consistent with the polygon coordinate system. In particular
-            with the scale
-        disp2_cell_max_area : float
-            The cells maximum area for the second dispatching. It must be
-            consistent with the polygon coordinate system. In particular
-            with the scale
-        disp2_cell_min_circ : float
-            The cells minimum circularity for the second dispatching. It must
-            be consistent with the polygon coordinate system. In particular
-            with the scale
-        disp2_clust_min_cell_nb : int
-            The minimum number of cells to form a cluster for the second
-            dispatching. It must be consistent with the polygon coordinate
-            system. In particular with the scale
+        tile_max_width: int
+            The tiles max width
+        tile_max_height: int
+            The tiles max height
         """
         # Create Cytomine instance
-        tile_max_width, tile_max_height = 1024, 1024
         cytomine = Cytomine(host, public_key, private_key, working_path, protocol, base_path, verbose, timeout)
         CytomineJob.__init__(self, cytomine, software_id, project_id)
         tile_builder = CytomineTileBuilder(cytomine)
         tile_cache = TileCache(tile_builder)
-        aggr_classifier = PyxitClassifierAdapter.build_from_pickle(aggregate_classifier, tile_cache, working_path)
-        cell_classifier = PyxitClassifierAdapter.build_from_pickle(cell_classifier, tile_cache, working_path)
-        aggr_dispatch = PyxitClassifierAdapter.build_from_pickle(aggregate_dispatch_classifier, tile_cache, working_path)
-        cell_dispatch = PyxitClassifierAdapter.build_from_pickle(cell_dispatch_classifier, tile_cache, working_path)
+        aggr_classifier = PyxitClassifierAdapter.build_from_pickle(aggregate_classifier, tile_cache, working_path,
+                                                                   n_jobs=n_jobs, verbose=verbose)
+        cell_classifier = PyxitClassifierAdapter.build_from_pickle(cell_classifier, tile_cache, working_path,
+                                                                   n_jobs=n_jobs, verbose=verbose)
+        aggr_dispatch = PyxitClassifierAdapter.build_from_pickle(aggregate_dispatch_classifier, tile_cache,
+                                                                 working_path, n_jobs=n_jobs, verbose=verbose)
+        cell_dispatch = PyxitClassifierAdapter.build_from_pickle(cell_dispatch_classifier, tile_cache, working_path,
+                                                                 n_jobs=n_jobs, verbose=verbose)
         image_provider = SlideProvider(cytomine, slide_ids)
         slide_workflow = SlideProcessingWorkflow(tile_builder, cell_classifier, aggr_classifier, cell_dispatch,
                                                  aggr_dispatch, tile_max_width=tile_max_width,
@@ -181,32 +136,63 @@ def arr2str(arr):
     return "".join(str(arr).strip("[]").split(","))
 
 
+def str2list(l, conv=int):
+    print "PRINT: {}".format(l)
+    return [conv(v) for v in l.split(",")]
+
+
+def str2bool(v):
+    return v.lower() in ("yes", "true", "t", "1")
+
+
 def main(argv):
     print argv  # TODO remove
     # ----------Parsing command line args----------- #
-    parser = argparse.ArgumentParser()  # TODO desc.
-    parser.add_argument("--cell_classifier",           help="File where the cell classifier has been pickled")
-    parser.add_argument("--aggregate_classifier",      help="File where the architectural pattern classifier has been pickled")
-    parser.add_argument("--cell_dispatch_classifier",  help="File where the cell dispatch classifier has been pickled")
-    parser.add_argument("--aggregate_dispatch_classifier", help="File where the aggregate dispatch classifier has been pickled")
-    parser.add_argument("--host",                      help="Cytomine server host URL")
-    parser.add_argument("--public_key",                help="User public key")
-    parser.add_argument("--private_key",               help="User Private key")
-    parser.add_argument("--software_id",               help="Identifier of the software on the Cytomine server")
-    parser.add_argument("--project_id",                help="Identifier of the project to process on the Cytomine server")
-    parser.add_argument("--slide_ids",                 help="Sequence of ids of the slides to process", nargs="+", type=int)
-    parser.add_argument("--working_path",              help="Directory for caching temporary files", default="/tmp")
-    parser.add_argument("--protocol",                  help="Communication protocol",default="http://")
-    parser.add_argument("--base_path",                 help="n/a", default="/api/")
-    parser.add_argument("--timeout",                   help="Timeout time for connection (in seconds)", type=positive_int, default="120")
-    parser.add_argument("--verbose",                   help="increase output verbosity", action="store_true", default=True)
-    parser.add_argument("--nb_jobs",                   help="Number of core to use", type=not_zero, default=1)
+    parser = optparse.OptionParser()  # TODO desc.
+    parser.add_option("--cell_classifier", type='string', default="", dest="cell_classifier",
+                      help="File where the cell classifier has been pickled")
+    parser.add_option("--aggregate_classifier", type='string', default="", dest="aggregate_classifier",
+                      help="File where the architectural pattern classifier has been pickled")
+    parser.add_option("--cell_dispatch_classifier", type='string', default="", dest="cell_dispatch_classifier",
+                      help="File where the cell dispatch classifier has been pickled")
+    parser.add_option("--aggregate_dispatch_classifier", type='string', default="", dest="aggregate_dispatch_classifier",
+                      help="File where the aggregate dispatch classifier has been pickled")
+    parser.add_option("--host", type='string', default="", dest="host",
+                      help="Cytomine server host URL")
+    parser.add_option("--public_key", type='string', default="", dest="public_key",
+                      help="User public key")
+    parser.add_option("--private_key", type='string', default="", dest="private_key",
+                      help="User Private key")
+    parser.add_option("--software_id", type='int', dest="software_id",
+                      help="Identifier of the software on the Cytomine server")
+    parser.add_option("--project_id", type='int', dest="project_id",
+                      help="Identifier of the project to process on the Cytomine server")
+    parser.add_option("--slide_ids", type='string', default="", dest="slide_ids",
+                      help="Sequence of ids of the slides to process")
+    parser.add_option("--working_path", type='string', default="/tmp", dest="working_path",
+                      help="Directory for caching temporary files")
+    parser.add_option("--protocol", type='string', default="http://", dest="protocol",
+                      help="Communication protocol")
+    parser.add_option("--base_path", type='string', default="/api/", dest="base_path",
+                      help="Base path for api url")
+    parser.add_option("--timeout", type='int', default=120, dest="timeout",
+                      help="Timeout time for connection (in seconds)")
+    parser.add_option("--verbose", type='string', default=True, dest="verbose",
+                      help="increase output verbosity")
+    parser.add_option("--n_jobs", type='int', default=1, dest="n_jobs",
+                      help="Number of core to use")
+    parser.add_option("--tile_max_width", type='int', default=1024, dest="tile_max_width",
+                      help="Slides max width")
+    parser.add_option("--tile_max_height", type='int', default=1024, dest="tile_max_height",
+                      help="Slides max height")
 
-    args = parser.parse_args(args=argv)
+    options, arguments = parser.parse_args(args=argv)
 
-    with ThyroidJob(args.cell_classifier, args.aggregate_classifier, args.cell_dispatch_classifier,
-                    args.aggregate_dispatch_classifier, args.host, args.public_key, args.private_key, args.software_id,
-                    args.project_id, args.slide_ids) as job:
+    with ThyroidJob(options.cell_classifier, options.aggregate_classifier, options.cell_dispatch_classifier,
+                    options.aggregate_dispatch_classifier, options.host, options.public_key, options.private_key,
+                    options.software_id, options.project_id, str2list(options.slide_ids),
+                    verbose=str2bool(options.verbose), n_jobs=options.n_jobs,
+                    tile_max_height=options.tile_max_height, tile_max_width=options.tile_max_width) as job:
         job.run()
 
 
