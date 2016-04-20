@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=sldc_test2
-#SBATCH --output=/home/mass/GRD/r.mormont/out/validation/sldc_test2.res
+#SBATCH --output=/home/mass/GRD/r.mormont/out/sldc/sldc_test2.res
 #SBATCH --ntasks=10
 #SBATCH --cpus-per-task=1
 #SBATCH --time=96:00:00
