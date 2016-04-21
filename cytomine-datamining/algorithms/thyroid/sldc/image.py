@@ -304,6 +304,37 @@ class ImageWindow(Image):
         return self._offset
 
     @property
+    def abs_offset_x(self):
+        """Return the x offset of the window relatively to the base image.
+        Returns
+        -------
+        abs_offset_x: int
+            The absolute x offset of the window
+        """
+        return self.offset_x + self.parent.abs_offset_x if isinstance(self.parent, ImageWindow) else self.offset_x
+
+    @property
+    def abs_offset_y(self):
+        """Return the y offset of the window relatively to the base image.
+        Returns
+        -------
+        abs_offset_y: int
+            The absolute y offset of the window
+        """
+        return self.offset_y + self.parent.abs_offset_y if isinstance(self.parent, ImageWindow) else self.offset_y
+
+    @property
+    def abs_offset(self):
+        """Return the offset of the window relatively to the base image.
+
+        Returns
+        -------
+        abs_offset: tuple (int, int)
+            The absolute offset of the window
+        """
+        return self.abs_offset_x, self.abs_offset_y
+
+    @property
     def channels(self):
         return self._parent.channels
 
@@ -317,6 +348,9 @@ class ImageWindow(Image):
 
     @property
     def base_image(self):
+        """Return the base Image object from which the window was extracted. If the parent image is a Window then, the
+        base image is fetched recursively from it.
+        """
         return self._parent.base_image if isinstance(self._parent, ImageWindow) else self._parent
 
     @property

@@ -182,7 +182,7 @@ class DispatcherClassifier(object):
             # emplace prediction in prediction list
             emplace(predictions, predict_list, poly_ind_dict[index])
             # emplace dispatch id in dispatch list
-            emplace(np.full((len(predictions),), index), dispatch_list, poly_ind_dict[index])
+            emplace(np.full((len(predictions),), index).astype('int'), dispatch_list, poly_ind_dict[index])
         return predict_list, dispatch_list
 
     def _split_by_rule(self, image, rule, polygons, poly_indexes):
