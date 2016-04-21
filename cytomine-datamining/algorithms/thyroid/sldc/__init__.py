@@ -11,11 +11,12 @@ from .chaining import ImageProvider, WorkflowExecutor, PolygonTranslatorWorkflow
                       FullImageWorkflowExecutor, WorkflowChain, PostProcessor
 from .timing import WorkflowTiming
 from .information import WorkflowInformation, ChainInformation, WorkflowInformationCollection
+from .logging import Logger, StandardOutputLogger, FileLogger
 
 __author__ = "Romain Mormont <r.mormont@student.ulg.ac.be>"
 
 __all__ = ["Locator", "Segmenter", "DispatcherClassifier", "DispatchingRule", "SLDCWorkflow", "Image", "Tile",
            "TileBuilder", "PolygonClassifier", "TileTopology", "TileTopologyIterator", "ImageExtractionError",
            "TileExtractionError", "ImageWindow", "ImageProvider", "WorkflowExecutor", "WorkflowChain", "PostProcessor",
-           "WorkflowInformation", "ChainInformation", "WorkflowInformationCollection",
-           "FullImageWorkflowExecutor", "PolygonTranslatorWorkflowExecutor"]
+           "WorkflowInformation", "ChainInformation", "WorkflowInformationCollection", "FullImageWorkflowExecutor",
+           "PolygonTranslatorWorkflowExecutor", "Logger", "StandardOutputLogger", "FileLogger"]

@@ -90,7 +90,7 @@ class Merger(object):
 
         Returns
         -------
-        polygons: array
+        polygons: list
             An array of polygons objects containing the merged polygons
         """
         tiles_dict, polygons_dict = Merger._build_dicts(polygons_tiles)
@@ -145,7 +145,7 @@ class Merger(object):
 
         Returns
         -------
-        polygons: array
+        polygons: list
             An array of polygons objects containing the merged polygons
         """
         components = geom_graph.connex_components()

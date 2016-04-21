@@ -61,6 +61,12 @@ class WorkflowTiming(object):
             stats[key] = self._stat_tuple(key)
         return stats
 
+    def total(self):
+        total_time = 0
+        for key in self._durations.keys():
+            total_time += sum(self._durations[key])
+        return total_time
+
     def _record_start(self, code):
         self._start_dict[code] = datetime.datetime.now()
 

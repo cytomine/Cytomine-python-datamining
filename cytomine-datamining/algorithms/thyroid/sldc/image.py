@@ -4,7 +4,7 @@
 import math
 from abc import ABCMeta, abstractmethod, abstractproperty
 
-from sldc.errors import TileExtractionError
+from errors import TileExtractionError
 
 __author__ = "Romain Mormont <r.mormont@student.ulg.ac.be>"
 

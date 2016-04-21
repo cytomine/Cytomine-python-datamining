@@ -45,7 +45,7 @@ class SLDCWorkflow(object):
         self._merger = Merger(boundary_thickness)
         self._dispatch_classifier = dispatcher_classifier
 
-    def process(self, image):
+    def process(self, image, logger):
         """Process the image using the SLDCWorkflow
         Parameters
         ----------
@@ -57,31 +57,41 @@ class SLDCWorkflow(object):
             An array containing the found polygons as well as the predicted class. These data are
             structured in an array of tuple where a tuple contains as its first element the polygon
             object (shapely.geometry.Polygon) and as second element the predicted class (integer code).
+        logger: Logger
+            A logger
         Notes
         -----
         This method doesn't modify the image passed as parameter.
         This method doesn't modify the object's attributes.
         """
         timing = WorkflowTiming()
-        tile_topology = image.tile_topology(max_width=self._tile_max_width,
-                                            max_height=self._tile_max_height,
+        tile_topology = image.tile_topology(max_width=self._tile_max_width, max_height=self._tile_max_height,
                                             overlap=self._tile_overlap)
         tile_iterator = TileTopologyIterator(self._tile_builder, tile_topology, silent_fail=True)
 
+        # segment locate
         polygons_tiles = list()
+        logger.info("SLDCWorkflow : start segment locate")
         timing.start_fetching()
         for tile in tile_iterator:
             timing.end_fetching()
             polygons_tiles.append((tile, self._segment_locate(tile, timing)))
             timing.start_fetching()
+        logger.info("SLDCWorkflow : end segment locate. {} tile(s) processed.".format(len(polygons_tiles)))
 
+        # merge
+        logger.info("SLDCWorkflow : start merging")
         timing.start_merging()
         polygons = self._merger.merge(polygons_tiles, tile_topology)
         timing.end_merging()
+        logger.info("SLDCWorkflow : end segment locate. {} polygon(s) found.".format(len(polygons)))
 
+        # dispatch classify
+        logger.info("SLDCWorkflow : start dispatch/classify")
         timing.start_dispatch_classify()
         predictions, dispatch_indexes = self._dispatch_classifier.dispatch_classify_batch(image, polygons)
         timing.end_dispatch_classify()
+        logger.info("SLDCWorkflow : end dispatch/classify")
 
         return WorkflowInformation(polygons, dispatch_indexes, predictions, timing, metadata=self.get_metadata())
 
