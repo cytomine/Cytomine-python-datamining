@@ -46,7 +46,7 @@ if __name__ == "__main__":
     args.append("--base_path")
     args.append("/api/")
     args.append("--verbose")
-    args.append("1")
+    args.append("0")
     args.append("--n_jobs")
     args.append("1")
     workflow.main(args)
