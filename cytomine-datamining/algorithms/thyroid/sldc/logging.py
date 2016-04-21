@@ -129,7 +129,7 @@ class Logger(object):
     def prefix(cls, level):
         from datetime import datetime
         now = datetime.now().isoformat()
-        tid = threading.current_thread().zfill(10)
+        tid = "{}".format(threading.current_thread().ident).zfill(6)
         if level == cls.DEBUG:
             return "[tid:{}][{}][DEBUG]".format(tid, now)
         elif level == cls.WARNING:
@@ -142,7 +142,6 @@ class Logger(object):
     def _format_msg(self, level, msg):
         if self._prefix:
             rows = ["{} {}".format(self.prefix(level), row) for row in msg.split(os.linesep)]
-            rows.append("")  # append a row so that there is an end of line at the end of the message
             return os.linesep.join(rows)
         else:
             return msg
@@ -180,6 +179,7 @@ class FileLogger(Logger):
 
     def _print(self, formatted_msg):
         self._file.write(formatted_msg)
+        self._file.write(os.linesep)
 
     def close(self):
         """Close the logging file

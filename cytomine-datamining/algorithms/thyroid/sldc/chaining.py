@@ -5,7 +5,8 @@ from abc import ABCMeta, abstractmethod
 from shapely.affinity import translate
 
 from information import ChainInformation, WorkflowInformationCollection, WorkflowInformation
-from sldc import ImageWindow, StandardOutputLogger, Logger
+from sldc import ImageWindow
+from logging import StandardOutputLogger, Logger
 
 __author__ = "Romain Mormont <r.mormont@student.ulg.ac.be>"
 
@@ -227,7 +228,7 @@ class WorkflowChain(object):
         collection = WorkflowInformationCollection()
         for i, executor in enumerate(self._workflow_executors):
             self._logger.info("WorkflowChain : start workflow {} for image #{}".format(i + 1, image_nb + 1))
-            collection.append(executor.execute(image, collection))
+            collection.append(executor.execute(image, collection, self._logger))
         self._logger.info("WorkflowChain : post-processing generated data for image #{}".format(image_nb + 1))
         self._post_processor.post_process(image, collection)
         # self._chain_information.register_workflow_collection(collection, image_nb)  # TODO thread safe
