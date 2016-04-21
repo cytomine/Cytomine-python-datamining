@@ -6,7 +6,7 @@ import numpy as np
 from PIL.Image import fromarray
 from shapely.affinity import translate
 
-from sldc.image import Image, Tile, TileBuilder
+from sldc.image import Image, Tile, TileBuilder, ImageWindow
 from PIL import Image as PILImage
 from helpers.utilities.datatype.polygon import bounds
 from shapely.geometry import Polygon, MultiPolygon, box
@@ -73,7 +73,7 @@ class CytomineSlide(Image):
 
     @property
     def np_image(self):
-        raise NotImplementedError("Disabled due to the too heavey size of the images")
+        raise NotImplementedError("Disabled due to the too heavy size of the images")
 
     @property
     def width(self):
@@ -120,14 +120,15 @@ class CytomineTile(Tile):
         """
         Tile.__init__(self, parent, offset, width, height, tile_identifier=tile_identifier)
         self._cytomine = cytomine
-        self._np_image = np.asarray(_get_crop(self._cytomine, self._parent.image_instance, self._tile_box()))
+        self._np_image = np.asarray(_get_crop(self._cytomine, self.base_image.image_instance, self._tile_box()))
 
     @property
     def np_image(self):
         return self._np_image
 
     def _tile_box(self):
-        return box(self.offset_x, self.offset_y, self.offset_x + self.width, self.offset_y + self.height)
+        offset_x, offset_y = self.abs_offset
+        return box(offset_x, offset_y, offset_x + self.width, offset_y + self.height)
 
 
 class CytomineTileBuilder(TileBuilder):
@@ -231,6 +232,8 @@ class TileCache(object):
         path: string
             The path in which to store the image
         """
+        if isinstance(image, ImageWindow):
+            image = image.base_image
         filename = "{}_{}_{}_{}_{}.png".format(image.image_instance.id, tile.offset_x,
                                                tile.offset_y, tile.width, tile.height)
         return os.path.join(base_path, filename)
@@ -238,12 +241,14 @@ class TileCache(object):
     @staticmethod
     def _cache_key(image, offset_x, offset_y, width, height):
         """Given tile extraction parameters, create a unique identifier for the tile to use a key of the cache)
-
+        The offset part of the key is relative to the base image, not the tile parent image
         Parameters
         ----------
         image: Image
         offset_x: int
+            Offset x of the tile in its parent image
         offset_y: int
+            Offset y of the tile in its parent image
         width: int
         height: int
 
@@ -252,4 +257,126 @@ class TileCache(object):
         key: tuple
             A unique tuple identifying the tile
         """
+        if isinstance(image, ImageWindow):  # use the base image as reference image for coordinates
+            offset_x, offset_y = image.abs_offset_x + offset_x, image.abs_offset_y + offset_y
+            image = image.base_image
         return image.image_instance.id, offset_x, offset_y, width, height
+
+
+class CytomineMaskedTile(CytomineTile):
+    """
+    A tile from a cytomine slide on which is applied a mask represented by a polygon
+    """
+    def __init__(self, cytomine, parent, offset, width, height, polygon, tile_identifier=None):
+        """Constructor for CytomineTile objects
+
+        Parameters
+        ----------
+        cytomine: cytomine.Cytomine
+            An initialized instance of the cytomine client
+        parent: Image
+            The image from which is extracted the tile
+        offset: (int, int)
+            The x and y coordinates of the pixel at the origin point of the slide in the parent image.
+            Coordinates order is the following : (x, y).
+        width: int
+            The width of the tile
+        height: int
+            The height of the tile
+        polygon: Polygon
+            The polygon representing the mask over the image. The polygon coordinate should be relative to the parent
+            image top-left pixel
+        tile_identifier: int, optional (default: None)
+            A integer identifier that identifies uniquely the tile among a set of tiles
+
+        Notes
+        -----
+        The coordinates origin is the leftmost pixel at the top of the slide
+        """
+        CytomineTile.__init__(self, cytomine, parent, offset, width, height, tile_identifier=tile_identifier)
+        self._np_image = alpha_rasterize(self._np_image, translate(polygon, -offset[0], -offset[1]))
+
+
+class CytomineMaskedWindow(ImageWindow):
+    """
+    A cytomine slide on which is applied an alpha mask with a polygon
+    """
+
+    def __init__(self, parent, offset, width, height, polygon):
+        """Construct CytomineMaskedSlide objects
+
+        Parameters
+        ----------
+        parent: CytomineSlide
+            The parent slide
+        offset: (int, int)
+            The x and y coordinates of the pixel at the origin point of the slide in the parent image.
+            Coordinates order is the following : (x, y).
+        width: int
+            The width of the tile
+        height: int
+            The height of the tile
+        polygon: Polygon
+            The polygon representing the mask in the parent image coordinate system
+        """
+        ImageWindow.__init__(self, parent, offset, width, height)
+        self._polygon = polygon
+
+    @property
+    def polygon_mask(self):
+        return self._polygon
+
+    @property
+    def np_image(self):
+        raise NotImplementedError("Disabled due to the too heavy size of the images.")
+
+    @property
+    def channels(self):
+        if self.parent.channels == 1 or self.parent.channels == 3:
+            return self.parent.channels + 1
+        else:
+            return self.parent.channels
+
+    @staticmethod
+    def from_window(window, polygon):
+        """Build a CytomineMaskedWindow from another window and a polygon
+        Parameters
+        ----------
+        window: ImageWindow
+            The other window
+        polygon: Polygon
+            The polygon representing the mask in the parent image coordinate system
+
+        Returns
+        -------
+        masked_window: CytomineMaskedWindow
+            The cytomine masked window
+        """
+        return CytomineMaskedWindow(window.parent, window.offset, window.width, window.height, polygon)
+
+
+class CytomineMaskedTileBuilder(TileBuilder):
+    def __init__(self, cytomine):
+        """Construct CytomineMaskedTileBuilder objects
+
+        Parameters
+        ----------
+        cytomine: cytomine.Cytomine
+            The initialized cytomine client
+        """
+        self._cytomine = cytomine
+
+    def build(self, image, offset, width, height):
+        """ Build method
+        Parameters
+        ----------
+        image: CytomineMaskedWindow
+            The parent image from which is constructed the tile
+        offset: tuple (int, int)
+            Offset of the tile in the parent image
+        width: int
+            Width of the tile
+        height: int
+            Height of the tile
+        """
+        return CytomineMaskedTile(self._cytomine, image, offset, width, height, image.polygon_mask)

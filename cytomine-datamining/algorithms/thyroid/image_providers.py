@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
+from shapely.affinity import translate
 
 __author__ = "Mormont Romain <romain.mormont@gmail.com>"
 __version__ = "0.1"
 
-from sldc import ImageProvider, WorkflowLinker
-from image_adapter import CytomineSlide
+from sldc import ImageProvider, WorkflowExecutor, PolygonTranslatorWorkflowExecutor
+from image_adapter import CytomineSlide, CytomineMaskedWindow
 
 
 class SlideProvider(ImageProvider):
@@ -19,16 +20,22 @@ class SlideProvider(ImageProvider):
         return [CytomineSlide(self._cytomine, id_img_instance) for id_img_instance in self._images]
 
 
-class AggregateLinker(WorkflowLinker):
-    """WorkflowLinker for extracting window images of aggregates
+class AggregateWorkflowExecutor(PolygonTranslatorWorkflowExecutor):
+    """WorkflowExecutor for extracting window images of aggregates and then translating generated polygons
     """
-    def __init__(self, cytomine):
-        WorkflowLinker.__init__(self)
+    def __init__(self, cytomine, workflow):
+        WorkflowExecutor.__init__(self, workflow)
         self._cytomine = cytomine
 
     def get_images(self, image, workflow_info_collection):
+        if len(workflow_info_collection) != 1:
+            raise RuntimeError("One execution expected, got {}.".format(len(workflow_info_collection)))
+        workflow_information = workflow_info_collection[0]
         images = []
-        for polygon, dispatch, cls in workflow_info_collection.polygons():
-            if dispatch == 2:  # is aggregate
-                images.append(image.window_from_polygon(polygon))
+        for polygon, dispatch, cls in workflow_information.iterator():
+            if dispatch == 1:  # is aggregate
+                image_window = image.window_from_polygon(polygon)
+                trans_poly = translate(polygon, -image_window.offset_x, -image_window.offset_y)
+                masked_image = CytomineMaskedWindow.from_window(image_window, trans_poly)
+                images.append(masked_image)
         return images

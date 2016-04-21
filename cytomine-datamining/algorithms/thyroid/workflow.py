@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 import optparse
 
-from sldc import PostProcessor, WorkflowChain
+from sldc import PostProcessor, WorkflowChain, FullImageWorkflowExecutor
 from helpers.utilities.datatype.polygon import affine_transform
-from image_providers import SlideProvider, AggregateLinker
+from image_providers import SlideProvider, AggregateWorkflowExecutor
 from slide_processing import SlideProcessingWorkflow
-from image_adapter import CytomineTileBuilder, TileCache
+from image_adapter import CytomineTileBuilder, TileCache, CytomineMaskedTileBuilder
 from aggregate_processing import AggregateProcessingWorkflow
 from ontology import ThyroidOntology
 from classifiers import PyxitClassifierAdapter
@@ -125,6 +125,7 @@ class ThyroidJob(CytomineJob):
         cytomine = Cytomine(host, public_key, private_key, working_path, protocol, base_path, verbose, timeout)
         CytomineJob.__init__(self, cytomine, software_id, project_id)
         tile_builder = CytomineTileBuilder(cytomine)
+        masked_tile_builder = CytomineMaskedTileBuilder(cytomine)
         tile_cache = TileCache(tile_builder)
         # build useful classifiers
         aggr_classifier = PyxitClassifierAdapter.build_from_pickle(aggregate_classifier, tile_cache, working_path,
@@ -140,14 +141,14 @@ class ThyroidJob(CytomineJob):
         slide_workflow = SlideProcessingWorkflow(tile_builder, cell_classifier, aggr_classifier, cell_dispatch,
                                                  aggr_dispatch, tile_max_width=tile_max_width,
                                                  tile_max_height=tile_max_height)
-        workflow_linker = AggregateLinker(cytomine)
-        aggre_workflow = AggregateProcessingWorkflow(tile_builder, cell_classifier, cell_dispatch_classifier,
+        aggre_workflow = AggregateProcessingWorkflow(masked_tile_builder, cell_classifier, cell_dispatch,
                                                      tile_max_width=tile_max_width, tile_max_height=tile_max_height)
+        aggre_workflow_executor = AggregateWorkflowExecutor(cytomine, aggre_workflow)
         post_processor = CytominePostProcessor(cytomine)
 
         # build the workflow chain
-        self._chain = WorkflowChain(image_provider, slide_workflow, post_processor)
-        self._chain.append_workflow(aggre_workflow, workflow_linker)
+        workflow_executors = [FullImageWorkflowExecutor(slide_workflow), aggre_workflow_executor]
+        self._chain = WorkflowChain(image_provider, workflow_executors, post_processor)
 
     def run(self):
         self._chain.execute()
