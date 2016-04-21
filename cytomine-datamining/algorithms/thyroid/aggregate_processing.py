@@ -14,6 +14,14 @@ from dispatching_rules import CellRule
 from helpers.datamining.colordeconvoluter import ColorDeconvoluter
 
 
+def get_standard_kernel():
+    """Return the standard color deconvolution kernel"""
+    kernel = np.array([[56.24850493, 71.98403122, 22.07749587],
+                       [48.09104103, 62.02717516, 37.36866958],
+                       [9.17867488, 10.89206473, 5.99225756]])
+    return kernel
+
+
 def get_standard_struct_elem():
     """Return the standard structural element"""
     struct_elem = np.array([[0, 0, 1, 1, 1, 0, 0],
@@ -73,6 +81,8 @@ class AggregateSegmenter(Segmenter):
         # Find interior contours (possibly inclusion that were missed because of their color) and remove the
         # corresponding artifacts
         contours2, hierarchy = cv2.findContours(internal_binary_copy, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+        if hierarchy is None:
+            return np.zeros(alpha.shape, dtype="uint8")
 
         # Remove contours that don't have a parent contour (???)
         #   contours2 is somtimes so big that calling enumerate on it causes freezes
@@ -199,6 +209,7 @@ class AggregateProcessingWorkflow(SLDCWorkflow):
             The number of pixels of overlap between the tiles when iterating over the images
         """
         color_deconvoluter = ColorDeconvoluter()
+        color_deconvoluter.set_kernel(get_standard_kernel())
         segmenter = AggregateSegmenter(color_deconvoluter, struct_elem=get_standard_struct_elem())
         dispatcher_classifier = AggregateDispatcherClassifier(cell_classifier, cell_dispatch_classifier)
         SLDCWorkflow.__init__(self, segmenter, dispatcher_classifier, tile_builder, tile_max_width=tile_max_width,
