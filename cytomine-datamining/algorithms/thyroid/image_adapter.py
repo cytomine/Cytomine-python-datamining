@@ -36,7 +36,7 @@ def _get_crop(cytomine, image_inst, geometry):
     else:
         bounds_ = geometry
     url = image_inst.get_crop_url(bounds_)
-    #TODO change in the client
+    # TODO change in the client
     url = cytomine._Cytomine__protocol + cytomine._Cytomine__host + cytomine._Cytomine__base_path + url
     resp, content = cytomine.fetch_url(url)
     if resp.status != 200:
@@ -178,7 +178,8 @@ class TileCache(object):
             return self._cache[key]
         else:
             tile = self._tile_builder.build(image, offset, width, height)
-            self._cache[key] = tile
+            # TODO re-enable caching (disabled because of memory consumption)
+            # self._cache[key] = tile
             return tile
 
     def save_tile(self, image, polygon, base_path, alpha=False):
