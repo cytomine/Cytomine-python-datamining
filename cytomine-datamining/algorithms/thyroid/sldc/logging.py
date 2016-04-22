@@ -10,6 +10,7 @@ __version__ = "0.1"
 class Logger(object):
     """A class encaspulating logging
     """
+    SILENT = 0
     ERROR = 1
     WARNING = 2
     INFO = 3
@@ -130,18 +131,23 @@ class Logger(object):
         from datetime import datetime
         now = datetime.now().isoformat()
         tid = "{}".format(threading.current_thread().ident).zfill(6)
+        return "[tid:{}][{}][{}]".format(tid, now, cls.level2str(level))
+
+    @classmethod
+    def level2str(cls, level):
         if level == cls.DEBUG:
-            return "[tid:{}][{}][DEBUG]".format(tid, now)
+            return "DEBUG"
         elif level == cls.WARNING:
-            return "[tid:{}][{}][WARN ]".format(tid, now)
+            return "WARN "
         elif level == cls.ERROR:
-            return "[tid:{}][{}][ERROR]".format(tid, now)
+            return "ERROR"
         else:  # info
-            return "[tid:{}][{}][INFO ]".format(tid, now)
+            return "INFO "
 
     def _format_msg(self, level, msg):
         if self._prefix:
             rows = ["{} {}".format(self.prefix(level), row) for row in msg.split(os.linesep)]
+            rows.append("")  # append a row so that there is an end of line at the end of the message
             return os.linesep.join(rows)
         else:
             return msg
@@ -179,9 +185,18 @@ class FileLogger(Logger):
 
     def _print(self, formatted_msg):
         self._file.write(formatted_msg)
-        self._file.write(os.linesep)
 
     def close(self):
         """Close the logging file
         """
         self._file.close()
+
+
+class SilentLogger(Logger):
+    """A logger that ignore messages
+    """
+    def __init__(self, prefix=True):
+        Logger.__init__(self, Logger.SILENT, prefix=prefix)
+
+    def _print(self, formatted_msg):
+        pass

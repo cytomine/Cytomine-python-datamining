@@ -41,7 +41,7 @@ class ImageProvider(object):
 
         Exceptions
         ----------
-        ImageExtractionError:
+        ImageExtractionException:
             Raised when an image cannot be extracted. This error is never raised when the image provider is in
             silent_fail mode. In this situation, the provider fetches as many images as possible and returns only the
             successfully fetched images in the array.

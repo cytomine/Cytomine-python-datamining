@@ -4,15 +4,21 @@
 import math
 from abc import ABCMeta, abstractmethod, abstractproperty
 
-from errors import TileExtractionError
+from errors import TileExtractionException
 
 __author__ = "Romain Mormont <r.mormont@student.ulg.ac.be>"
 
 
 class Image(object):
     """
-    Abstract representation of an image.
-    Construction of an image object can raise an ImageExtractionError exception.
+    Abstract representation of an (possibly huge) image.
+    To actually explore the image and its representation, it is recommended to iterate over tiles extracted
+    using a TileTopology.
+
+    Notes
+    -----
+    To avoid memory leaks the representation of the image should not be stored into memory as a class attribute.
+    Alternatively, the loading should be deferred to the call of np_image.
     """
     __metaclass__ = ABCMeta
 
@@ -53,16 +59,16 @@ class Image(object):
         Returns
         -------
         np_image: array-like
-            A number representation of the image
+            A numpy representation of the image
 
         Raises
         ------
-        ImageExtractionError: when the image cannot be extracted (and so is its representation)
+        ImageExtractionException: when the image cannot be extracted (and so is its representation)
 
         Notes
         -----
-        This property should be used carefully as it will load the whole image into memory.
-        Therefore, it shouldn't be used with very big images.
+        When working with very big images, this method may be "disabled" (i.e. raise NotImplementedError) to prevent
+        user of the class to fully load them into memory. Use tiles instead to explore the image.
         """
         pass
 
@@ -133,7 +139,7 @@ class Image(object):
         Raises
         ------
         IndexError: if the offset is not inside the image
-        TileExtractionError: if the tile cannot be extracted
+        TileExtractionException: if the tile cannot be extracted
         """
         if not self._check_tile_offset(offset):
             raise IndexError("Offset {} is out of the image.".format(offset))
@@ -159,7 +165,7 @@ class Image(object):
         Raises
         ------
         IndexError: if the offset is not inside the image
-        TileExtractionError: if the tile cannot be extracted
+        TileExtractionException: if the tile cannot be extracted
         """
         offset, width, height = Image.polygon_box(polygon)
         return self.tile(tile_builder, offset, width, height)
@@ -255,7 +261,7 @@ class ImageWindow(Image):
         Parameters
         ----------
         parent: Image
-            The image from which is extracted the image
+            The image from which is extracted the window
         offset: (int, int)
             The x and y coordinates of the pixel at the origin point of the slide in the parent image.
             Coordinates order is the following : (x, y).
@@ -359,27 +365,37 @@ class ImageWindow(Image):
 
     @property
     def np_image(self):
+        """Return a numpy representation of the image
+
+        Returns
+        -------
+        np_image: array-like
+            A numpy representation of the image
+
+        Raises
+        ------
+        ImageExtractionException: when the image cannot be extracted (and so is its representation)
+
+        Notes
+        -----
+        Actually accesses to the parent image np_image property !!
+        """
         minx = self.offset_x
         miny = self.offset_y
         maxx = self.offset_x + self.width
         maxy = self.offset_y + self.height
         return self._parent.np_image[minx:maxx, miny:maxy]
 
-    def window(self, offset, max_width, max_height):
-        # translate offset so that it is expressed in parent image coordinates system
-        offset_x = offset[0] + self._offset[0]
-        offset_y = offset[1] + self._offset[1]
-        final_offset = (offset_x, offset_y)
-        # clamp image to current window
-        width = min(max_width, self.width - offset[0])
-        height = min(max_height, self.height - offset[1])
-        return self._parent.window(final_offset, width, height)
-
 
 class Tile(ImageWindow):
     """
-    Abstract representation of an image's tile
-    A tile is an image extracted from a bigger image
+    Abstract representation of an image's tile. A tile is a "small" window of an image.
+    This class should be used along with a TileTopology to explore huge images.
+
+    Notes
+    -----
+    To avoid memory leaks the representation of the time should not be stored into memory as a class attribute.
+    Alternatively, the loading should be deferred to the call of np_image.
     """
     __metaclass__ = ABCMeta
 
@@ -415,6 +431,28 @@ class Tile(ImageWindow):
     def identifier(self, value):
         self._identifier = value
 
+    def np_image(self):
+        """Return a numpy representation of the tile
+
+        Returns
+        -------
+        np_image: array-like
+            A numpy representation of the tile
+
+        Raises
+        ------
+        TileExtractionException: when the tile cannot be extracted
+
+        Notes
+        -----
+        This property should be used to actually load the tile representation into memory.
+        Default implementation uses parent image np_image property!!!
+        """
+        try:
+            return super(Tile, self).np_image
+        except Exception as e:
+            raise TileExtractionException("Cannot extract the tile : {}".format(e.message))
+
 
 class TileBuilder(object):
     """
@@ -447,7 +485,7 @@ class TileBuilder(object):
         Errors
         ------
         TypeError: when the reference image is not set
-        TileExtractionImage: when the tile cannot be extracted
+        TileExtractionException: when the tile cannot be extracted
 
         Notes
         -----
@@ -507,7 +545,7 @@ class TileTopologyIterator(object):
         for tile_identifier in range(1, self._topology.tile_count + 1):
             try:
                 yield self._topology.tile(tile_identifier, self._builder)
-            except TileExtractionError, e:
+            except TileExtractionException, e:
                 if not self._silent_fail:
                     raise e
 

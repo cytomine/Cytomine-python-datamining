@@ -67,6 +67,25 @@ class WorkflowTiming(object):
             total_time += sum(self._durations[key])
         return total_time
 
+    def sl_total_duration(self):
+        """Return the total execution time for segmenting tiles and locating polygons until now
+        Returns
+        -------
+        time: int
+            The execution time in second
+        """
+        return self.total_duration_of([WorkflowTiming.SEGMENTATION, WorkflowTiming.LOCATION])
+
+    def duration_of(self, step):
+        if step not in self._durations:
+            return 0
+        return sum(self._durations[step])
+
+    def total_duration_of(self, steps):
+        if len(steps) == 0:
+            return 0
+        return sum([self.duration_of(step) for step in steps])
+
     def _record_start(self, code):
         self._start_dict[code] = datetime.datetime.now()
 

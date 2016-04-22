@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 import numpy as np
+from abc import ABCMeta, abstractmethod
 
 __author__ = "Romain Mormont <r.mormont@student.ulg.ac.be>"
-
-from abc import ABCMeta, abstractmethod
 
 
 def emplace(src, dest, mapping):
@@ -134,7 +133,7 @@ class DispatcherClassifier(object):
         else:
             return self._classifiers[matching_rule].predict(image, polygon), matching_rule
 
-    def dispatch_classify_batch(self, image, polygons):
+    def dispatch_classify_batch(self, image, polygons, logger):
         """Apply the dispatching and classification steps to an ensemble of polygons.
 
         Parameters
@@ -143,7 +142,8 @@ class DispatcherClassifier(object):
             The image to which belongs the polygon
         polygons: list of shapely.geometry.Polygon
             The polygons of which the classes must be predicted
-
+        logger: logger
+            A logger
         Returns
         -------
         predictions: list of int|None
@@ -167,6 +167,11 @@ class DispatcherClassifier(object):
                 poly_ind_dict[i] = poly_ind_dict.get(i, []) + list(match)
                 indexes = np.setdiff1d(indexes, match, True)
 
+        # log the end of dispatching
+        nb_polygons = len(polygons)
+        nb_dispatched = nb_polygons - indexes.shape[0]
+        logger.info("DispatcherClassifier : end dispatching ({}/{} polygons dispatched)".format(nb_dispatched, nb_polygons))
+
         # add all polygons that didn't match any rule
         match_dict[-1] = take(polygons, indexes)
         poly_ind_dict[-1] = indexes
@@ -183,6 +188,8 @@ class DispatcherClassifier(object):
             emplace(predictions, predict_list, poly_ind_dict[index])
             # emplace dispatch id in dispatch list
             emplace(np.full((len(predictions),), index).astype('int'), dispatch_list, poly_ind_dict[index])
+
+        logger.info("DispatcherClassifier : end dispatching ({}/{} polygons dispatched)".format(nb_dispatched, nb_polygons))
         return predict_list, dispatch_list
 
     def _split_by_rule(self, image, rule, polygons, poly_indexes):

@@ -71,13 +71,15 @@ class SLDCWorkflow(object):
 
         # segment locate
         polygons_tiles = list()
-        logger.info("SLDCWorkflow : start segment locate")
-        timing.start_fetching()
-        for tile in tile_iterator:
-            timing.end_fetching()
-            polygons_tiles.append((tile, self._segment_locate(tile, timing)))
-            timing.start_fetching()
-        logger.info("SLDCWorkflow : end segment locate. {} tile(s) processed.".format(len(polygons_tiles)))
+        logger.info("SLDCWorkflow : start segment/locate.")
+        for i, tile in enumerate(tile_iterator):
+            # log percentage of progress if there are enough tiles
+            if tile_topology.tile_count > 25 and (i + 1) % (tile_topology.tile_count // 10) == 0:
+                pass
+            logger.info("SLDCWorkflow : {}% of tile segmented in {} s.".format(100.0 * i / tile_topology.tile_count,
+                                                                               self._sl_total_time(timing)))
+        polygons_tiles.append((tile, self._segment_locate(tile, timing)))
+        logger.info("SLDCWorkflow : end segment/locate. {} tile(s) processed in {} s.".format(len(polygons_tiles)))
 
         # merge
         logger.info("SLDCWorkflow : start merging")
@@ -91,13 +93,16 @@ class SLDCWorkflow(object):
         timing.start_dispatch_classify()
         predictions, dispatch_indexes = self._dispatch_classifier.dispatch_classify_batch(image, polygons)
         timing.end_dispatch_classify()
-        logger.info("SLDCWorkflow : end dispatch/classify")
+        logger.info("SLDCWorkflow : end dispatch/classify ")
 
         return WorkflowInformation(polygons, dispatch_indexes, predictions, timing, metadata=self.get_metadata())
 
     def _segment_locate(self, tile, timing):
+        timing.start_fetching()
+        np_image = tile.np_image
+        timing.end_fetching()
         timing.start_segment()
-        segmented = self._segmenter.segment(tile.np_image)
+        segmented = self._segmenter.segment(np_image)
         timing.end_segment()
         timing.start_location()
         located = self._locator.locate(segmented, offset=tile.offset)

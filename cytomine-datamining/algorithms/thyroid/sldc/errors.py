@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
 
-class TileExtractionError(RuntimeError):
+class TileExtractionException(Exception):
     """
     Thrown when a tile is requested but cannot be fetched
     """
     pass
 
 
-class ImageExtractionError(RuntimeError):
+class ImageExtractionException(Exception):
     """
     Thrown when an image is requested cannot be extracted
     """
