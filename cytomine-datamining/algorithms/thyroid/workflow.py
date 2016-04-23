@@ -27,8 +27,8 @@ class CytominePostProcessor(PostProcessor):
         self._cytomine = cytomine
 
     def post_process(self, image, workflow_info_collection):
-        if len(workflow_info_collection) != 2:
-            raise RuntimeError("Two executions expected, got {}.".format(len(workflow_info_collection)))
+        # if len(workflow_info_collection) != 2:
+        #     raise RuntimeError("Two executions expected, got {}.".format(len(workflow_info_collection)))
 
         # extract polygons from first run
         slide_processing = workflow_info_collection[0]
@@ -39,12 +39,12 @@ class CytominePostProcessor(PostProcessor):
             elif dispatch == 1:  # pattern
                 upload_fn(ThyroidOntology.PATTERN_PROLIF if cls == 1 else ThyroidOntology.PATTERN_NORM)
 
-        # extract polygons from second run
-        aggre_processing = workflow_info_collection[1]
-        for polygon, dispatch, cls in aggre_processing.iterator():
-            upload_fn = self._upload_fn(image, polygon)
-            if dispatch == 0:
-                upload_fn(ThyroidOntology.CELL_INCL if cls == 1 else ThyroidOntology.CELL_NORM)
+        # # extract polygons from second run
+        # aggre_processing = workflow_info_collection[1]
+        # for polygon, dispatch, cls in aggre_processing.iterator():
+        #     upload_fn = self._upload_fn(image, polygon)
+        #     if dispatch == 0:
+        #         upload_fn(ThyroidOntology.CELL_INCL if cls == 1 else ThyroidOntology.CELL_NORM)
 
     def _upload_fn(self, image, polygon):
         """Return a callable taking one parameter. This callable uploads the polygon as annotation for the given image.
@@ -147,7 +147,7 @@ class ThyroidJob(CytomineJob):
         post_processor = CytominePostProcessor(cytomine)
 
         # build the workflow chain
-        workflow_executors = [FullImageWorkflowExecutor(slide_workflow), aggre_workflow_executor]
+        workflow_executors = [FullImageWorkflowExecutor(slide_workflow)] #, aggre_workflow_executor]
         self._chain = WorkflowChain(image_provider, workflow_executors, post_processor)
 
     def run(self):
@@ -159,7 +159,6 @@ def arr2str(arr):
 
 
 def str2list(l, conv=int):
-    print "PRINT: {}".format(l)
     return [conv(v) for v in l.split(",")]
 
 
@@ -168,7 +167,6 @@ def str2bool(v):
 
 
 def main(argv):
-    print argv  # TODO remove
     # ----------Parsing command line args----------- #
     parser = optparse.OptionParser()  # TODO desc.
     parser.add_option("--cell_classifier", type='string', default="", dest="cell_classifier",
