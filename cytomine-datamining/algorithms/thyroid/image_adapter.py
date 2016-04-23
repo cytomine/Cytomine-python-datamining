@@ -6,17 +6,17 @@ import numpy as np
 from PIL.Image import fromarray
 from shapely.affinity import translate
 
+from sldc import TileExtractionException
 from sldc.image import Image, Tile, TileBuilder, ImageWindow
 from PIL import Image as PILImage
-from helpers.utilities.datatype.polygon import bounds
-from shapely.geometry import Polygon, MultiPolygon, box
+from shapely.geometry import Polygon, box
 from helpers.datamining.rasterizer import alpha_rasterize
 
 __author__ = "Mormont Romain <romain.mormont@gmail.com>"
 __version__ = "0.1"
 
 
-def _get_crop(cytomine, image_inst, geometry):
+def _get_crop(cytomine, image_inst, geometry, zoom=0):
     """
     Download the crop corresponding to bounds on the given image instance
     from cytomine
@@ -27,20 +27,18 @@ def _get_crop(cytomine, image_inst, geometry):
         The cilent holding the communication
     image_inst : :class:`ImageInstance` or image instance id (int)
         The image on which to extract crop
-    geometry : :class:`shapely.Polygon` or :class:`Bounds`
-        The geometry of the crop. /!\ the geometries are assumed to be
-        in image coordinate (at zoom 0)
+    geometry: tuple (int, int, int, int)
+        The information about the geometry of the crop structured as (offset_x, offset_y, width, height)
+    zoom: int (optional, default=0)
+        The zoom to apply to the image
     """
-    if isinstance(geometry, Polygon) or isinstance(geometry, MultiPolygon):
-        bounds_ = bounds(geometry)
-    else:
-        bounds_ = geometry
-    url = image_inst.get_crop_url(bounds_)
-    # TODO change in the client
-    url = cytomine._Cytomine__protocol + cytomine._Cytomine__host + cytomine._Cytomine__base_path + url
+    bounds = dict()
+    bounds["x"], bounds["y"], bounds["w"], bounds["h"] = geometry
+    url = "{}{}{}{}?zoom={}".format(cytomine._Cytomine__protocol, cytomine._Cytomine__host,
+                                   cytomine._Cytomine__base_path, image_inst.get_crop_url(bounds), zoom)
     resp, content = cytomine.fetch_url(url)
     if resp.status != 200:
-        raise IOError("Couldn't fetch the crop for image {} and bounds {} from server (status : {}).".format(image_inst.id, bounds, resp.status))
+        raise IOError("Couldn't fetch the crop for image {} and bounds {} from server (status : {}).".format(image_inst.id, geometry, resp.status))
     tmp = cStringIO.StringIO(content)
     return PILImage.open(tmp)
 
@@ -120,11 +118,27 @@ class CytomineTile(Tile):
         """
         Tile.__init__(self, parent, offset, width, height, tile_identifier=tile_identifier)
         self._cytomine = cytomine
-        self._np_image = np.asarray(_get_crop(self._cytomine, self.base_image.image_instance, self._tile_box()))
 
     @property
     def np_image(self):
-        return self._np_image
+        try:
+            # build crop box
+            tbox = (self.offset_x, self.offset_y, self.width, self.height)
+            # fetch image
+            np_array = np.asarray(_get_crop(self._cytomine, self.base_image.image_instance, tbox))
+            if np_array.shape[1] != tbox[2] or np_array.shape[0] != tbox[3] or np_array.shape[2] < self.channels:
+                msg = "Fetched image has invalid size : {} instead of {}".format(np_array.shape, (tbox[3], tbox[1], self.channels))
+                raise TileExtractionException(msg)
+            # drop alpha channel if there is one
+            if np_array.shape[2] > 4:
+                np_array = np_array[:, :, 0:3]
+            return np_array
+        except IOError as e:
+            raise TileExtractionException(e.message)
+
+    @property
+    def channels(self):
+        return 3
 
     def _tile_box(self):
         offset_x, offset_y = self.abs_offset
@@ -295,7 +309,12 @@ class CytomineMaskedTile(CytomineTile):
         The coordinates origin is the leftmost pixel at the top of the slide
         """
         CytomineTile.__init__(self, cytomine, parent, offset, width, height, tile_identifier=tile_identifier)
-        self._np_image = alpha_rasterize(self._np_image, translate(polygon, -offset[0], -offset[1]))
+        self._polygon = polygon
+
+    @property
+    def np_image(self):
+        np_image = super(CytomineMaskedTile, self).np_image
+        return alpha_rasterize(np_image, translate(self._polygon, -self.offset_x, -self.offset_y))
 
 
 class CytomineMaskedWindow(ImageWindow):
