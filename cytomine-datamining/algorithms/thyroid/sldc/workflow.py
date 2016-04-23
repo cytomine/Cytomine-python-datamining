@@ -4,6 +4,7 @@ from image import Image, TileBuilder, TileTopologyIterator
 from merger import Merger
 from locator import Locator
 from information import WorkflowInformation
+from sldc import TileExtractionException
 from timing import WorkflowTiming
 
 __author__ = "Romain Mormont <r.mormont@student.ulg.ac.be>"
@@ -75,39 +76,65 @@ class SLDCWorkflow(object):
         for i, tile in enumerate(tile_iterator):
             # log percentage of progress if there are enough tiles
             if tile_topology.tile_count > 25 and (i + 1) % (tile_topology.tile_count // 10) == 0:
-                pass
-            logger.info("SLDCWorkflow : {}% of tile segmented in {} s.".format(100.0 * i / tile_topology.tile_count,
-                                                                               self._sl_total_time(timing)))
-        polygons_tiles.append((tile, self._segment_locate(tile, timing)))
-        logger.info("SLDCWorkflow : end segment/locate. {} tile(s) processed in {} s.".format(len(polygons_tiles)))
+                percentage = 100.0 * i / tile_topology.tile_count
+                logger.info("SLDCWorkflow : {}% of the tiles processed (segment/locate).\n".format(percentage) +
+                            "SLDCWorkflow : segment/locate duration is {} s until now.".format(timing.sl_total_duration()))
+            polygons_tiles.append((tile, self._segment_locate(tile, timing, logger)))
+
+        # log end of segment locate
+        logger.info("SLDCWorkflow : end segment/locate.\n" +
+                    "SLDCWorkflow : {} tile(s) processed in {} s.\n".format(len(polygons_tiles), timing.sl_total_duration()) +
+                    "SLDCWorkflow : {} polygon(s) found on those tiles.".format(sum([len(polygons) for _, polygons in polygons_tiles])))
 
         # merge
         logger.info("SLDCWorkflow : start merging")
         timing.start_merging()
         polygons = self._merger.merge(polygons_tiles, tile_topology)
         timing.end_merging()
-        logger.info("SLDCWorkflow : end segment locate. {} polygon(s) found.".format(len(polygons)))
+        logger.info("SLDCWorkflow : end merging.\n" +
+                    "SLDCWorkflow : {} polygon(s) found.\n".format(len(polygons)) +
+                    "SLDCWorkflow : executed in {} s.".format(timing.duration_of(WorkflowTiming.MERGING)))
 
         # dispatch classify
-        logger.info("SLDCWorkflow : start dispatch/classify")
+        logger.info("SLDCWorkflow : start dispatch/classify.")
         timing.start_dispatch_classify()
-        predictions, dispatch_indexes = self._dispatch_classifier.dispatch_classify_batch(image, polygons)
+        predictions, dispatch_indexes = self._dispatch_classifier.dispatch_classify_batch(image, polygons, logger)
         timing.end_dispatch_classify()
-        logger.info("SLDCWorkflow : end dispatch/classify ")
+        logger.info("SLDCWorkflow : end dispatch/classify.\n" +
+                    "SLDCWorkflow : executed in {} s.".format(timing.duration_of(WorkflowTiming.DISPATCH_CLASSIFY)))
 
         return WorkflowInformation(polygons, dispatch_indexes, predictions, timing, metadata=self.get_metadata())
 
-    def _segment_locate(self, tile, timing):
-        timing.start_fetching()
-        np_image = tile.np_image
-        timing.end_fetching()
-        timing.start_segment()
-        segmented = self._segmenter.segment(np_image)
-        timing.end_segment()
-        timing.start_location()
-        located = self._locator.locate(segmented, offset=tile.offset)
-        timing.end_location()
-        return located
+    def _segment_locate(self, tile, timing, logger):
+        """Fetch the tile and then perform the segment and locate steps
+        Parameters
+        ----------
+        tile: Tile
+            The tile to process for the segment locate
+        timing: WorkflowTiming
+            The workflow timing object for measuring the execution times of the various steps
+        logger: Logger
+            A logger
+        Returns
+        -------
+        polygons: list of Polygon
+            List containing the polygons found by the locate step
+        """
+        try:
+            timing.start_fetching()
+            np_image = tile.np_image
+            timing.end_fetching()
+            timing.start_segment()
+            segmented = self._segmenter.segment(np_image)
+            timing.end_segment()
+            timing.start_location()
+            located = self._locator.locate(segmented, offset=tile.offset)
+            timing.end_location()
+            return located
+        except TileExtractionException as e:
+            logger.warning("SLDCWorkflow : skip tile {} because it couldn't be extracted.\n".format(tile.identifier) +
+                           "SLDCWorkflow : fetch error : {}".format(e.message))
+            return []
 
     def get_metadata(self):
         """Return the metadata associated with this workflow

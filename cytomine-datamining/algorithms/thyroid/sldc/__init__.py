@@ -17,6 +17,7 @@ __author__ = "Romain Mormont <r.mormont@student.ulg.ac.be>"
 
 __all__ = ["Locator", "Segmenter", "DispatcherClassifier", "DispatchingRule", "SLDCWorkflow", "Image", "Tile",
            "TileBuilder", "PolygonClassifier", "TileTopology", "TileTopologyIterator", "ImageExtractionException",
-           "TileExtractionException", "ImageWindow", "ImageProvider", "WorkflowExecutor", "WorkflowChain", "PostProcessor",
-           "WorkflowInformation", "ChainInformation", "WorkflowInformationCollection", "FullImageWorkflowExecutor",
-           "PolygonTranslatorWorkflowExecutor", "Logger", "StandardOutputLogger", "FileLogger", "SilentLogger"]
+           "TileExtractionException", "ImageWindow", "ImageProvider", "WorkflowExecutor", "WorkflowChain",
+           "PostProcessor", "WorkflowInformation", "ChainInformation", "WorkflowInformationCollection",
+           "FullImageWorkflowExecutor", "PolygonTranslatorWorkflowExecutor", "Logger", "StandardOutputLogger",
+           "FileLogger", "SilentLogger", "WorkflowTiming"]

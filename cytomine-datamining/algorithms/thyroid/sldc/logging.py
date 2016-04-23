@@ -147,7 +147,6 @@ class Logger(object):
     def _format_msg(self, level, msg):
         if self._prefix:
             rows = ["{} {}".format(self.prefix(level), row) for row in msg.split(os.linesep)]
-            rows.append("")  # append a row so that there is an end of line at the end of the message
             return os.linesep.join(rows)
         else:
             return msg

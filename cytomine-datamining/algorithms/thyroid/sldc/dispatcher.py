@@ -170,7 +170,7 @@ class DispatcherClassifier(object):
         # log the end of dispatching
         nb_polygons = len(polygons)
         nb_dispatched = nb_polygons - indexes.shape[0]
-        logger.info("DispatcherClassifier : end dispatching ({}/{} polygons dispatched)".format(nb_dispatched, nb_polygons))
+        logger.info("DispatcherClassifier : end dispatching ({}/{} polygons dispatched).".format(nb_dispatched, nb_polygons))
 
         # add all polygons that didn't match any rule
         match_dict[-1] = take(polygons, indexes)
@@ -189,7 +189,7 @@ class DispatcherClassifier(object):
             # emplace dispatch id in dispatch list
             emplace(np.full((len(predictions),), index).astype('int'), dispatch_list, poly_ind_dict[index])
 
-        logger.info("DispatcherClassifier : end dispatching ({}/{} polygons dispatched)".format(nb_dispatched, nb_polygons))
+        logger.info("DispatcherClassifier : end classification.")
         return predict_list, dispatch_list
 
     def _split_by_rule(self, image, rule, polygons, poly_indexes):
