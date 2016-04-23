@@ -20,7 +20,6 @@ try:
     import Image, ImageDraw
 except:
     from PIL import Image, ImageDraw
-from ..utilities.datatype import clamp_polygon
 
 
 def alpha_rasterize(image, polygon):
@@ -53,7 +52,6 @@ def alpha_rasterize(image, polygon):
     np_results = np.zeros((height, width, depth), dtype=np.uint)
     np_results[:, :, 0:depth-1] = np_img
     # Rasterization
-    polygon = clamp_polygon(polygon, 0, 0, width, height)
     alpha = Image.new("L", (width, height), 0)
     draw = ImageDraw.Draw(alpha)
     boundary = polygon.boundary
