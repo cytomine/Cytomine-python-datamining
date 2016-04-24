@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import cStringIO
 import os
-
+import PIL
 import numpy as np
 from PIL.Image import fromarray
 from shapely.affinity import translate
@@ -132,7 +132,7 @@ class CytomineTile(Tile):
             # drop alpha channel if there is one
             if np_array.shape[2] > 4:
                 np_array = np_array[:, :, 0:3]
-            return np_array
+            return np_array.astype("uint8")
         except IOError as e:
             raise TileExtractionException(e.message)
 
@@ -165,117 +165,134 @@ class CytomineTileBuilder(TileBuilder):
 
 
 class TileCache(object):
-    """A class for fetching crops of polygons as Tile objects and caching the fetched image for later retrieval
+    """A class to use jointly with tiles to avoid fetching them several time
     """
-    def __init__(self, tile_builder):
-        self._cache = dict()
+    def __init__(self, tile_builder, working_path):
         self._tile_builder = tile_builder
+        self._working_path = working_path
 
-    def get_tile(self, image, polygon):
-        """Get a tile cropping the given polygon
-
+    def fetch_and_cache(self, tile):
+        """Fetch the np_image for the passed tile and cache it in the working path. If the np_image was already
+        cached nothing is fetched from the server.
         Parameters
         ----------
-        image: Image
-            The image from which the crop must be extracted
-        polygon: Polygon
-            The polygon that should be cropped
-
+        tile: Tile
+            The tile of which the np_image must be fetched and cached
         Returns
         -------
-        tile: Tile
-            The tile cropping the polygon either fetched from cache or from the server on cache miss.
-        """
-        offset, width, height = Image.polygon_box(polygon)
-        key = TileCache._cache_key(image, offset[0], offset[1], width, height)
-        if key in self._cache:
-            return self._cache[key]
-        else:
-            tile = self._tile_builder.build(image, offset, width, height)
-            # TODO re-enable caching (disabled because of memory consumption)
-            # self._cache[key] = tile
-            return tile
-
-    def save_tile(self, image, polygon, base_path, alpha=False):
-        """Fetch and save in the filesystem a tile cropping the given polygon
-
-        Parameters
-        ----------
-        image: Image
-            The image from which the crop must be extracted
-        polygon: Polygon
-            The polygon that should be cropped
-        base_path: string
-            The path of the folder in which the image file should be stored
-        alpha: bool (optional, default: False)
-            True for applying an alpha mask on the image before saving it, false for storing the image as such
-            The alpha mask is shaped like the polygon.
-        Returns
-        -------
-        tile: Tile
-            The tile object
         path: string
-            The full path where the file was stored
+            The full path to which was cached the np_image
         """
-        tile = self.get_tile(image, polygon)
-        path = TileCache._tile_path(image, tile, base_path)
-        if alpha:
-            # translate polygon into tile coordinate system
-            minx, miny, _, _ = polygon.bounds
-            translated_polygon = translate(polygon, -minx, -miny)
-            np_image = alpha_rasterize(tile.np_image, translated_polygon)
-        else:
-            np_image = tile.np_image
-        fromarray(np_image.astype('uint8')).save(path)
-        return tile, path
+        if not self._cache_has(tile, alpha=False):
+            self._save(tile, tile.np_image.astype("uint8"), alpha=False)
+        return self._tile_path(tile, alpha=False)
 
-    @staticmethod
-    def _tile_path(image, tile, base_path):
+    def polygon_fetch_and_cache(self, image, polygon, alpha=True):
+        """Fetch the np_image for the tile boxing the passed polygon and cache it in the working path. If the np_image
+        was already cached nothing is fetched from the server.
+        Parameters
+        ----------
+        image: Image
+            The image from which the tile must be extracted
+        polygon: Polygon
+            The polygon that should be boxed by the tile
+        alpha: bool
+            True of applying an alpha mask structured like the polygon
+
+        Returns
+        -------
+        path: string
+            The full path to which was cached the np_image
+        """
+        tile = image.tile_from_polygon(self._tile_builder, polygon)
+        if not self._cache_has(tile, alpha=alpha):
+            np_image = tile.np_image
+            np_image = alpha_rasterize(np_image, translate(polygon, -tile.offset_x, -tile.offset_y))
+            self._save(tile, np_image.astype("uint8"), alpha=alpha)
+        return self._tile_path(tile, alpha)
+
+    def tile_np_image(self, tile):
+        """Get the np_image of the given tile from the cache. If it was not cached, fetch it from the
+        server and cache it before returning it.
+
+        Parameters
+        ----------
+        tile: Tile
+            The tile of which the np_image must be fetched and cached
+
+        Returns
+        -------
+        np_image: array-like
+            The image representation
+        """
+        path = self.fetch_and_cache(tile)
+        return np.asarray(PIL.Image.open(path)).astype("uint8")
+
+    def polygon_np_image(self, image, polygon, alpha=True):
+        """Get the np_image of the tile that boxes the polygon in the image from the cache. If it was not cached,
+        fetch it from the server and cache it before returning it.
+
+        Parameters
+        ----------
+        image: Image
+            The image from which the tile must be extracted
+        polygon: Polygon
+            The polygon that should be boxed by the tile
+        alpha: bool
+            True of applying an alpha mask structured like the polygon
+
+        Returns
+        -------
+        np_image: array-like
+            The image representation
+        """
+        return self.tile_np_image(image.tile_from_polygon(self._tile_builder, polygon))
+
+    def _save(self, tile, np_image, alpha=False):
+        """Save the tile np_image at the path produced by _tile_path
+        Parameters
+        ----------
+        tile: Tile
+            The tile from which was generated np_image
+        np_image: array-like
+            The numpy image to save
+        alpha: bool (optional, default: False)
+            True if the np_image has an alpha channel
+        """
+        fromarray(np_image).save(self._tile_path(tile, alpha))
+
+    def _cache_has(self, tile, alpha=False):
+        """Check whether the given tile was already cached by the tile cache
+        Parameters
+        ----------
+        tile: Tile
+            The tile
+        alpha: bool (optional, default: False)
+            True if the alp
+        :return:
+        """
+        return os.path.isfile(self._tile_path(tile, alpha))
+
+    def _tile_path(self, tile, alpha=False):
         """Return the path where to store the tile
 
         Parameters
         ----------
-        image: Image
-            The image object from which the tile was extracted
         tile: Tile
             The tile object containing the image to store
-        base_path: string
-            The path in which the crop image file should be stored
+        alpha: bool (optional, default: False)
+            True if an alpha mask is applied
 
         Returns
         -------
         path: string
             The path in which to store the image
         """
-        if isinstance(image, ImageWindow):
-            image = image.base_image
-        filename = "{}_{}_{}_{}_{}.png".format(image.image_instance.id, tile.offset_x,
-                                               tile.offset_y, tile.width, tile.height)
-        return os.path.join(base_path, filename)
-
-    @staticmethod
-    def _cache_key(image, offset_x, offset_y, width, height):
-        """Given tile extraction parameters, create a unique identifier for the tile to use a key of the cache)
-        The offset part of the key is relative to the base image, not the tile parent image
-        Parameters
-        ----------
-        image: Image
-        offset_x: int
-            Offset x of the tile in its parent image
-        offset_y: int
-            Offset y of the tile in its parent image
-        width: int
-        height: int
-
-        Return
-        ------
-        key: tuple
-            A unique tuple identifying the tile
-        """
-        if isinstance(image, ImageWindow):  # use the base image as reference image for coordinates
-            offset_x, offset_y = image.abs_offset_x + offset_x, image.abs_offset_y + offset_y
-            image = image.base_image
-        return image.image_instance.id, offset_x, offset_y, width, height
+        basename = "{}_{}_{}_{}_{}".format(tile.base_image.image_instance.id, tile.offset_x,
+                                           tile.offset_y, tile.width, tile.height)
+        if alpha:
+            basename = "{}_alpha".format(basename)
+        return os.path.join(self._working_path, "{}.png".format(basename))
 
 
 class CytomineMaskedTile(CytomineTile):

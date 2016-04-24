@@ -1,18 +1,17 @@
 # -*- coding: utf-8 -*-
 from shapely.affinity import translate
+from sldc import ImageProvider, WorkflowExecutor, PolygonTranslatorWorkflowExecutor, SilentLogger
+from image_adapter import CytomineSlide, CytomineMaskedWindow
 
 __author__ = "Mormont Romain <romain.mormont@gmail.com>"
 __version__ = "0.1"
-
-from sldc import ImageProvider, WorkflowExecutor, PolygonTranslatorWorkflowExecutor
-from image_adapter import CytomineSlide, CytomineMaskedWindow
 
 
 class SlideProvider(ImageProvider):
     """An image provider which generates CytomineSlides base on image instance ids
     """
-    def __init__(self, cytomine, images):
-        ImageProvider.__init__(self, silent_fail=True)
+    def __init__(self, cytomine, images, logger=SilentLogger()):
+        ImageProvider.__init__(self, silent_fail=True, logger=logger)
         self._cytomine = cytomine
         self._images = images
 
@@ -23,8 +22,8 @@ class SlideProvider(ImageProvider):
 class AggregateWorkflowExecutor(PolygonTranslatorWorkflowExecutor):
     """WorkflowExecutor for extracting window images of aggregates and then translating generated polygons
     """
-    def __init__(self, cytomine, workflow):
-        WorkflowExecutor.__init__(self, workflow)
+    def __init__(self, cytomine, workflow, logger=SilentLogger()):
+        WorkflowExecutor.__init__(self, workflow, logger=logger)
         self._cytomine = cytomine
 
     def get_images(self, image, workflow_info_collection):

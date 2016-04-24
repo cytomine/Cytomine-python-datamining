@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import threading
-from abc import abstractmethod
+from abc import abstractmethod, ABCMeta
 
 __author__ = "Mormont Romain <romain.mormont@gmail.com>"
 __version__ = "0.1"
@@ -199,3 +199,33 @@ class SilentLogger(Logger):
 
     def _print(self, formatted_msg):
         pass
+
+
+class Loggable(object):
+    """A base class to be implemented by any component that can produce logs through a logger.
+    By default the logger object is set with a SilentLogger.
+    """
+    __metaclass__ = ABCMeta
+
+    def __init__(self, logger=SilentLogger()):
+        self._logger = logger
+
+    @property
+    def logger(self):
+        """Get the logger of the loggable object
+        Returns
+        -------
+        logger: Logger
+            The logger object
+        """
+        return self._logger
+
+    @logger.setter
+    def logger(self, logger):
+        """Set the logger of the loggable object
+        Parameters
+        ----------
+        logger: Logger
+            The logger object to set
+        """
+        self._logger = logger

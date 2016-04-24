@@ -6,7 +6,7 @@ __version__ = "0.1"
 import cv2
 import copy
 import numpy as np
-from sldc import Segmenter, DispatcherClassifier, SLDCWorkflow
+from sldc import Segmenter, DispatcherClassifier, SLDCWorkflow, SilentLogger
 from scipy.ndimage.filters import maximum_filter
 from scipy.ndimage.measurements import label
 from helpers.datamining.segmenter import otsu_threshold_with_mask
@@ -168,7 +168,7 @@ class AggregateSegmenter(Segmenter):
 
 
 class AggregateDispatcherClassifier(DispatcherClassifier):
-    def __init__(self, cell_classifier, cell_dispatch_classifier):
+    def __init__(self, cell_classifier, cell_dispatch_classifier, logger=SilentLogger()):
         """Constructor for SlideDispatcherClassifier objects
         Objects which aren't cells are classified None
 
@@ -178,10 +178,12 @@ class AggregateDispatcherClassifier(DispatcherClassifier):
             The classifiers for cells
         cell_dispatch_classifier: PyxitClassifierAdapter
             The classifier for dispatching cells
+        logger: Logger (optional, default: a SilentLogger instance)
+            A logger object
         """
         rules = [CellRule(cell_dispatch_classifier)]
         classifiers = [cell_classifier]
-        DispatcherClassifier.__init__(self, rules, classifiers)
+        DispatcherClassifier.__init__(self, rules, classifiers, logger=logger)
 
 
 class AggregateProcessingWorkflow(SLDCWorkflow):
@@ -190,7 +192,7 @@ class AggregateProcessingWorkflow(SLDCWorkflow):
     """
 
     def __init__(self, tile_builder, cell_classifier, cell_dispatch_classifier,
-                 tile_max_width=1024, tile_max_height=1024, overlap=15):
+                 tile_max_width=1024, tile_max_height=1024, overlap=15, logger=SilentLogger()):
         """Constructor for AggregateProcessingWorkflow objects
 
         Parameters
@@ -207,10 +209,12 @@ class AggregateProcessingWorkflow(SLDCWorkflow):
             The maximum height of the tile to use when iterating over the images
         overlap: int
             The number of pixels of overlap between the tiles when iterating over the images
+        logger: Logger (optional, default: a SilentLogger instance)
+            A logger object
         """
         color_deconvoluter = ColorDeconvoluter()
         color_deconvoluter.set_kernel(get_standard_kernel())
         segmenter = AggregateSegmenter(color_deconvoluter, struct_elem=get_standard_struct_elem())
-        dispatcher_classifier = AggregateDispatcherClassifier(cell_classifier, cell_dispatch_classifier)
+        dispatcher_classifier = AggregateDispatcherClassifier(cell_classifier, cell_dispatch_classifier, logger=logger)
         SLDCWorkflow.__init__(self, segmenter, dispatcher_classifier, tile_builder, tile_max_width=tile_max_width,
-                              tile_max_height=tile_max_height, tile_overlap=overlap)
+                              tile_max_height=tile_max_height, tile_overlap=overlap, logger=logger)

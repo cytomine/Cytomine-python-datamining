@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 import pickle
 import numpy as np
-from sldc import PolygonClassifier
+from sldc import PolygonClassifier, TileExtractionException, Loggable, SilentLogger, Logger
 
 __author__ = "Mormont Romain <romain.mormont@gmail.com>"
 __version__ = "0.1"
 
 
-class PyxitClassifierAdapter(PolygonClassifier):
+class PyxitClassifierAdapter(PolygonClassifier, Loggable):
 
-    def __init__(self, pyxit_classifier, tile_cache, classes, working_path):
+    def __init__(self, pyxit_classifier, tile_cache, classes, logger=SilentLogger()):
         """Constructor for PyxitClassifierAdapter objects
 
         Parameters
@@ -20,28 +20,54 @@ class PyxitClassifierAdapter(PolygonClassifier):
             A tile cache for fetching tiles
         classes: array
             An array containing the classes labels
-        working_path: string
-            A path in which the instance can save temporary images to pass to the pyxit classifier
+        logger: Logger
+            A logger object
         """
+        PolygonClassifier.__init__(self)
+        Loggable.__init__(self, logger)
         self._pyxit_classifier = pyxit_classifier
         self._tile_cache = tile_cache
         self._classes = classes
-        self._working_path = working_path
 
     def predict(self, image, polygon):
+        """
+        Parameters
+        ----------
+        image: Image
+        polygon: Polygon
+
+        Returns
+        -------
+        cls: int
+            The predicted class, None on error
+        """
         # Pyxit classifier takes images from the filesystem
         # So store the crop into a file before passing the path to the classifier
-        _, tile_path = self._tile_cache.save_tile(image, polygon, self._working_path, alpha=True)
-        return self._predict(np.array([tile_path]))[0]
+        try:
+            tile_path = self._tile_cache.polygon_fetch_and_cache(image, polygon)
+            return self._predict(np.array([tile_path]))[0]
+        except TileExtractionException:
+
+            return None
 
     def predict_batch(self, image, polygons):
         # Pyxit classifier takes images from the filesystem
         # So store the crops into files before passing the paths to the classifier
-        paths = []
-        for polygon in polygons:
-            _, tile_path = self._tile_cache.save_tile(image, polygon, self._working_path, alpha=True)
-            paths.append(tile_path)
-        return self._predict(np.array(paths))
+        paths = list()
+        extracted = list()
+        for i, polygon in enumerate(polygons):
+            try:
+                extracted.append(i)
+                paths.append(self._tile_cache.polygon_fetch_and_cache(image, polygon))
+            except TileExtractionException:
+                pass
+
+        # merge predictions with missed tiles
+        predictions = self._predict(np.array(paths))
+        to_return = [None] * len(polygons)
+        for prediction, i in zip(predictions, extracted):
+            to_return[i] = prediction
+        return np.array(to_return)
 
     def _predict(self, X):
         """Call predict on the classifier with the filepaths of X
@@ -61,7 +87,7 @@ class PyxitClassifierAdapter(PolygonClassifier):
         return self._classes.take(best_index, axis=0).astype('int')
 
     @staticmethod
-    def build_from_pickle(model_path, tile_builder, working_path, n_jobs=1, verbose=False):
+    def build_from_pickle(model_path, tile_builder, logger, n_jobs=1):
         """Builds a PyxitClassifierAdapter object from a pickled model
 
         Parameters
@@ -70,12 +96,10 @@ class PyxitClassifierAdapter(PolygonClassifier):
             The path to which is stored the pickled model
         tile_builder: TileBuilder
             A tile builder object
-        working_path: string
-            The path in which temporary files can be written
+        logger: Logger (optional, default: a SilentLogger object)
+            A logger object
         n_jobs: int
             The number of jobs on which the classifiers should run
-        verbose: bool
-            The verbosity of the models
 
         Returns
         -------
@@ -91,7 +115,7 @@ class PyxitClassifierAdapter(PolygonClassifier):
             classes = pickle.load(model_file)
             classifier = pickle.load(model_file)
             classifier.n_jobs = n_jobs
-            classifier.verbose = 10 if verbose else 0
+            classifier.verbose = 10 if logger.level > Logger.DEBUG else 0
             classifier.base_estimator.n_jobs = n_jobs
-            classifier.base_estimator.verbose = 10 if verbose else 0
-        return PyxitClassifierAdapter(classifier, tile_builder, classes, working_path)
+            classifier.base_estimator.verbose = 10 if logger.level > logger.DEBUG else 0
+        return PyxitClassifierAdapter(classifier, tile_builder, classes, logger=logger)

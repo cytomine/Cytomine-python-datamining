@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import optparse
 
-from sldc import PostProcessor, WorkflowChain, FullImageWorkflowExecutor
+from sldc import PostProcessor, WorkflowChain, FullImageWorkflowExecutor, Logger, StandardOutputLogger, SilentLogger
 from helpers.utilities.datatype.polygon import affine_transform
 from image_providers import SlideProvider, AggregateWorkflowExecutor
 from slide_processing import SlideProcessingWorkflow
@@ -23,7 +23,16 @@ class CytominePostProcessor(PostProcessor):
     This post processor publish the annotation and classes with the predicted class
     """
 
-    def __init__(self, cytomine):
+    def __init__(self, cytomine, logger=SilentLogger()):
+        """Build a cytomine post processor
+        Parameters
+        ----------
+        cytomine: Cytomine
+            Cytomine client
+        logger: Logger (optional, default: SilentLogger)
+            A logger object
+        """
+        PostProcessor.__init__(self, logger=logger)
         self._cytomine = cytomine
 
     def post_process(self, image, workflow_info_collection):
@@ -63,11 +72,10 @@ class CytominePostProcessor(PostProcessor):
 
 
 class ThyroidJob(CytomineJob):
-
-    def __init__(self, cell_classifier, aggregate_classifier, cell_dispatch_classifier, aggregate_dispatch_classifier,
+    def __init__(self, cell_classif, aggr_classif, cell_dispatch_classif, aggr_dispatch_classif,
                  host, public_key, private_key, software_id, project_id,
-                 slide_ids, working_path="/tmp", protocol="http://", base_path="/api/", verbose=False, timeout=120,
-                 n_jobs=1, tile_max_width=1024, tile_max_height=1024):
+                 slide_ids, working_path="/tmp", protocol="http://", base_path="/api/", verbose=Logger.DEBUG,
+                 timeout=120, n_jobs=1, tile_max_width=1024, tile_max_height=1024):
         """
         Create a standard thyroid application with the given parameters.
         Standard implies :
@@ -83,14 +91,14 @@ class ThyroidJob(CytomineJob):
 
         Parameters
         ----------
-        cell_classifier : `callable`
-            The cell classifier
-        pattern_classifier : `callable`
-            The architectural pattern classifier
-        cell_dispatch_classifier: PyxitClassifierAdapter
-            The classifier for dispatching cells
-        aggregate_dispatch_classifier: PyxitClassifierAdapater
-            The classifier for dispaching aggregates
+        cell_classif: string
+            The cell classifier pickle file path
+        aggr_classif: string
+            The architectural pattern classifier pickle file path
+        cell_dispatch_classif: string
+            The classifier for dispatching cells pickle file path
+        aggr_dispatch_classif: string
+            The classifier for dispaching aggregates pickle file path
         host : str
             The Cytomine server host URL
         public_key : str
@@ -122,32 +130,34 @@ class ThyroidJob(CytomineJob):
             The tiles max height
         """
         # Create Cytomine instance
-        cytomine = Cytomine(host, public_key, private_key, working_path, protocol, base_path, verbose, timeout)
+        cytomine = Cytomine(host, public_key, private_key, working_path, protocol,
+                            base_path, verbose >= Logger.DEBUG, timeout)
         CytomineJob.__init__(self, cytomine, software_id, project_id)
         tile_builder = CytomineTileBuilder(cytomine)
         masked_tile_builder = CytomineMaskedTileBuilder(cytomine)
-        tile_cache = TileCache(tile_builder)
+        tile_cache = TileCache(tile_builder, working_path)
+        logger = StandardOutputLogger(verbose)
+
         # build useful classifiers
-        aggr_classifier = PyxitClassifierAdapter.build_from_pickle(aggregate_classifier, tile_cache, working_path,
-                                                                   n_jobs=n_jobs, verbose=verbose)
-        cell_classifier = PyxitClassifierAdapter.build_from_pickle(cell_classifier, tile_cache, working_path,
-                                                                   n_jobs=n_jobs, verbose=verbose)
-        aggr_dispatch = PyxitClassifierAdapter.build_from_pickle(aggregate_dispatch_classifier, tile_cache,
-                                                                 working_path, n_jobs=n_jobs, verbose=verbose)
-        cell_dispatch = PyxitClassifierAdapter.build_from_pickle(cell_dispatch_classifier, tile_cache, working_path,
-                                                                 n_jobs=n_jobs, verbose=verbose)
+        adapter_builder_func = PyxitClassifierAdapter.build_from_pickle
+        aggr_classifier = adapter_builder_func(aggr_classif, tile_cache, logger, n_jobs=n_jobs)
+        cell_classifier = adapter_builder_func(cell_classif, tile_cache, logger, n_jobs=n_jobs)
+        aggr_dispatch = adapter_builder_func(aggr_dispatch_classif, tile_cache, logger, n_jobs=n_jobs)
+        cell_dispatch = adapter_builder_func(cell_dispatch_classif, tile_cache, logger, n_jobs=n_jobs)
+
         # build workflow chain components
         image_provider = SlideProvider(cytomine, slide_ids)
         slide_workflow = SlideProcessingWorkflow(tile_builder, cell_classifier, aggr_classifier, cell_dispatch,
                                                  aggr_dispatch, tile_max_width=tile_max_width,
-                                                 tile_max_height=tile_max_height)
+                                                 tile_max_height=tile_max_height, logger=logger)
         aggre_workflow = AggregateProcessingWorkflow(masked_tile_builder, cell_classifier, cell_dispatch,
-                                                     tile_max_width=tile_max_width, tile_max_height=tile_max_height)
-        aggre_workflow_executor = AggregateWorkflowExecutor(cytomine, aggre_workflow)
-        post_processor = CytominePostProcessor(cytomine)
+                                                     tile_max_width=tile_max_width, tile_max_height=tile_max_height,
+                                                     logger=logger)
+        aggre_workflow_executor = AggregateWorkflowExecutor(cytomine, aggre_workflow, logger=logger)
+        post_processor = CytominePostProcessor(cytomine, logger=logger)
 
         # build the workflow chain
-        workflow_executors = [FullImageWorkflowExecutor(slide_workflow)] #, aggre_workflow_executor]
+        workflow_executors = [FullImageWorkflowExecutor(slide_workflow)]  # , aggre_workflow_executor]
         self._chain = WorkflowChain(image_provider, workflow_executors, post_processor)
 
     def run(self):
@@ -197,8 +207,8 @@ def main(argv):
                       help="Base path for api url")
     parser.add_option("--timeout", type='int', default=120, dest="timeout",
                       help="Timeout time for connection (in seconds)")
-    parser.add_option("--verbose", type='string', default=True, dest="verbose",
-                      help="increase output verbosity")
+    parser.add_option("--verbose", type='int', default=Logger.INFO, dest="verbose",
+                      help="Output verbosity in {0,1,2,3,4}")
     parser.add_option("--n_jobs", type='int', default=1, dest="n_jobs",
                       help="Number of core to use")
     parser.add_option("--tile_max_width", type='int', default=1024, dest="tile_max_width",
@@ -211,7 +221,7 @@ def main(argv):
     with ThyroidJob(options.cell_classifier, options.aggregate_classifier, options.cell_dispatch_classifier,
                     options.aggregate_dispatch_classifier, options.host, options.public_key, options.private_key,
                     options.software_id, options.project_id, str2list(options.slide_ids),
-                    verbose=str2bool(options.verbose), n_jobs=options.n_jobs, protocol=options.protocol,
+                    verbose=options.verbose, n_jobs=options.n_jobs, protocol=options.protocol,
                     base_path=options.base_path, working_path=options.working_path,
                     tile_max_height=options.tile_max_height, tile_max_width=options.tile_max_width) as job:
         job.run()

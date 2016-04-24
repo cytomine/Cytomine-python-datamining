@@ -14,6 +14,7 @@ __copyright__ = "Copyright 2010-2013 University of Liège, Belgium"
 __version__ = '0.1'
 
 import workflow
+from sldc import Logger
 
 if __name__ == "__main__":
     args = list()
@@ -36,7 +37,7 @@ if __name__ == "__main__":
     args.append("--project_id")
     args.append("186829908")
     args.append("--slide_ids")
-    args.append("186858563")  # 186859011,186858563,186851426,186851134,186850855,186850602,186850322,186849981,186849450,186848900,186848552,186847588,186847313")
+    args.append("186859011")  # 186859011,186858563,186851426,186851134,186850855,186850602,186850322,186849981,186849450,186848900,186848552,186847588,186847313")
     args.append("--tile_max_height")
     args.append("2048")
     args.append("--tile_max_width")
@@ -46,7 +47,7 @@ if __name__ == "__main__":
     args.append("--base_path")
     args.append("/api/")
     args.append("--verbose")
-    args.append("0")
+    args.append("{}".format(Logger.INFO))
     args.append("--n_jobs")
     args.append("1")
     workflow.main(args)

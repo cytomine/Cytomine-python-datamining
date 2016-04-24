@@ -11,7 +11,7 @@ from .chaining import ImageProvider, WorkflowExecutor, PolygonTranslatorWorkflow
                       FullImageWorkflowExecutor, WorkflowChain, PostProcessor
 from .timing import WorkflowTiming
 from .information import WorkflowInformation, ChainInformation, WorkflowInformationCollection
-from .logging import Logger, StandardOutputLogger, FileLogger, SilentLogger
+from .logging import Logger, StandardOutputLogger, FileLogger, SilentLogger, Loggable
 
 __author__ = "Romain Mormont <r.mormont@student.ulg.ac.be>"
 
@@ -20,4 +20,4 @@ __all__ = ["Locator", "Segmenter", "DispatcherClassifier", "DispatchingRule", "S
            "TileExtractionException", "ImageWindow", "ImageProvider", "WorkflowExecutor", "WorkflowChain",
            "PostProcessor", "WorkflowInformation", "ChainInformation", "WorkflowInformationCollection",
            "FullImageWorkflowExecutor", "PolygonTranslatorWorkflowExecutor", "Logger", "StandardOutputLogger",
-           "FileLogger", "SilentLogger", "WorkflowTiming"]
+           "FileLogger", "SilentLogger", "WorkflowTiming", "Loggable"]

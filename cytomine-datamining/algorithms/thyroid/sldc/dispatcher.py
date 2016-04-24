@@ -2,6 +2,8 @@
 import numpy as np
 from abc import ABCMeta, abstractmethod
 
+from logging import Loggable, SilentLogger
+
 __author__ = "Romain Mormont <r.mormont@student.ulg.ac.be>"
 
 
@@ -39,11 +41,20 @@ def take(src, idx):
     return [src[i] for i in idx]
 
 
-class DispatchingRule(object):
+class DispatchingRule(Loggable):
     """
     An object for dispatching polygons
     """
     __metaclass__ = ABCMeta
+
+    def __init__(self, logger=SilentLogger()):
+        """Initializes the dispatching rule with a logger
+        Parameters
+        ----------
+        logger: Logger
+            The logger to set
+        """
+        Loggable.__init__(self, logger)
 
     @abstractmethod
     def evaluate(self, image, polygon):
@@ -81,14 +92,14 @@ class DispatchingRule(object):
         return [self.evaluate(image, polygon) for polygon in polygons]
 
 
-class DispatcherClassifier(object):
+class DispatcherClassifier(Loggable):
     """
     A dispatcher classifier is an object that evaluates a set of dispatching rules on a polygon
     and that passes this polygon to the associated polygon classifier according to
     the first matching rule.
     """
 
-    def __init__(self, predicates, classifiers, fail_callback=None):
+    def __init__(self, predicates, classifiers, fail_callback=None, logger=SilentLogger()):
         """Constructor for ClassifierDispatcher object
 
         Parameters
@@ -102,6 +113,7 @@ class DispatcherClassifier(object):
             This callback should return the value expected for a polygon which doesn't match any rule.
             If the default value is passed, a custom callable which always returns None is crafted.
         """
+        Loggable.__init__(self, logger)
         self._predicates = predicates
         self._classifiers = classifiers
         self._fail_callback = fail_callback if fail_callback is not None else (lambda x: None)
@@ -133,7 +145,7 @@ class DispatcherClassifier(object):
         else:
             return self._classifiers[matching_rule].predict(image, polygon), matching_rule
 
-    def dispatch_classify_batch(self, image, polygons, logger):
+    def dispatch_classify_batch(self, image, polygons):
         """Apply the dispatching and classification steps to an ensemble of polygons.
 
         Parameters
@@ -142,8 +154,6 @@ class DispatcherClassifier(object):
             The image to which belongs the polygon
         polygons: list of shapely.geometry.Polygon
             The polygons of which the classes must be predicted
-        logger: logger
-            A logger
         Returns
         -------
         predictions: list of int|None
@@ -170,7 +180,7 @@ class DispatcherClassifier(object):
         # log the end of dispatching
         nb_polygons = len(polygons)
         nb_dispatched = nb_polygons - indexes.shape[0]
-        logger.info("DispatcherClassifier : end dispatching ({}/{} polygons dispatched).".format(nb_dispatched, nb_polygons))
+        self.logger.info("DispatcherClassifier : end dispatching ({}/{} polygons dispatched).".format(nb_dispatched, nb_polygons))
 
         # add all polygons that didn't match any rule
         match_dict[-1] = take(polygons, indexes)
@@ -189,7 +199,7 @@ class DispatcherClassifier(object):
             # emplace dispatch id in dispatch list
             emplace(np.full((len(predictions),), index).astype('int'), dispatch_list, poly_ind_dict[index])
 
-        logger.info("DispatcherClassifier : end classification.")
+        self.logger.info("DispatcherClassifier : end classification.")
         return predict_list, dispatch_list
 
     def _split_by_rule(self, image, rule, polygons, poly_indexes):
