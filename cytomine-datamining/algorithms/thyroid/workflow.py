@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import optparse
 
-from sldc import PostProcessor, WorkflowChain, FullImageWorkflowExecutor, Logger, StandardOutputLogger, SilentLogger
+from sldc import PostProcessor, WorkflowChain, FullImageWorkflowExecutor, Logger, StandardOutputLogger, SilentLogger, \
+    Loggable
 from helpers.utilities.datatype.polygon import affine_transform
 from image_providers import SlideProvider, AggregateWorkflowExecutor
 from slide_processing import SlideProcessingWorkflow
@@ -29,7 +30,7 @@ class CytominePostProcessor(PostProcessor):
         ----------
         cytomine: Cytomine
             Cytomine client
-        logger: Logger (optional, default: SilentLogger)
+        logger: Logger (optional, default: a SilentLogger object)
             A logger object
         """
         PostProcessor.__init__(self, logger=logger)
@@ -47,6 +48,7 @@ class CytominePostProcessor(PostProcessor):
                 upload_fn(ThyroidOntology.CELL_INCL if cls == 1 else ThyroidOntology.CELL_NORM)
             elif dispatch == 1:  # pattern
                 upload_fn(ThyroidOntology.PATTERN_PROLIF if cls == 1 else ThyroidOntology.PATTERN_NORM)
+        slide_processing.timing.report(self.logger)
 
         # # extract polygons from second run
         # aggre_processing = workflow_info_collection[1]
@@ -71,10 +73,10 @@ class CytominePostProcessor(PostProcessor):
             self._cytomine.add_annotation_term(annotation.id, label, label, 1.0, annotation_term_model=AlgoAnnotationTerm)
 
 
-class ThyroidJob(CytomineJob):
+class ThyroidJob(CytomineJob, Loggable):
     def __init__(self, cell_classif, aggr_classif, cell_dispatch_classif, aggr_dispatch_classif,
                  host, public_key, private_key, software_id, project_id,
-                 slide_ids, working_path="/tmp", protocol="http://", base_path="/api/", verbose=Logger.DEBUG,
+                 slide_ids, working_path="/tmp", protocol="http://", base_path="/api/", verbose=Logger.INFO,
                  timeout=120, n_jobs=1, tile_max_width=1024, tile_max_height=1024):
         """
         Create a standard thyroid application with the given parameters.
@@ -130,38 +132,43 @@ class ThyroidJob(CytomineJob):
             The tiles max height
         """
         # Create Cytomine instance
+        Loggable.__init__(self, logger=StandardOutputLogger(verbose))
         cytomine = Cytomine(host, public_key, private_key, working_path, protocol,
                             base_path, verbose >= Logger.DEBUG, timeout)
         CytomineJob.__init__(self, cytomine, software_id, project_id)
         tile_builder = CytomineTileBuilder(cytomine)
         masked_tile_builder = CytomineMaskedTileBuilder(cytomine)
         tile_cache = TileCache(tile_builder, working_path)
-        logger = StandardOutputLogger(verbose)
 
         # build useful classifiers
         adapter_builder_func = PyxitClassifierAdapter.build_from_pickle
-        aggr_classifier = adapter_builder_func(aggr_classif, tile_cache, logger, n_jobs=n_jobs)
-        cell_classifier = adapter_builder_func(cell_classif, tile_cache, logger, n_jobs=n_jobs)
-        aggr_dispatch = adapter_builder_func(aggr_dispatch_classif, tile_cache, logger, n_jobs=n_jobs)
-        cell_dispatch = adapter_builder_func(cell_dispatch_classif, tile_cache, logger, n_jobs=n_jobs)
+        aggr_classifier = adapter_builder_func(aggr_classif, tile_cache, self._logger, n_jobs=n_jobs)
+        cell_classifier = adapter_builder_func(cell_classif, tile_cache, self._logger, n_jobs=n_jobs)
+        aggr_dispatch = adapter_builder_func(aggr_dispatch_classif, tile_cache, self._logger, n_jobs=n_jobs)
+        cell_dispatch = adapter_builder_func(cell_dispatch_classif, tile_cache, self._logger, n_jobs=n_jobs)
 
         # build workflow chain components
         image_provider = SlideProvider(cytomine, slide_ids)
         slide_workflow = SlideProcessingWorkflow(tile_builder, cell_classifier, aggr_classifier, cell_dispatch,
                                                  aggr_dispatch, tile_max_width=tile_max_width,
-                                                 tile_max_height=tile_max_height, logger=logger)
+                                                 tile_max_height=tile_max_height, logger=self._logger)
         aggre_workflow = AggregateProcessingWorkflow(masked_tile_builder, cell_classifier, cell_dispatch,
                                                      tile_max_width=tile_max_width, tile_max_height=tile_max_height,
-                                                     logger=logger)
-        aggre_workflow_executor = AggregateWorkflowExecutor(cytomine, aggre_workflow, logger=logger)
-        post_processor = CytominePostProcessor(cytomine, logger=logger)
+                                                     logger=self._logger)
+        aggre_workflow_executor = AggregateWorkflowExecutor(cytomine, aggre_workflow, logger=self._logger)
+        post_processor = CytominePostProcessor(cytomine, logger=self._logger)
 
         # build the workflow chain
         workflow_executors = [FullImageWorkflowExecutor(slide_workflow)]  # , aggre_workflow_executor]
-        self._chain = WorkflowChain(image_provider, workflow_executors, post_processor)
+        self._chain = WorkflowChain(image_provider, workflow_executors, post_processor, logger=self._logger)
 
     def run(self):
-        self._chain.execute()
+        try:
+            self._logger.info("ThyroidJob : start thyroid workflow.")
+            self._chain.execute()
+            self._logger.info("ThyroidJob : end thyroid workflow.")
+        except Exception as e:
+            self._logger.warning("ThyroidJob : error while executing workflow : {}.".format(e.message))
 
 
 def arr2str(arr):
