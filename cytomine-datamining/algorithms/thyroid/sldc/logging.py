@@ -116,7 +116,7 @@ class Logger(object):
         msg: string
             The message
         """
-        if self._level <= level:
+        if self._level >= level:
             formatted = self._format_msg(level, msg)
             self._lock.acquire()
             self._print(formatted)

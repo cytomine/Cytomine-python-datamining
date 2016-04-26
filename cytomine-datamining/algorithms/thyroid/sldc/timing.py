@@ -98,7 +98,7 @@ class WorkflowTiming(object):
     def _stat_tuple(self, code):
         """
         :param code:
-        :return: (min, max, mean, count)
+        :return: (total, min, max, mean, count)
         """
         durations = np.array(self._durations[code])
         count = durations.shape[0]
@@ -130,11 +130,8 @@ class WorkflowTiming(object):
             timing._durations[key] = timing1._durations.get(key, []) + timing2._durations.get(key, [])
         return timing
 
-    def report(self, image, polygons_classes):
-        print "========================================"
-        print "Image {}".format(str(image))
-        print "Polygon count : {}".format(len(polygons_classes))
-        print "Timing : "
+    def report(self, logger):
         stats = self.stats()
-        for key in stats.keys():
-            print "- {} : {}".format(key, stats[key])
+        str_ = "\n".join(["WorkflowTiming : step '{}' : {} s (mean: {} s)".format(key, stats[key][0], stats[key][3])
+                         for key in stats.keys()])
+        logger.i(str_)
