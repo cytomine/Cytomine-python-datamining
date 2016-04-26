@@ -57,10 +57,11 @@ class PyxitClassifierAdapter(PolygonClassifier, Loggable):
         extracted = list()
         for i, polygon in enumerate(polygons):
             try:
-                extracted.append(i)
                 paths.append(self._tile_cache.polygon_fetch_and_cache(image, polygon))
-            except TileExtractionException:
-                pass
+                extracted.append(i)
+            except TileExtractionException as e:
+                self.logger.w("PyxitClassifierAdapter: skip polygon because tile cannot be extracted.\n".format(i) +
+                              "PyxitClassifierAdapter: error : {}".format(e.message))
 
         # merge predictions with missed tiles
         predictions = self._predict(np.array(paths))
