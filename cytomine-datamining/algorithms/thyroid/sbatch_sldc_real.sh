@@ -22,5 +22,4 @@ MODEL_PATH="/home/mass/GRD/r.mormont/models"
     --tile_max_width "2048" \
     --working_path "/home/mass/GRD/r.mormont/nobackup/sldc/" \
     --base_path "/api/" \
-    --verbose 0 \
     --n_jobs 10
