@@ -9,13 +9,13 @@ use of this software.
 Permission is only granted to use this software for non-commercial purposes.
 """
 
+import numpy as np
+import math
+
 __author__ = "Begon Jean-Michel <jm.begon@gmail.com>"
 __copyright__ = "Copyright 2010-2013 University of LiÃ¨ge, Belgium"
 __version__ = '0.1'
 
-import numpy as np
-import math
-from ..utilities.datatype import NumpyConverter
 
 class ColorDeconvoluter:
     """
@@ -33,7 +33,7 @@ class ColorDeconvoluter:
     def __init__(self):
         self.kernel = None
         self.kernel_inv = None
-        self._converter = NumpyConverter()
+        self._log255 = math.log(255.0)
 
     def set_kernel(self, kernel):
         """
@@ -45,7 +45,7 @@ class ColorDeconvoluter:
             The kernel to use. It must be 3x3, regular and its value should
             be in the range [0, 255].
         """
-        #Normalizing the kernel
+        # Normalizing the kernel
         norm = np.sqrt((kernel**2).sum(axis=1))
         tmp = np.zeros((3, 3))
         for i in range(3):
@@ -75,30 +75,37 @@ class ColorDeconvoluter:
 
         assert M is not None, "Kernel not set"
 
-        #Check for alpha mask
+        # Check for alpha mask
         alpha_mask = None
-        if (np_image.shape[2] == 4):
-            alpha_mask = np_image[:, :, 3]
+        if np_image.shape[2] == 4:
+            alpha_mask = np_image[:, :, 3].astype(np.uint8)
             np_image = np_image[:, :, 0:3]
 
-        #Normalize the image
-        log255 = math.log(255.0)
-        RGB = -255 * np.log((np_image.astype(np.float) + 1) / 255.0) / log255
-        #Compute img : img_{i,j,n} = sum_{k} img_{i,j,k} * D_{k,n}
-        C = np.einsum('ijk,kn', RGB, D)
-        #Normalize
-        c = np.exp(-(C - 255.0) * log255 / 255.0)
-        np.clip(c, 0, 255, c)
+        height, width, _ = np_image.shape
 
-        stains = []
-        for k in range(3):
-            stains.append(np.uint8(np.around(255.0 - (  (255.0 - c[:,:,k]).reshape(c[:,:,0].shape+(1,)) * M[k,:].reshape((1,1,3))  )  )))
+        # Normalize the image
+        float_img = np_image.astype(np.float) + 1  # +1 to avoid log 0
+        log_img = 255 * np.log(255.0 / float_img) / self._log255
+        # Compute img : img_{i,j,n} = sum_{k} img_{i,j,k} * D_{k,n}
+        C = np.einsum('ijk,kn', log_img, D)
 
-        #Add alpha mask
+        # Normalize
+        c = np.exp((1.0 - C / 255.0) * self._log255)
+        c = np.clip(c, 0, 255)
+
+        # only compute first stain
+        c_255_minus = 255 - c[:, :, 0]
+        first_stain = np.tile(M[0, :], (height, width, 1))
+        first_stain[:, :, 0] *= c_255_minus
+        first_stain[:, :, 1] *= c_255_minus
+        first_stain[:, :, 2] *= c_255_minus
+        first_stain = 255 - first_stain
+
+        # Add alpha mask
         if alpha_mask is not None:
-            return np.dstack((stains[0], alpha_mask.astype(np.uint8)))
+            return np.dstack((first_stain, alpha_mask))
         else:
-            return stains[0]
+            return first_stain
 
     def fit(self, tile_stream1, tile_stream2, tile_stream3):
         """
