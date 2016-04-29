@@ -169,7 +169,7 @@ class WorkflowTiming(object):
         phase: string
             The string of the phase that starts
         """
-        self._start_dict[phase] = timeit.default_timer().time()
+        self._start_dict[phase] = timeit.default_timer()
 
     def _record_end(self, phase):
         """Record an end for a given phase
@@ -180,7 +180,7 @@ class WorkflowTiming(object):
         """
         start = self._start_dict.get(phase)
         if start is not None:
-            self._durations[phase].append(timeit.default_timer().time() - start)
+            self._durations[phase].append(timeit.default_timer() - start)
             del self._start_dict[phase]
 
     def _stat_tuple(self, phase):
