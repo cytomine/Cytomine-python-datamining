@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=cv_test
+#SBATCH --job-name=cv_patterns_vs_all
 #SBATCH --output=/home/mass/GRD/r.mormont/out/validation/cv_patterns_vs_all.res
 #SBATCH --ntasks=30
 #SBATCH --cpus-per-task=1
