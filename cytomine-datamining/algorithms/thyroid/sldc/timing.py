@@ -191,8 +191,8 @@ class WorkflowTiming(object):
             The phase string of which statistics tuple is wanted
         Returns
         -------
-        stats: tuple of (float, float, float, float, float)
-            Tuple containing the following stats (sum, min, max, mean, count)
+        stats: tuple of (float, float, float, float, float, float)
+            Tuple containing the following stats (sum, min, mean, max, std, count)
         """
         durations = np.array(self._durations[phase])
         count = durations.shape[0]
@@ -202,6 +202,7 @@ class WorkflowTiming(object):
             round(np.min(durations), 5), \
             round(np.mean(durations), 5), \
             round(np.max(durations), 5), \
+            round(np.std(durations), 5), \
             count
 
     @classmethod
@@ -228,11 +229,16 @@ class WorkflowTiming(object):
             timing._durations[key] = timing1._durations.get(key, []) + timing2._durations.get(key, [])
         return timing
 
-    def report(self, image, polygons_classes):
-        print "========================================"
-        print "Image {}".format(str(image))
-        print "Polygon count : {}".format(len(polygons_classes))
-        print "Timing : "
+    def report(self, logger):
+        """Report the execution times of the workflow phases using the given logger
+        Parameters
+        ----------
+        logger: Logger
+            The logger to which the times must be notified
+        """
+        to_report = "Execution times of the workflow phases."
         stats = self.stats()
         for key in stats.keys():
-            print "- {} : {}".format(key, stats[key])
+            curr_stat = stats[key]
+            to_report += "\n  {} : {} s (avg: {} s, std: {} s)".format(key, curr_stat[0], curr_stat[2], curr_stat[4])
+        logger.info(to_report)

@@ -203,7 +203,7 @@ class DispatcherClassifier(Loggable):
             # emplace prediction in prediction list
             emplace(predictions, predict_list, poly_ind_dict[index])
             # emplace dispatch id in dispatch list
-            emplace(np.full((len(predictions),), index).astype('int'), dispatch_list, poly_ind_dict[index])
+            emplace(np.full((len(predictions),), index, dtype="int"), dispatch_list, poly_ind_dict[index])
 
         self.logger.info("DispatcherClassifier : end classification.")
         return predict_list, dispatch_list
