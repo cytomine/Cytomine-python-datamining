@@ -39,7 +39,7 @@ class ImageProvider(Loggable):
 
         Returns
         -------
-        images: array
+        images: iterable
             An array of images
 
         Exceptions

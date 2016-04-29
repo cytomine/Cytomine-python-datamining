@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import cv2
-from abc import ABCMeta, abstractmethod
 from shapely.geometry import Polygon
 from shapely.affinity import affine_transform as aff_transfo
 from functools import partial

@@ -82,7 +82,7 @@ class Merger(object):
 
         Parameters
         ----------
-        polygons_tiles: array
+        polygons_tiles: iterable
             An array of tuples. Each tuple contains a tile and its polygons in an array.
             The polygons are of type shapely.geometry.Polygon.
         tile_topology: TileTopology
@@ -118,9 +118,9 @@ class Merger(object):
 
         Parameters
         ----------
-        polygons1: array
+        polygons1: iterable
             Array of integers containing polygons indexes
-        polygons2: array
+        polygons2: iterable
             Array of integers containing polygons indexes
         polygons_dict: dict
             Dictionary mapping polygon identifiers with actual shapely polygons objects
@@ -167,7 +167,7 @@ class Merger(object):
 
         Parameters
         ----------
-        polygons_tiles: array of tuples
+        polygons_tiles: iterable
             ...
 
         Returns

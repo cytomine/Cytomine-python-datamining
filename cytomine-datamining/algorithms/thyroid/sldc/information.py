@@ -23,11 +23,11 @@ class ChainInformation(object):
         """
         return len(self._runs)
 
-    def get_workflow_info(self, id):
+    def get_workflow_info(self, id_workflow):
         """Return the workflow info having a given id
         Parameters
         ----------
-        id: int
+        id_workflow: int
             The id of the workflow info object to get
 
         Returns
@@ -35,7 +35,7 @@ class ChainInformation(object):
         run: WorkflowInformation
             The workflow info object
         """
-        return self._runs[id]
+        return self._runs[id_workflow]
 
     def register_workflow_info(self, workflow_info, image):
         """Register a new run to the execution information object
@@ -81,7 +81,8 @@ class ChainInformation(object):
         list: list of WorkflowInformation
             The workflow information objects registered for the given image
         """
-        return WorkflowInformationCollection([self.get_workflow_info(id) for id in self._image2ids.get(image, [])])
+        return WorkflowInformationCollection([self.get_workflow_info(id_workflow)
+                                              for id_workflow in self._image2ids.get(image, [])])
 
 
 class WorkflowInformation(object):
@@ -96,7 +97,7 @@ class WorkflowInformation(object):
         - timing : the information about the execution time of the workflow
         - metadata : a comment from the implementor of the workflow to document how the previous data were generated
     """
-    def __init__(self, polygons, dispatch, classes, timing, id=None, metadata=""):
+    def __init__(self, polygons, dispatch, classes, timing, id_workflow=None, metadata=""):
         """Construct a run object
         Parameters
         ----------
@@ -108,12 +109,12 @@ class WorkflowInformation(object):
             Their predicted classes
         timing: SLDCTiming
             Execution time information
-        id: int, (optional, default: None)
+        id_workflow: int, (optional, default: None)
             The run id, None if to assign it later
         metadata: string, (optional, default: "")
             String data/comment to associate with the workflow generated data
         """
-        self._id = id
+        self._id = id_workflow
         self._polygons = polygons
         self._dispatch = dispatch
         self._classes = classes
@@ -240,6 +241,7 @@ class WorkflowInformationCollection(object):
             The classes number to exclude from the iterated list
         """
         for workflow_info in self._items:
-            for polygon, dispatch, cls in workflow_info.iterator(filter_classes=filter_classes, filter_dispatch=filter_dispatch):
+            for polygon, dispatch, cls in workflow_info.iterator(filter_classes=filter_classes,
+                                                                 filter_dispatch=filter_dispatch):
                 yield polygon, dispatch, cls
         return
