@@ -102,10 +102,8 @@ class ColorDeconvoluter:
         first_stain = 255 - first_stain
 
         # Add alpha mask
-        if alpha_mask is not None:
-            return np.dstack((first_stain, alpha_mask))
-        else:
-            return first_stain
+        to_return = first_stain if alpha_mask is None else np.dstack((first_stain, alpha_mask))
+        return to_return.astype("uint8")
 
     def fit(self, tile_stream1, tile_stream2, tile_stream3):
         """
