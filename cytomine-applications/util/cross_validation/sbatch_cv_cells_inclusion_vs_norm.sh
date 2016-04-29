@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH --job-name=cv_patterns_vs_all
-#SBATCH --output=/home/mass/GRD/r.mormont/out/validation/cv_patterns_vs_all.res
+#SBATCH --job-name=cv_cells_inclusion_vs_norm
+#SBATCH --output=/home/mass/GRD/r.mormont/out/validation/cv_cells_inclusion_vs_norm.res
 #SBATCH --ntasks=30
 #SBATCH --cpus-per-task=1
 #SBATCH --time=96:00:00
