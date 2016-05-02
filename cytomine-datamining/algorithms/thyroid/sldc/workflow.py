@@ -100,11 +100,11 @@ class SLDCWorkflow(Loggable):
 
         # dispatch classify
         self.logger.info("SLDCWorkflow : start dispatch/classify.")
-        predictions, dispatch_indexes = self._dispatch_classifier.dispatch_classify_batch(image, polygons, timing)
+        pred, proba, dispatch_indexes = self._dispatch_classifier.dispatch_classify_batch(image, polygons, timing)
         self.logger.info("SLDCWorkflow : end dispatch/classify.\n" +
                          "SLDCWorkflow : executed in {} s.".format(timing.dc_total_duration()))
 
-        return WorkflowInformation(polygons, dispatch_indexes, predictions, timing, metadata=self.get_metadata())
+        return WorkflowInformation(polygons, dispatch_indexes, pred, proba, timing, metadata=self.get_metadata())
 
     def _segment_locate(self, tile, timing):
         """Fetch the tile and then perform the segment and locate steps

@@ -136,14 +136,17 @@ class DispatcherClassifier(Loggable):
             If none of the dispatching rules matched a polygon, the value returned is the one produced
             by the fail callback for the given polygon. Especially, if no fail callback was registered,
             None is returned.
+        probability: float
+            The probability associated with the prediction (0.0 if the polygon wasn't dispatched)
         dispatch: int
             The index of the dispatch rule that matched the polygon, -1 if none did
         """
         matching_rule = self._dispatch_index(image, polygon)
         if matching_rule == -1:
-            return self._fail_callback(polygon), matching_rule
+            return self._fail_callback(polygon), 0.0, matching_rule
         else:
-            return self._classifiers[matching_rule].predict(image, polygon), matching_rule
+            cls, probability = self._classifiers[matching_rule].predict(image, polygon)
+            return cls, probability, matching_rule
 
     def dispatch_classify_batch(self, image, polygons, timing):
         """Apply the dispatching and classification steps to an ensemble of polygons.
@@ -164,6 +167,8 @@ class DispatcherClassifier(Loggable):
             If none of the dispatching rules matched the polygon, the prediction associated with it is the one produced
             by the fail callback for the given polygon. Especially, if no fail callback was registered, None is
             returned.
+        probabilities: list of float
+            The probabilities associated with the each predicted classes (0.0 for polygons that were not dispatched)
         dispatches: list of int
             A list of integers of which the ith one is the index of first rule that matched the ith polygon.
         """
@@ -192,21 +197,25 @@ class DispatcherClassifier(Loggable):
 
         # compute the prediction
         predict_list = [None] * len(polygons)
+        probabilities_list = [0.0] * len(polygons)
         dispatch_list = [None] * len(polygons)
         for index in match_dict.keys():
             if index == -1:
+                # set a 0 probability for each poly as they were not dispatched
+                probabilities = np.zeros((len(match_dict[index]),))
                 predictions = [self._fail_callback(polygon) for polygon in match_dict[index]]
             else:
                 timing.start_classify()
-                predictions = self._classifiers[index].predict_batch(image, match_dict[index])
+                predictions, probabilities = self._classifiers[index].predict_batch(image, match_dict[index])
                 timing.end_classify()
-            # emplace prediction in prediction list
+            # Emplace prediction in prediction list, probabilities in probabilities
+            # list and dispatch id in dispatch list
             emplace(predictions, predict_list, poly_ind_dict[index])
-            # emplace dispatch id in dispatch list
+            emplace(probabilities, probabilities_list, poly_ind_dict[index])
             emplace(np.full((len(predictions),), index, dtype="int"), dispatch_list, poly_ind_dict[index])
 
         self.logger.info("DispatcherClassifier : end classification.")
-        return predict_list, dispatch_list
+        return predict_list, probabilities_list, dispatch_list
 
     def _split_by_rule(self, image, rule, polygons, poly_indexes, timing):
         """Given a rule, splits all the poly_indexes list into two lists. The first list contains

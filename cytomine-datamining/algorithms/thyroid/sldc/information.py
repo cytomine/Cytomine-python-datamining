@@ -94,10 +94,12 @@ class WorkflowInformation(object):
             the ith polygon, -1 if none did
         - class : list of which the ith integer is the class predicted by the classifier to
             which was dispatched the ith polygon, -1 if none did
+        - probas : list of which the ith float (in [0,1]) is the probability of the ith predicted class if the
+            corresponding polygon was dispatched, 0 if it wasn't dispatched
         - timing : the information about the execution time of the workflow
         - metadata : a comment from the implementor of the workflow to document how the previous data were generated
     """
-    def __init__(self, polygons, dispatch, classes, timing, id_workflow=None, metadata=""):
+    def __init__(self, polygons, dispatch, classes, probas, timing, id_workflow=None, metadata=""):
         """Construct a run object
         Parameters
         ----------
@@ -107,6 +109,8 @@ class WorkflowInformation(object):
             Their dispatch indexes
         classes: list
             Their predicted classes
+        probas: list
+            The probabilities of the predicted classes
         timing: SLDCTiming
             Execution time information
         id_workflow: int, (optional, default: None)
@@ -120,6 +124,7 @@ class WorkflowInformation(object):
         self._classes = classes
         self._metadata = metadata
         self._timing = timing
+        self._probas = probas
 
     @property
     def id(self):
@@ -140,6 +145,10 @@ class WorkflowInformation(object):
     @property
     def classes(self):
         return self._classes
+
+    @property
+    def probas(self):
+        return self._probas
 
     @property
     def metadata(self):
@@ -165,10 +174,10 @@ class WorkflowInformation(object):
         """
         if filter_dispatch is None:
             filter_dispatch = [-1]
-        for polygon, dispatch, cls in zip(self.polygons, self.dispatch, self.classes):
+        for polygon, dispatch, cls, proba in zip(self.polygons, self.dispatch, self.classes, self.probas):
             if (filter_dispatch is None or dispatch not in filter_dispatch) and \
                     (filter_classes is None or cls not in filter_classes):
-                yield polygon, dispatch, cls
+                yield polygon, dispatch, cls, proba
         return
 
     def merge(self, other):
@@ -230,8 +239,8 @@ class WorkflowInformationCollection(object):
 
     def polygons(self, filter_classes=None, filter_dispatch=None):
         """An iterator that goes through all the polygons stored in the collection
-        The yielded value is a tuple containing the polygon, the dispatch index and the predicted
-        class
+        The yielded value is a tuple containing the polygon, the dispatch index, the predicted
+        class and the probability
 
         Parameters
         ----------
@@ -241,7 +250,7 @@ class WorkflowInformationCollection(object):
             The classes number to exclude from the iterated list
         """
         for workflow_info in self._items:
-            for polygon, dispatch, cls in workflow_info.iterator(filter_classes=filter_classes,
-                                                                 filter_dispatch=filter_dispatch):
-                yield polygon, dispatch, cls
+            for polygon, dispatch, cls, proba in workflow_info.iterator(filter_classes=filter_classes,
+                                                                        filter_dispatch=filter_dispatch):
+                yield polygon, dispatch, cls, proba
         return
