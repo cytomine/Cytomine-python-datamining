@@ -18,7 +18,7 @@ class PyxitClassifierAdapter(PolygonClassifier, Loggable):
             The pyxit classifier objects
         tile_cache: TileCache
             A tile cache for fetching tiles
-        classes: array
+        classes: ndarray
             An array containing the classes labels
         logger: Logger
             A logger object
@@ -28,27 +28,6 @@ class PyxitClassifierAdapter(PolygonClassifier, Loggable):
         self._pyxit_classifier = pyxit_classifier
         self._tile_cache = tile_cache
         self._classes = classes
-
-    def predict(self, image, polygon):
-        """
-        Parameters
-        ----------
-        image: Image
-        polygon: Polygon
-
-        Returns
-        -------
-        cls: int
-            The predicted class, None on error
-        """
-        # Pyxit classifier takes images from the filesystem
-        # So store the crop into a file before passing the path to the classifier
-        try:
-            tile_path = self._tile_cache.polygon_fetch_and_cache(image, polygon)
-            return self._predict(np.array([tile_path]))[0]
-        except TileExtractionException:
-
-            return None
 
     def predict_batch(self, image, polygons):
         # Pyxit classifier takes images from the filesystem
@@ -64,28 +43,32 @@ class PyxitClassifierAdapter(PolygonClassifier, Loggable):
                               "PyxitClassifierAdapter: error : {}".format(e.message))
 
         # merge predictions with missed tiles
-        predictions = self._predict(np.array(paths))
-        to_return = [None] * len(polygons)
-        for prediction, i in zip(predictions, extracted):
-            to_return[i] = prediction
-        return np.array(to_return)
+        predictions, probas = self._predict(np.array(paths))
+        ret_classes = [None] * len(polygons)
+        ret_probas = [0.0] * len(polygons)
+        for prediction, proba, i in zip(predictions, probas, extracted):
+            ret_classes[i] = prediction
+            ret_probas[i] = proba
+        return np.array(ret_classes), np.array(ret_probas)
 
     def _predict(self, X):
         """Call predict on the classifier with the filepaths of X
 
         Parameters
         ----------
-        X: list of string
-            The path to the images to classify
+        X: ndarray
+            The paths to the images to classify
 
         Returns
         -------
-        Predictions:
-            Return
+        predictions: list of int
+            The predicted classes
+        probas: list of float
+            The probabilities
         """
         probas = self._pyxit_classifier.predict_proba(X)
         best_index = np.argmax(probas, axis=1)
-        return self._classes.take(best_index, axis=0).astype('int')
+        return self._classes.take(best_index, axis=0).astype('int'), probas
 
     @staticmethod
     def build_from_pickle(model_path, tile_builder, logger, n_jobs=1):

@@ -42,12 +42,12 @@ class CytominePostProcessor(PostProcessor):
 
         # extract polygons from first run
         slide_processing = workflow_info_collection[0]
-        for polygon, dispatch, cls in slide_processing.iterator():
+        for polygon, dispatch, cls, proba in slide_processing.iterator():
             upload_fn = self._upload_fn(image, polygon)
             if dispatch == 0:  # cell
-                upload_fn(ThyroidOntology.CELL_INCL if cls == 1 else ThyroidOntology.CELL_NORM)
+                upload_fn(ThyroidOntology.CELL_INCL if cls == 1 else ThyroidOntology.CELL_NORM, proba)
             elif dispatch == 1:  # pattern
-                upload_fn(ThyroidOntology.PATTERN_PROLIF if cls == 1 else ThyroidOntology.PATTERN_NORM)
+                upload_fn(ThyroidOntology.PATTERN_PROLIF if cls == 1 else ThyroidOntology.PATTERN_NORM, proba)
         slide_processing.timing.report(self.logger)
 
         # # extract polygons from second run
@@ -61,16 +61,17 @@ class CytominePostProcessor(PostProcessor):
         """Return a callable taking one parameter. This callable uploads the polygon as annotation for the given image.
         The callable parameter is the label to associate to the annotation
         """
-        return lambda cls: self._upload_annotation(image.image_instance, polygon, label=cls)
+        return lambda cls, proba: self._upload_annotation(image.image_instance, polygon, label=cls, proba=proba)
 
-    def _upload_annotation(self, img_inst, polygon, label=None):
+    def _upload_annotation(self, img_inst, polygon, label=None, proba=1.0):
         image_id = img_inst.id
         # Transform in cartesian coordinates
         polygon = affine_transform(xx_coef=1, xy_coef=0, yx_coef=0, yy_coef=-1, delta_y=img_inst.height)(polygon)
 
         annotation = self._cytomine.add_annotation(polygon.wkt, image_id)
         if label is not None and annotation is not None:
-            self._cytomine.add_annotation_term(annotation.id, label, label, 1.0, annotation_term_model=AlgoAnnotationTerm)
+            self._cytomine.add_annotation_term(annotation.id, label, label, proba,
+                                               annotation_term_model=AlgoAnnotationTerm)
 
 
 class ThyroidJob(CytomineJob, Loggable):
@@ -168,7 +169,7 @@ class ThyroidJob(CytomineJob, Loggable):
             self._chain.execute()
             self._logger.info("ThyroidJob : end thyroid workflow.")
         except Exception as e:
-            self._logger.warning("ThyroidJob : error while executing workflow : {}.".format(e.message))
+            self._logger.error("ThyroidJob : error while executing workflow : {}.".format(e.message))
 
 
 def arr2str(arr):
