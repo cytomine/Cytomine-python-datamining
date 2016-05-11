@@ -5,9 +5,10 @@ import os
 import numpy as np
 import sys
 
+from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score
 from sklearn.model_selection import GridSearchCV
 
-from util import str2bool, mk_window_size_tuples, accuracy_scoring
+from util import str2bool, mk_window_size_tuples, accuracy_scoring, print_cm
 from mapper import BinaryMapper, TernaryMapper
 from adapters import AnnotationCollectionAdapter, PyxitClassifierAdapter
 from options import MultipleOption
@@ -46,10 +47,12 @@ def mk_dataset(params):
                                            showMeta=True, id_user=params.cytomine_selected_users)
     excluded_set = set(params.cytomine_excluded_annotations)
     excluded_terms = set(params.cytomine_excluded_terms)
+    excluded_images = set(params.cytomine_excluded_images)
     filtered = [a for a in annotations.data()
                 if len(a.term) > 0
                     and a.id not in excluded_set
-                    and set(a.term).isdisjoint(excluded_terms)]
+                    and set(a.term).isdisjoint(excluded_terms)
+                    and a.image not in excluded_images]
     annotations = AnnotationCollectionAdapter(filtered)
     # dump annotations
     annotations = cytomine.dump_annotations(annotations=annotations, dest_path=params.pyxit_dir_ls,
@@ -62,6 +65,14 @@ def mk_dataset(params):
             annot.filename = os.path.join(params.pyxit_dir_ls, annot.term[0], "{}_{}.png".format(annot.image, annot.id))
 
     return zip(*[(annot.filename, annot.term[0], annot.image) for annot in annotations])
+
+
+def train_test_split(X, y, labels, test_set_labels):
+    np_x, np_y, np_labels = np.array(X), np.array(y), np.array(labels)
+    test_set_set = set(test_set_labels)
+    ts = np.logical_or.reduce([np_labels == x for x in test_set_set])
+    ls = np.logical_not(ts)
+    return np_x[ls], np_y[ls], np_labels[ls], np_x[ts], np_y[ts], np_labels[ts]
 
 
 def score(pyxit, X, y, labels, P, scoring, n_jobs=1, verbose=True):
@@ -111,6 +122,11 @@ def main(argv):
                  help="The identifiers of the terms to as a third class.")
     p.add_option('--cytomine_verbose', type="string", default="False", dest="cytomine_verbose",
                  help="True for enabling verbosity.")
+
+    p.add_option('--cytomine_test_images', action="extend", type='int', default=[], dest="cytomine_test_images",
+                 help="Images of which the annotations should be placed in the test set.")
+    p.add_option('--cytomine_excluded_images', action="extend", type='int', default=[], dest="cytomine_excluded_images",
+                 help="Images of which the annotations shouldn't be used for cross validation.")
 
     p.add_option('--pyxit_target_width', default=16, type='int', dest='pyxit_target_width',
                  help="Target width for the pyxit algorithm extracted windows.")
@@ -180,6 +196,13 @@ def main(argv):
     print "Create dataset..."
     X, y, labels = mk_dataset(params)
 
+    # prepare test set if needed
+    is_test_set_provided = len(params.cytomine_test_images) > 0
+    X_test, y_test, labels_test = [], [], []
+    if is_test_set_provided:
+        print "Test images provided. Perform train/test split..."
+        X, y, labels, X_test, y_test, labels_test = train_test_split(X, y, labels, params.cytomine_test_images)
+
     print "Parameters to tune : "
     print "- Pyxit min size : {}".format(params.pyxit_min_size)
     print "- Pyxit max size : {}".format(params.pyxit_max_size)
@@ -200,21 +223,47 @@ def main(argv):
     X, y, labels = np.array(X), np.array(y), np.array(labels)
     grid = GridSearchCV(pyxit, cv_params, scoring=accuracy_scoring,
                         cv=LeavePLabelOut(params.cv_images_out).get_n_splits(X, y, labels),
-                        verbose=10, n_jobs=1)
+                        verbose=10, n_jobs=1, refit=is_test_set_provided)
 
     # transform into a binary/ternary problem if necessary
+    is_mapped = params.cytomine_binary
+    mapping_dict = dict()
     if params.cytomine_binary:
         if len(params.cytomine_other_terms) > 0:
             mapper = TernaryMapper(params.cytomine_positive_terms, params.cytomine_negative_terms,
                                    params.cytomine_other_terms)
         else:
             mapper = BinaryMapper(params.cytomine_positive_terms, params.cytomine_negative_terms)
-        y = [mapper.map(to_map) for to_map in y]
+        mapping_dict = mapper.map_dict(y.tolist() + y_test.tolist())
+        y = np.array([mapper.map(to_map) for to_map in y])
+        y_test = np.array([mapper.map(to_map) for to_map in y_test])
 
     grid.fit(X, y)
 
     print "Best parameters : {}".format(grid.best_params_)
     print "Best score      : {}".format(grid.best_score_)
+
+    if is_test_set_provided:
+        print "Apply best model on test set..."
+        y_pred = grid.best_estimator_.predict(X_test)
+        cm = confusion_matrix(y_test, y_pred)
+
+        # display class correspondance
+        if is_mapped:
+            print "Class correspondances:"
+            for key in mapping_dict:
+                print " - {}: {}".format(key, mapping_dict[key])
+
+        # display scores
+        print "Score(s) :"
+        classes = np.union1d(np.unique(y_test).tolist(), np.unique(y).tolist()).astype("string")
+        print " - Accuracy : {}".format(accuracy_score(y_test, y_pred))
+        if classes.shape[0] == 2:
+            print " - Precision : {}".format(precision_score(y_test, y_pred))
+            print " - Recall : {}".format(recall_score(y_test, y_pred))
+
+        print "Confusion matrix: "
+        print_cm(cm, classes)
 
 if __name__ == "__main__":
     main(sys.argv)

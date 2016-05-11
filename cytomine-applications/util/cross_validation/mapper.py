@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from abc import ABCMeta, abstractmethod
 
+import numpy as np
+
 __author__ = "Mormont Romain <romain.mormont@gmail.com>"
 __version__ = "0.1"
 
@@ -16,6 +18,14 @@ class ClassificationOutputMapper(object):
         :return: int, the actual class
         """
         pass
+
+    def map_dict(self, terms):
+        unique_terms = np.unique(np.array(terms))
+        map_dict = dict()
+        for term in unique_terms.tolist():
+            mapped = self.map(term)
+            map_dict[mapped] = map_dict.get(mapped, []) + [term]
+        return map_dict
 
 
 class DefaultMapper(ClassificationOutputMapper):
