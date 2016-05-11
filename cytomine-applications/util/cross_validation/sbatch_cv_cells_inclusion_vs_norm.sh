@@ -42,6 +42,24 @@
         --cytomine_excluded_annotations 9321884 \
         --cytomine_excluded_annotations 7994253 \
         --cytomine_excluded_annotations 9313842 \
+    --cytomine_test_images 8124112 \
+        --cytomine_test_images 8123867 \
+        --cytomine_test_images 8122868 \
+        --cytomine_test_images 8122830 \
+        --cytomine_test_images 8120497 \
+        --cytomine_test_images 8120408 \
+        --cytomine_test_images 8120321 \
+        --cytomine_test_images 728799 \
+        --cytomine_test_images 728744 \
+        --cytomine_test_images 728725 \
+        --cytomine_test_images 728709 \
+        --cytomine_test_images 728689 \
+        --cytomine_test_images 728675 \
+        --cytomine_test_images 728391 \
+        --cytomine_test_images 724858 \
+        --cytomine_test_images 719625 \
+        --cytomine_test_images 716534 \
+        --cytomine_test_images 716528 \
     --cytomine_verbose 0 \
     --cv_images_out 1 \
     --pyxit_n_jobs 40 \
