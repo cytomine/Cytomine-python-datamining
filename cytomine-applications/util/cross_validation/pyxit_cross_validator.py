@@ -7,10 +7,11 @@ import sys
 
 from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score
 from sklearn.model_selection import GridSearchCV
+from sklearn.utils.estimator_checks import check_estimator
 
 from util import str2bool, mk_window_size_tuples, accuracy_scoring, print_cm
 from mapper import BinaryMapper, TernaryMapper
-from adapters import AnnotationCollectionAdapter, PyxitClassifierAdapter
+from adapters import AnnotationCollectionAdapter, PyxitClassifierAdapter, SVMPyxitClassifierAdapter
 from options import MultipleOption
 from cytomine import Cytomine
 from cytomine.models import Annotation
@@ -28,12 +29,22 @@ def mk_pyxit(params):
                                   n_jobs=params.pyxit_n_jobs,
                                   verbose=False)
 
-    return PyxitClassifierAdapter(base_estimator=forest, n_subwindows=params.pyxit_n_subwindows,
-                                  min_size=params.pyxit_min_size[0], max_size=params.pyxit_max_size[0],
-                                  target_width=params.pyxit_target_width, target_height=params.pyxit_target_height,
-                                  interpolation=params.pyxit_interpolation, transpose=params.pyxit_transpose,
-                                  colorspace=params.pyxit_colorspace[0], fixed_size=params.pyxit_fixed_size,
-                                  n_jobs=params.pyxit_n_jobs, verbose=params.cytomine_verbose)
+    if params.svm:
+        return SVMPyxitClassifierAdapter(base_estimator=forest, C=params.svm_c[0],
+                                         n_subwindows=params.pyxit_n_subwindows,
+                                         min_size=params.pyxit_min_size[0], max_size=params.pyxit_max_size[0],
+                                         target_width=params.pyxit_target_width,
+                                         target_height=params.pyxit_target_height,
+                                         interpolation=params.pyxit_interpolation, transpose=params.pyxit_transpose,
+                                         colorspace=params.pyxit_colorspace[0], fixed_size=params.pyxit_fixed_size,
+                                         n_jobs=params.pyxit_n_jobs, verbose=params.cytomine_verbose)
+    else:
+        return PyxitClassifierAdapter(base_estimator=forest, n_subwindows=params.pyxit_n_subwindows,
+                                      min_size=params.pyxit_min_size[0], max_size=params.pyxit_max_size[0],
+                                      target_width=params.pyxit_target_width, target_height=params.pyxit_target_height,
+                                      interpolation=params.pyxit_interpolation, transpose=params.pyxit_transpose,
+                                      colorspace=params.pyxit_colorspace[0], fixed_size=params.pyxit_fixed_size,
+                                      n_jobs=params.pyxit_n_jobs, verbose=params.cytomine_verbose)
 
 
 def mk_dataset(params):
@@ -186,13 +197,16 @@ def main(argv):
     if len(params.forest_min_samples_split) == 0:
         params.forest_min_samples_split = [1]
     if len(params.svm_c) == 0:
-        params.svm_c = [0.1]
+        params.svm_c = [1.0]
     if len(params.pyxit_colorspace) == 0:
         params.pyxit_colorspace = [2]
 
     # create pyxit and generate dataset
     print "Create Pyxit..."
     pyxit = mk_pyxit(params)
+    if params.svm:
+        print "SVM enabled!"
+    print
     print "Create dataset..."
     X, y, labels = mk_dataset(params)
 
@@ -216,9 +230,11 @@ def main(argv):
         "window_sizes": windows_sizes,
         "max_features": params.forest_max_features,
         "min_samples_split": params.forest_min_samples_split,
-        "colorspace": params.pyxit_colorspace,
-        # "svm_c": params.svm_c, # disabled to avoid useless cases
+        "colorspace": params.pyxit_colorspace
     }
+
+    if params.svm:
+        cv_params["C"] = params.svm_c
 
     X, y, labels = np.array(X), np.array(y), np.array(labels)
     grid = GridSearchCV(pyxit, cv_params, scoring=accuracy_scoring,

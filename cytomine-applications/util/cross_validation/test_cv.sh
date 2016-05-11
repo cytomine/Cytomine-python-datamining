@@ -59,3 +59,5 @@
     --forest_n_estimators 2 \
     --forest_min_samples_split 1 \
     --forest_max_features 16 \
+    --svm 1 \
+    --svm_c 1.0
