@@ -72,7 +72,7 @@
         --pyxit_min_size 0.3 \
     --pyxit_max_size 0.5 \
         --pyxit_max_size 0.4 \
-    --forest_min_samples_split 429 \
+    --forest_min_samples_split 331 \
     --forest_max_features 1 \
         --forest_max_features 28 \
         --forest_max_features 384 \

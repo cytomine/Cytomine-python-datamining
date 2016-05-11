@@ -3,8 +3,8 @@
 #SBATCH --output=/home/mass/GRD/r.mormont/out/validation/cv_cells_vs_patterns_vs_others_new_params.res
 #SBATCH --ntasks=40
 #SBATCH --cpus-per-task=1
-#SBATCH --time=96:00:00
-#SBATCH --mem=200G
+#SBATCH --time=196:00:00
+#SBATCH --mem=700G
 #SBATCH --partition=Cytomine
 /home/mass/GRD/r.mormont/miniconda/bin/python /home/mass/GRD/r.mormont/sftp/cytomine-applications/util/cross_validation/pyxit_cross_validator.py \
     --cytomine_host "beta.cytomine.be" \
@@ -74,7 +74,7 @@
     --pyxit_max_size 1.0 \
         --pyxit_max_size 0.8 \
         --pyxit_max_size 0.6 \
-    --forest_min_samples_split 429 \
+    --forest_min_samples_split 578 \
     --forest_max_features 1 \
         --forest_max_features 28 \
         --forest_max_features 384 \
