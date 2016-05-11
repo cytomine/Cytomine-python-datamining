@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=cv_patterns_prolif_vs_norm
-#SBATCH --output=/home/mass/GRD/r.mormont/out/validation/cv_patterns_prolif_vs_norm.res
-#SBATCH --ntasks=30
+#SBATCH --job-name=cv_patterns_prolif_vs_norm_new_params
+#SBATCH --output=/home/mass/GRD/r.mormont/out/validation/cv_patterns_prolif_vs_norm_new_params.res
+#SBATCH --ntasks=40
 #SBATCH --cpus-per-task=1
 #SBATCH --time=96:00:00
 #SBATCH --mem=200G
@@ -42,27 +42,40 @@
         --cytomine_excluded_annotations 9321884 \
         --cytomine_excluded_annotations 7994253 \
         --cytomine_excluded_annotations 9313842 \
+    --cytomine_test_images 8124112 \
+        --cytomine_test_images 8123867 \
+        --cytomine_test_images 8122868 \
+        --cytomine_test_images 8122830 \
+        --cytomine_test_images 8120497 \
+        --cytomine_test_images 8120408 \
+        --cytomine_test_images 8120321 \
+        --cytomine_test_images 728799 \
+        --cytomine_test_images 728744 \
+        --cytomine_test_images 728725 \
+        --cytomine_test_images 728709 \
+        --cytomine_test_images 728689 \
+        --cytomine_test_images 728675 \
+        --cytomine_test_images 728391 \
+        --cytomine_test_images 724858 \
+        --cytomine_test_images 719625 \
+        --cytomine_test_images 716534 \
+        --cytomine_test_images 716528 \
     --cytomine_verbose 0 \
     --cv_images_out 1 \
-    --pyxit_n_jobs 30 \
+    --pyxit_n_jobs 40 \
     --pyxit_dir_ls "/home/mass/GRD/r.mormont/nobackup/cv/ls" \
     --forest_n_estimators 100 \
+    --pyxit_n_subwindows 100 \
     --pyxit_colorspace 2 \
-    --pyxit_min_size 0.1 \
-        --pyxit_min_size 0.3 \
-        --pyxit_min_size 0.5 \
-        --pyxit_min_size 0.7 \
-        --pyxit_min_size 0.9 \
-    --pyxit_max_size 1.0 \
-        --pyxit_max_size 0.8 \
-        --pyxit_max_size 0.6 \
-        --pyxit_max_size 0.4\
+        --pyxit_colorspace 1 \
+    --pyxit_min_size 0.05 \
+        --pyxit_min_size 0.1 \
+    --pyxit_max_size 0.3 \
         --pyxit_max_size 0.2 \
-    --forest_min_samples_split 1 \
-        --forest_min_samples_split 5 \
-        --forest_min_samples_split 10 \
-        --forest_min_samples_split 20 \
-    --forest_max_features 4 \
-        --forest_max_features 8 \
-        --forest_max_features 16 \
-        --forest_max_features 24
+    --forest_min_samples_split 429 \
+    --forest_max_features 1 \
+        --forest_max_features 28 \
+        --forest_max_features 384 \
+        --forest_max_features 768 \
+    --svm 1 \
+    --svm_c 0.1
