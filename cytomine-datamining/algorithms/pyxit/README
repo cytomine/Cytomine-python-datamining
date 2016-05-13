@@ -7,9 +7,9 @@ But it can be run without Cytomine on local data (using dir_ls and dir_ts argume
 It is based on the following paper:
 
 1) For image/object classification:
-Towards generic image classification: an extensive empirical study
-Marée et al., 2014
-http://orbi.ulg.ac.be/handle/2268/175525
+"Towards Generic Image Classification using Tree-based Learning: an Extensive Empirical Study".
+Raphael Maree, Pierre Geurts, Louis Wehenkel.
+Pattern Recognition Letters, DOI: 10.1016/j.patrec.2016.01.006, 2016. 
 
 
 2) For image semantic segmentation:
