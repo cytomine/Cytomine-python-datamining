@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .builder import WorkflowBuilder
+from .builder import WorkflowBuilder, WorkflowChainBuilder
 from .chaining import ImageProvider, WorkflowExecutor, PolygonTranslatorWorkflowExecutor, WorkflowChain, PostProcessor,\
                       FullImageWorkflowExecutor
 from .classifier import PolygonClassifier
@@ -24,4 +24,4 @@ __all__ = ["Locator", "Segmenter", "DispatcherClassifier", "DispatchingRule", "S
            "PostProcessor", "WorkflowInformation", "ChainInformation", "WorkflowInformationCollection",
            "FullImageWorkflowExecutor", "PolygonTranslatorWorkflowExecutor", "Logger", "StandardOutputLogger",
            "FileLogger", "SilentLogger", "WorkflowTiming", "Loggable", "WorkflowBuilder", "DefaultTileBuilder",
-           "Merger"]
+           "Merger", "WorkflowChainBuilder"]
