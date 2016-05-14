@@ -1,11 +1,11 @@
 #!/bin/bash
 #SBATCH --job-name=sldc_real_slide_8122868
-#SBATCH --output=/home/mass/GRD/r.mormont/out/sldc/sldc_real_slide_8122868.res
+#SBATCH --output=/home/mass/GRD/r.mormont/out/sldc/sldc_real_slide_8122868_2.res
 #SBATCH --ntasks=10
 #SBATCH --cpus-per-task=1
 #SBATCH --time=192:00:00
 #SBATCH --mem=100G
-#SBATCH --partition=Public
+#SBATCH --partition=Cytomine
 MODEL_PATH="/home/mass/GRD/r.mormont/models"
 /home/mass/GRD/r.mormont/miniconda/bin/python /home/mass/GRD/r.mormont/sftp/cytomine-datamining/algorithms/thyroid/workflow.py \
     --cell_classifier "$MODEL_PATH/patterns_prolif_vs_norm.pkl" \
@@ -18,8 +18,8 @@ MODEL_PATH="/home/mass/GRD/r.mormont/models"
     --software_id "152714969" \
     --project_id "716498" \
     --slide_ids "8122868" \
-    --tile_max_height "2048" \
-    --tile_max_width "2048" \
+    --tile_max_height "1024" \
+    --tile_max_width "1024" \
     --working_path "/home/mass/GRD/r.mormont/nobackup/sldc/" \
     --base_path "/api/" \
     --n_jobs 10
