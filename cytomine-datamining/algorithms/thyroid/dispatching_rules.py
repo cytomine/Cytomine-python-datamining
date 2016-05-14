@@ -22,10 +22,6 @@ class BinaryClassifierRule(DispatchingRule):
         DispatchingRule.__init__(self, logger=logger)
         self._classifier = pyxit_classifier_adapter
 
-    def evaluate(self, image, polygon):
-        cls, proba = self._classifier.predict(image, polygon)
-        return cls > 0.5
-
     def evaluate_batch(self, image, polygons):
         classes, probas = self._classifier.predict_batch(image, polygons)
         return classes > 0.5

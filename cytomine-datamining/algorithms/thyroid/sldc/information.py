@@ -195,6 +195,7 @@ class WorkflowInformation(object):
         self._polygons += other.polygons
         self._dispatch += other.dispatch
         self._classes += other.classes
+        self._probas += other.probas
         self._timing = WorkflowTiming.merge_timings(self._timing, other.timing)
 
         if self._metadata is None:
