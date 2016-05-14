@@ -1,6 +1,6 @@
 #!/bin/bash
 
-/home/mass/GRD/r.mormont/miniconda/bin/python /home/mass/GRD/r.mormont/sftp/cytomine-applications/util/cross_validation/pyxit_cross_validator.py \
+/home/mass/GRD/r.mormont/miniconda/bin/python -m pdb /home/mass/GRD/r.mormont/sftp/cytomine-applications/util/cross_validation/pyxit_cross_validator.py \
     --cytomine_host "beta.cytomine.be" \
     --cytomine_public_key "ad014190-2fba-45de-a09f-8665f803ee0b" \
     --cytomine_private_key "767512dd-e66f-4d3c-bb46-306fa413a5eb" \

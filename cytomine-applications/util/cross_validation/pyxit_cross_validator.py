@@ -5,9 +5,13 @@ import os
 import numpy as np
 import sys
 
+import time
+
+from sklearn.base import clone
 from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score
-from sklearn.model_selection import GridSearchCV
-from sklearn.utils.estimator_checks import check_estimator
+from sklearn.model_selection import GridSearchCV, ParameterGrid
+from sklearn.externals.joblib import logger
+from sklearn.utils import check_random_state
 
 from util import str2bool, mk_window_size_tuples, accuracy_scoring, print_cm
 from mapper import BinaryMapper, TernaryMapper
@@ -22,12 +26,13 @@ __author__ = "Mormont Romain <romain.mormont@gmail.com>"
 __version__ = "0.1"
 
 
-def mk_pyxit(params):
+def mk_pyxit(params, random_state=0):
+    random_state = check_random_state(random_state)
     forest = ExtraTreesClassifier(n_estimators=params.forest_n_estimators,
                                   max_features=params.forest_max_features[0],
                                   min_samples_split=params.forest_min_samples_split[0],
                                   n_jobs=params.pyxit_n_jobs,
-                                  verbose=False)
+                                  verbose=False, random_state=random_state)
 
     if params.svm:
         return SVMPyxitClassifierAdapter(base_estimator=forest, C=params.svm_c[0],
@@ -37,14 +42,16 @@ def mk_pyxit(params):
                                          target_height=params.pyxit_target_height,
                                          interpolation=params.pyxit_interpolation, transpose=params.pyxit_transpose,
                                          colorspace=params.pyxit_colorspace[0], fixed_size=params.pyxit_fixed_size,
-                                         n_jobs=params.pyxit_n_jobs, verbose=params.cytomine_verbose)
+                                         n_jobs=params.pyxit_n_jobs, verbose=params.cytomine_verbose,
+                                         random_state=random_state)
     else:
         return PyxitClassifierAdapter(base_estimator=forest, n_subwindows=params.pyxit_n_subwindows,
                                       min_size=params.pyxit_min_size[0], max_size=params.pyxit_max_size[0],
                                       target_width=params.pyxit_target_width, target_height=params.pyxit_target_height,
                                       interpolation=params.pyxit_interpolation, transpose=params.pyxit_transpose,
                                       colorspace=params.pyxit_colorspace[0], fixed_size=params.pyxit_fixed_size,
-                                      n_jobs=params.pyxit_n_jobs, verbose=params.cytomine_verbose)
+                                      n_jobs=params.pyxit_n_jobs, verbose=params.cytomine_verbose,
+                                      random_state=random_state)
 
 
 def mk_dataset(params):
@@ -93,6 +100,27 @@ def score(pyxit, X, y, labels, P, scoring, n_jobs=1, verbose=True):
     return cross_val_score(pyxit, X, y, labels=labels, scoring=scoring, cv=LeavePLabelOut(P),n_jobs=n_jobs,
                            verbose=verbose)
 
+
+def where_in(needles, haystack):
+    """Identifies which items in haystack are in needles
+    Parameters
+    ----------
+    needles: ndarray
+        The numpy array containing the items to look for
+    haystack: ndarray
+        The numpy array containing the elements to be looked for
+
+    Returns
+    -------
+    in: ndarray
+        The indexes of the items of haystack that are in needles
+    out: ndarray
+        The indexes of the items that are not
+    """
+    needles = np.unique(needles)
+    haystack = np.array(haystack)
+    boolean_mask = np.logical_or.reduce([haystack == item for item in needles])
+    return np.where(boolean_mask)[0].astype("int"), np.where(np.logical_not(boolean_mask))[0].astype("int")
 
 def main(argv):
     p = optparse.OptionParser(description='Pyxit/Cytomine Classification Cross Validator',
@@ -237,9 +265,6 @@ def main(argv):
         cv_params["C"] = params.svm_c
 
     X, y, labels = np.array(X), np.array(y), np.array(labels)
-    grid = GridSearchCV(pyxit, cv_params, scoring=accuracy_scoring,
-                        cv=LeavePLabelOut(params.cv_images_out).get_n_splits(X, y, labels),
-                        verbose=10, n_jobs=1, refit=is_test_set_provided)
 
     # transform into a binary/ternary problem if necessary
     is_mapped = params.cytomine_binary
@@ -254,14 +279,57 @@ def main(argv):
         y = np.array([mapper.map(to_map) for to_map in y])
         y_test = np.array([mapper.map(to_map) for to_map in y_test])
 
-    grid.fit(X, y)
+    # extract subwindows on learning set
+    print "Extract subwindows..."
+    _X, _y = pyxit.extract_subwindows(X, y)
+    _labels = np.repeat(labels, params.pyxit_n_subwindows)
 
-    print "Best parameters : {}".format(grid.best_params_)
-    print "Best score      : {}".format(grid.best_score_)
+    # prepare the cross validation
+    print "Prepare cross validation..."
+    params_grid = ParameterGrid(cv_params)
+    cv = LeavePLabelOut(params.cv_images_out)
+    split_count = cv.get_n_splits(X, y, labels)
+    print "[CV] Fitting {} folds for each of {} candidates, totalling {} fits.".format(split_count, len(params_grid),
+                                                                                       split_count * len(params_grid))
+
+    scores = []
+    for i, parameters in enumerate(params_grid):
+        parameters_score = []
+        for j, (train, test) in enumerate(cv.split(X, y, labels)):
+            # Set the parameters and split windows into train and test sets
+            _train, _test = where_in(labels[train], _labels)
+            print "[CV] {} ({}/{})".format(parameters, j+1, split_count)
+            estimator = clone(pyxit)
+            estimator.set_params(**parameters)
+            start = time.time()
+            estimator.fit(X[train], y[train], _X=_X[_train], _y=_y[_train])
+            curr_score = accuracy_score(y[test], estimator.predict(X[test], _X=_X[_test]))
+            duration = time.time() - start
+            print "[CV]   {} - {} in {}".format(parameters, round(curr_score, 4), logger.short_format_time(duration))
+            parameters_score.append(curr_score)
+
+        avg_score = np.mean(parameters_score)
+        print "[CV] For parameters {}".format(parameters)
+        print "[CV]   => average score : {}".format(avg_score)
+        scores.append(avg_score)
+
+    # Extract best parameters
+    best_index = np.argmax(scores)
+    best_params = params_grid[best_index]
+    best_score = scores[best_index]
+    best_estimator = None
+    if is_test_set_provided:
+        best_estimator = clone(pyxit)
+        best_estimator.set_params(**params_grid[best_index])
+        best_estimator.fit(X, y, _X=_X, _y=_y)
+
+    # refit with the best parameters
+    print "Best parameters : {}".format(best_params)
+    print "Best score      : {}".format(best_score)
 
     if is_test_set_provided:
         print "Apply best model on test set..."
-        y_pred = grid.best_estimator_.predict(X_test)
+        y_pred = best_estimator.predict(X_test)
         cm = confusion_matrix(y_test, y_pred)
 
         # display class correspondance
