@@ -43,7 +43,7 @@ if __name__ == "__main__":
     args.append("--tile_max_width")
     args.append("2048")
     args.append("--working_path")
-    args.append("/home/mass/GRD/r.mormont/nobackup/sldc/")
+    args.append("/home/mass/GRD/r.mormont/nobackup/launch/")
     args.append("--base_path")
     args.append("/api/")
     args.append("--verbose")
