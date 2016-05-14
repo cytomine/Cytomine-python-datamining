@@ -68,8 +68,12 @@
     --pyxit_n_subwindows 100 \
     --pyxit_colorspace 1 \
         --pyxit_colorspace 2 \
-    --pyxit_min_size 0.5 \
+    --pyxit_min_size 0.1 \
+        --pyxit_min_size 0.3 \
+        --pyxit_min_size 0.5 \
     --pyxit_max_size 1.0 \
+        --pyxit_max_size 0.8 \
+        --pyxit_max_size 0.6 \
     --forest_min_samples_split 578 \
     --forest_max_features 1 \
         --forest_max_features 28 \
