@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 import os
+import multiprocessing
 import threading
 from abc import abstractmethod, ABCMeta
 
-__author__ = "Mormont Romain <romain.mormont@gmail.com>"
+__author__ = "Romain Mormont <romainmormont@hotmail.com>"
 __version__ = "0.1"
 
 
 class Logger(object):
-    """A class encaspulating logging
+    """A base class loggers. A logger is an object which print or not the messages it is passed according to
+    the verbosity level. Base class are responsible for defining the printing policy.
     """
     SILENT = 0
     ERROR = 1
@@ -25,7 +27,7 @@ class Logger(object):
         """
         self._level = level
         self._prefix = prefix
-        self._lock = threading.Lock()
+        self._lock = multiprocessing.Lock()
 
     @property
     def level(self):

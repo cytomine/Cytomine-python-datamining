@@ -1,17 +1,20 @@
 # -*- coding: utf-8 -*-
 
-from .image import Image, Tile, TileBuilder, TileTopologyIterator, TileTopology, ImageWindow
-from .locator import Locator
-from .segmenter import Segmenter
-from .dispatcher import DispatchingRule, DispatcherClassifier
-from .workflow import SLDCWorkflow
+from .builder import WorkflowBuilder
+from .chaining import ImageProvider, WorkflowExecutor, PolygonTranslatorWorkflowExecutor, WorkflowChain, PostProcessor,\
+                      FullImageWorkflowExecutor
 from .classifier import PolygonClassifier
-from .errors import ImageExtractionException, TileExtractionException
-from .chaining import ImageProvider, WorkflowExecutor, PolygonTranslatorWorkflowExecutor, \
-                      FullImageWorkflowExecutor, WorkflowChain, PostProcessor
-from .timing import WorkflowTiming
+from .dispatcher import DispatchingRule, DispatcherClassifier, CatchAllRule
+from .errors import ImageExtractionException, TileExtractionException, MissingComponentException
+from .image import Image, Tile, TileBuilder, TileTopologyIterator, TileTopology, ImageWindow, DefaultTileBuilder
 from .information import WorkflowInformation, ChainInformation, WorkflowInformationCollection
+from .locator import Locator
 from .logging import Logger, StandardOutputLogger, FileLogger, SilentLogger, Loggable
+from .merger import Merger
+from .segmenter import Segmenter
+from .timing import WorkflowTiming
+from .workflow import SLDCWorkflow
+
 
 __author__ = "Romain Mormont <r.mormont@student.ulg.ac.be>"
 
@@ -20,4 +23,5 @@ __all__ = ["Locator", "Segmenter", "DispatcherClassifier", "DispatchingRule", "S
            "TileExtractionException", "ImageWindow", "ImageProvider", "WorkflowExecutor", "WorkflowChain",
            "PostProcessor", "WorkflowInformation", "ChainInformation", "WorkflowInformationCollection",
            "FullImageWorkflowExecutor", "PolygonTranslatorWorkflowExecutor", "Logger", "StandardOutputLogger",
-           "FileLogger", "SilentLogger", "WorkflowTiming", "Loggable"]
+           "FileLogger", "SilentLogger", "WorkflowTiming", "Loggable", "WorkflowBuilder", "DefaultTileBuilder",
+           "Merger"]

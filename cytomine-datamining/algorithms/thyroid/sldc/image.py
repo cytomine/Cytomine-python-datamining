@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
-
 import math
 from abc import ABCMeta, abstractmethod, abstractproperty
 
 from errors import TileExtractionException
 
-__author__ = "Romain Mormont <r.mormont@student.ulg.ac.be>"
+__author__ = "Romain Mormont <romainmormont@hotmail.com>"
+__version__ = "0.1"
 
 
 class Image(object):
@@ -58,7 +58,7 @@ class Image(object):
 
         Returns
         -------
-        np_image: array-like
+        np_image: ndarray
             A numpy representation of the image
 
         Raises
@@ -68,7 +68,7 @@ class Image(object):
         Notes
         -----
         When working with very big images, this method may be "disabled" (i.e. raise NotImplementedError) to prevent
-        user of the class to fully load them into memory. Use tiles instead to explore the image.
+        user of the class to fully load them into memory. Tiles should be used instead to explore large images.
         """
         pass
 
@@ -79,9 +79,9 @@ class Image(object):
         ----------
         offset: (int, int)
             The (x, y) coordinates of the pixel at the origin point of the window in the parent image
-        max_width:
+        max_width: int
             The maximum width of the window
-        max_height:
+        max_height: int
             The maximum height of the window
 
         Returns
@@ -95,13 +95,13 @@ class Image(object):
         return ImageWindow(self, offset, width, height)
 
     def window_from_polygon(self, polygon):
-        """Build and return a window fitting the passed polygon.
+        """Build and return a window being the minimum bounding box around the passed polygon.
         At least a part of the polygon should fit the image
 
         Parameters
         ----------
-        polygon: Polygon
-            The polygon of which the bounding window should be returned
+        polygon: shapely.geometry.Polygon
+            The polygon of which the minimum bounding window should be returned
 
         Returns
         -------
@@ -126,9 +126,9 @@ class Image(object):
             A tile builder for constructing the Tile object
         offset: (int, int)
             The (x, y) coordinates of the pixel at the origin point of the tile in the parent image
-        max_width:
+        max_width: int
             The maximum width of the tile
-        max_height:
+        max_height: int
             The maximum height of the tile
 
         Returns
@@ -148,13 +148,13 @@ class Image(object):
         return tile_builder.build(self, offset, width, height)
 
     def tile_from_polygon(self, tile_builder, polygon):
-        """Build a tile boxing the passed polygon
+        """Build a tile being the minimum bounding box around the passed polygon
 
         Parameters
         ----------
         tile_builder: TileBuilder
             The builder for effectively building the tile
-        polygon: Polygon
+        polygon: shapely.geometry.Polygon
             The polygon of which the bounding tile should be returned
 
         Returns
@@ -177,11 +177,11 @@ class Image(object):
         ----------
         builder: TileBuilder
             The builder to user for actually constructing the tiles while iterating over the image
-        max_width: int, optional (default: 1024)
+        max_width: int (optional, default: 1024)
             The maximum width of the tiles to build
-        max_height: int, optional (default: 1024)
+        max_height: int (optional, default: 1024)
             The maximum height of the tiles to build
-        overlap: int, optional (default: 0)
+        overlap: int (optional, default: 0)
             The overlapping between tiles
 
         Returns
@@ -193,15 +193,15 @@ class Image(object):
         return TileTopologyIterator(builder, topology)
 
     def tile_topology(self, max_width=1024, max_height=1024, overlap=0):
-        """Builds a tile topology over the image
+        """Builds a tile topology for this the image
 
         Parameters
         ----------
-        max_width: int, optional (default: 1024)
+        max_width: int (optional, default: 1024)
             The maximum width of the tiles to build
-        max_height: int, optional (default: 1024)
+        max_height: int (optional, default: 1024)
             The maximum height of the tiles to build
-        overlap: int, optional (default: 0)
+        overlap: int (optional, default: 0)
             The overlapping between tiles
 
         Returns
@@ -233,7 +233,7 @@ class Image(object):
 
         Parameters
         ----------
-        polygon: Polygon
+        polygon: shapely.geometry.Polygon
             The polygon of which the bounding box should be computed
 
         Returns
@@ -255,6 +255,8 @@ class Image(object):
 
 
 class ImageWindow(Image):
+    """An image window represents a window in another image
+    """
     def __init__(self, parent, offset, width, height):
         """Constructor for ImageWindow objects
 
@@ -356,6 +358,10 @@ class ImageWindow(Image):
     def base_image(self):
         """Return the base Image object from which the window was extracted. If the parent image is a Window then, the
         base image is fetched recursively from it.
+        Returns
+        -------
+        base_image: Image
+            The base image
         """
         return self._parent.base_image if isinstance(self._parent, ImageWindow) else self._parent
 
@@ -369,7 +375,7 @@ class ImageWindow(Image):
 
         Returns
         -------
-        np_image: array-like
+        np_image: ndarray
             A numpy representation of the image
 
         Raises
@@ -384,17 +390,16 @@ class ImageWindow(Image):
         miny = self.offset_y
         maxx = self.offset_x + self.width
         maxy = self.offset_y + self.height
-        return self._parent.np_image[minx:maxx, miny:maxy]
+        return self._parent.np_image[miny:maxy, minx:maxx]
 
 
 class Tile(ImageWindow):
-    """
-    Abstract representation of an image's tile. A tile is a "small" window of an image.
+    """Abstract representation of an image's tile. A tile is a "small" window of an image.
     This class should be used along with a TileTopology to explore huge images.
 
     Notes
     -----
-    To avoid memory leaks the representation of the time should not be stored into memory as a class attribute.
+    To avoid memory leaks the representation of the tile should not be stored into memory as a class attribute.
     Alternatively, the loading should be deferred to the call of np_image.
     """
     __metaclass__ = ABCMeta
@@ -413,7 +418,7 @@ class Tile(ImageWindow):
             The width of the tile
         height: int
             The height of the tile
-        tile_identifier: int, optional (default: None)
+        tile_identifier: int (optional, default: None)
             A integer identifier that identifies uniquely the tile among a set of tiles
 
         Notes
@@ -431,12 +436,13 @@ class Tile(ImageWindow):
     def identifier(self, value):
         self._identifier = value
 
+    @property
     def np_image(self):
         """Return a numpy representation of the tile
 
         Returns
         -------
-        np_image: array-like
+        np_image: ndarray
             A numpy representation of the tile
 
         Raises
@@ -455,8 +461,7 @@ class Tile(ImageWindow):
 
 
 class TileBuilder(object):
-    """
-    A class for building tiles for a given image
+    """An interface to be implemented by any class which builds specific tiles
     """
     __metaclass__ = ABCMeta
 
@@ -516,9 +521,14 @@ class TileBuilder(object):
         return image.tile_from_polygon(self, polygon)
 
 
+class DefaultTileBuilder(TileBuilder):
+    """A tile builder which builds Tile objects"""
+    def build(self, image, offset, width, height):
+        return Tile(image, offset, width, height)
+
+
 class TileTopologyIterator(object):
-    """
-    An object to iterate over an image tile per tile
+    """An object to iterate over an image tile per tile as defined by a TileTopology
     """
 
     def __init__(self, builder, tile_topology, silent_fail=False):
@@ -531,7 +541,7 @@ class TileTopologyIterator(object):
         tile_topology: TileTopology
             The topology on which must iterate the iterator
         silent_fail: bool (optional, default: False)
-            True for skipping tiles that cannot be constructed silently, otherwise, an error is raised
+            True for silently skipping tiles that cannot be constructed, otherwise, an error is raised
 
         Notes
         -----
@@ -551,18 +561,17 @@ class TileTopologyIterator(object):
 
 
 class TileTopology(object):
-    """
-    A tile topology is an object storing information about a set of tiles of given dimensions and overlapping that
+    """A tile topology is an object storing information about a set of tiles of given dimensions and overlapping that
     fully covers an image. These parameters (image width and height, tile width and height and overlap) fully define
     the topology.
 
     The tile topology defines a bijection between the tiles and the integers. The tile generated by the topology are
     therefore associated identifiers matching this bijection. Given 'v', the number of vertical tiles and 'h', the
     number of horizontal tiles :
-        - tile 1 is the upper-left tile
-        - tile h is the upper-right tile
-        - tile (h * (v - 1) + 1) is the lower-left tile
-        - tile (v * h) is the lower-right tile
+        - tile 1 is the top-left tile
+        - tile h is the top-right tile
+        - tile (h * (v - 1) + 1) is the bottom-left tile
+        - tile (v * h) is the bottom-right tile
 
     The implementation is aimed at being memory efficient by computing everything on-the-fly for avoiding storing heavy
     data structures. Also, methods that compute topology properties (such as finding the neighbour tiles, finding the
@@ -576,11 +585,11 @@ class TileTopology(object):
         ----------
         image: Image
             The image for which the topology must be built
-        max_width: int, optional (default: 1024)
+        max_width: int (optional, default: 1024)
             The maximum width of the tiles
-        max_height: int, optional (default: 1024)
+        max_height: int (optional, default: 1024)
             The maximum height of the tiles
-        overlap: int, optional (default: 0)
+        overlap: int (optional, default: 0)
             The number of pixels of overlapping between neighbouring tiles
 
         Notes
@@ -602,6 +611,7 @@ class TileTopology(object):
             A tile identifier
         tile_builder : TileBuilder
             A builder for building a Tile object from the extracted tile
+
         Returns
         -------
         tile: Tile

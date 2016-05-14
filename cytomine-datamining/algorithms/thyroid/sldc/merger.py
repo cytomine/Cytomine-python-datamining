@@ -3,13 +3,13 @@
 from shapely.geometry import JOIN_STYLE
 from shapely.ops import cascaded_union
 
-__author__ = "Romain Mormont <r.mormont@student.ulg.ac.be>"
-__contributor__ = "Begon Jean-Michel <jm.begon@gmail.com>"
+__author__ = "Begon Jean-Michel <jm.begon@gmail.com>"
+__contributor__ = ["Romain Mormont <romainmormont@hotmail.com>"]
+__version = "0.1"
 
 
 class Graph(object):
-    """
-    A class for representing a graph
+    """A class for representing a graph
     """
     def __init__(self):
         self.nodes = []
@@ -18,8 +18,15 @@ class Graph(object):
 
     def add_node(self, value):
         """Add a node to the graph
-        :param value:
-        :return:
+
+        Parameters
+        ----------
+        value: int
+            Node value
+        Returns
+        -------
+        index: int
+            Return the node index
         """
         self.nodes.append(value)
         self.node2idx[value] = len(self.nodes) - 1
@@ -27,9 +34,13 @@ class Graph(object):
 
     def add_edge(self, source, destination):
         """Add an edge to the graph
-        :param source:
-        :param destination:
-        :return:
+
+        Parameters
+        ----------
+        source: int
+            Id of the source node
+        destination: int
+            Id of the destination node
         """
         ls = self.edges.get(source, [])
         if len(ls) == 0:
@@ -38,7 +49,10 @@ class Graph(object):
 
     def connex_components(self):
         """Find the connex components of the graph
-        :return:
+        Returns
+        -------
+        components: iterable (subtype: iterable of int)
+            An iterable containing connex components. A connex component is an iterable of node indexes
         """
         visited = [False]*len(self.nodes)
         components = []
@@ -63,8 +77,7 @@ class Graph(object):
 
 
 class Merger(object):
-    """
-    A class for merging polygons from neighbouring tiles of an image
+    """A class for merging polygons from neighbouring tiles of an image
     """
     def __init__(self, boundary_thickness):
         """Constructor for Merger objects
@@ -72,7 +85,7 @@ class Merger(object):
         Parameters:
         -----------
         boundary_thickness: int
-            Distance from the actual boundary at which an object is considered as
+            Distance from the actual object boundary at which an object is considered as
             touching the boundary
         """
         self._boundary_thickness = boundary_thickness
@@ -82,16 +95,15 @@ class Merger(object):
 
         Parameters
         ----------
-        polygons_tiles: iterable
-            An array of tuples. Each tuple contains a tile and its polygons in an array.
-            The polygons are of type shapely.geometry.Polygon.
+        polygons_tiles: iterable (subtype: (Tile, iterable of shapely.geometry.Polygon))
+            An iterable of tuples. Each tuple contains a tile and its polygons in another iterable.
         tile_topology: TileTopology
-            The tile topology used to generate the tile passed in polygons_tiles
+            The tile topology that was used to generate the tiles passed in polygons_tiles
 
         Returns
         -------
-        polygons: list
-            An array of polygons objects containing the merged polygons
+        polygons: iterable (subtype: shapely.geometry.Polygon)
+            An iterable of polygons objects containing the merged polygons
         """
         tiles_dict, polygons_dict = Merger._build_dicts(polygons_tiles)
         # no polygons
@@ -113,15 +125,15 @@ class Merger(object):
 
     def _register_merge(self, polygons1, polygons2, polygons_dict, geom_graph):
         """Compare 2-by-2 the polygons in the two arrays. If they are very close (using thickness_boundary as distance
-        threshold), they are registered as polygons to be merged in the geometry graph (the registration is simply
-        an edge between the nodes corresponding to the polygons).
+        threshold), they are registered as polygons to be merged in the geometry graph (the registration being
+        an edge between the nodes corresponding to the polygons in geom_graph).
 
         Parameters
         ----------
         polygons1: iterable
-            Array of integers containing polygons indexes
+            Iterable of integers containing polygons indexes
         polygons2: iterable
-            Array of integers containing polygons indexes
+            Iterable of integers containing polygons indexes
         polygons_dict: dict
             Dictionary mapping polygon identifiers with actual shapely polygons objects
         geom_graph: Graph
@@ -145,8 +157,8 @@ class Merger(object):
 
         Returns
         -------
-        polygons: list
-            An array of polygons objects containing the merged polygons
+        polygons: iterable
+            An iterable of polygons objects containing the merged polygons
         """
         components = geom_graph.connex_components()
         dilation_dist = self._boundary_thickness
@@ -167,8 +179,8 @@ class Merger(object):
 
         Parameters
         ----------
-        polygons_tiles: iterable
-            ...
+        polygons_tiles: iterable (subtype: (Tile, iterable of shapely.geometry.Polygon))
+            An iterable of tuples. Each tuple contains a tile and its polygons in another iterable.
 
         Returns
         -------
