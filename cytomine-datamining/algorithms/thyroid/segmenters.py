@@ -1,17 +1,15 @@
 # -*- coding: utf-8 -*-
-
-__author__ = "Mormont Romain <romain.mormont@gmail.com>"
-__version__ = "0.1"
-
 import cv2
 import copy
 import numpy as np
-from sldc import Segmenter, DispatcherClassifier, SLDCWorkflow, SilentLogger
-from scipy.ndimage.filters import maximum_filter
+
+from sldc import Segmenter
 from scipy.ndimage.measurements import label
+from scipy.ndimage.filters import maximum_filter
 from helpers.datamining.segmenter import otsu_threshold_with_mask
-from dispatching_rules import CellRule
-from helpers.datamining.colordeconvoluter import ColorDeconvoluter
+
+__author__ = "Mormont Romain <romain.mormont@gmail.com>"
+__version__ = "0.1"
 
 
 def get_standard_kernel():
@@ -33,6 +31,72 @@ def get_standard_struct_elem():
                             [0, 0, 1, 1, 1, 0, 0], ],
                            dtype=np.uint8)
     return struct_elem
+
+
+class SlideSegmenter(Segmenter):
+    """
+    A segmenter performing :
+    - Color deconvolution (see :class:`ColorDeconvoluter`)
+    - Static thresholding (identify cells)
+    - Morphological closure (remove holes in cells)
+    - Morphological opening (remove small objects)
+    - Morphological closure (merge close objects)
+
+    Format
+    ------
+    the given numpy.ndarrays are supposed to be RGB images :
+    np_image.shape = (height, width, color=3) with values in the range
+    [0, 255]
+
+    Constructor parameters
+    ----------------------
+    color_deconvoluter : :class:`ColorDeconvoluter` instance
+        The color deconvoluter performing the deconvolution
+    threshold : int [0, 255] (default : 120)
+        The threshold value. The higher, the more true/false positive
+    struct_elem : binary numpy.ndarray (default : None)
+        The structural element used for the morphological operations. If
+        None, a default will be supplied
+    nb_morph_iter : sequence of int (default [1,3,7])
+        The number of iterations of each morphological operation.
+            nb_morph_iter[0] : number of first closures
+            nb_morph_iter[1] : number of openings
+            nb_morph_iter[2] : number of second closures
+    """
+
+    def __init__(self, color_deconvoluter, threshold=120,
+                 struct_elem=None, nb_morph_iter=None):
+        self._color_deconvoluter = color_deconvoluter
+        self._threshold = threshold
+        self._struct_elem = struct_elem
+        if self._struct_elem is None:
+            self._struct_elem = np.array([[0, 0, 1, 1, 1, 0, 0],
+                                          [0, 1, 1, 1, 1, 1, 0],
+                                          [1, 1, 1, 1, 1, 1, 1],
+                                          [1, 1, 1, 1, 1, 1, 1],
+                                          [1, 1, 1, 1, 1, 1, 1],
+                                          [0, 1, 1, 1, 1, 1, 0],
+                                          [0, 0, 1, 1, 1, 0, 0], ],
+                                         dtype=np.uint8)
+        self._nb_morph_iter = [1, 3, 7] if nb_morph_iter is None else nb_morph_iter
+
+    def segment(self, np_image):
+        tmp_image = self._color_deconvoluter.transform(np_image)
+
+        # Static thresholding on the gray image
+        tmp_image = cv2.cvtColor(tmp_image, cv2.COLOR_RGB2GRAY)
+        _, binary = cv2.threshold(tmp_image, self._threshold, 255, cv2.THRESH_BINARY_INV)
+
+        # Remove holes in cells in the binary image
+        binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, self._struct_elem, iterations=self._nb_morph_iter[0])
+
+        # Remove small objects in the binary image
+        binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, self._struct_elem, iterations=self._nb_morph_iter[1])
+
+        # Union architectural paterns
+        binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, self._struct_elem, iterations=self._nb_morph_iter[2])
+
+        return binary
 
 
 class AggregateSegmenter(Segmenter):
@@ -165,56 +229,3 @@ class AggregateSegmenter(Segmenter):
         markers = cv2.morphologyEx(markers, cv2.MORPH_DILATE, self._small_struct_element, iterations=1)
 
         return markers.astype(np.uint8)
-
-
-class AggregateDispatcherClassifier(DispatcherClassifier):
-    def __init__(self, cell_classifier, cell_dispatch_classifier, logger=SilentLogger()):
-        """Constructor for SlideDispatcherClassifier objects
-        Objects which aren't cells are classified None
-
-        Parameters
-        ----------
-        cell_classifier: PolygonClassifier
-            The classifiers for cells
-        cell_dispatch_classifier: PyxitClassifierAdapter
-            The classifier for dispatching cells
-        logger: Logger (optional, default: a SilentLogger instance)
-            A logger object
-        """
-        rules = [CellRule(cell_dispatch_classifier)]
-        classifiers = [cell_classifier]
-        DispatcherClassifier.__init__(self, rules, classifiers, logger=logger)
-
-
-class AggregateProcessingWorkflow(SLDCWorkflow):
-    """
-    A workflow for processing aggregates
-    """
-
-    def __init__(self, tile_builder, cell_classifier, cell_dispatch_classifier,
-                 tile_max_width=1024, tile_max_height=1024, overlap=15, logger=SilentLogger()):
-        """Constructor for AggregateProcessingWorkflow objects
-
-        Parameters
-        ----------
-        tile_builder: TileBuilder
-            A tile builder
-        cell_classifier: PolygonClassifier
-            The classifiers for cells
-        cell_dispatch_classifier: PyxitClassifierAdapter
-            The classifier for dispatching cells
-        tile_max_width: int
-            The maximum width of the tile to use when iterating over the images
-        tile_max_height: int
-            The maximum height of the tile to use when iterating over the images
-        overlap: int
-            The number of pixels of overlap between the tiles when iterating over the images
-        logger: Logger (optional, default: a SilentLogger instance)
-            A logger object
-        """
-        color_deconvoluter = ColorDeconvoluter()
-        color_deconvoluter.set_kernel(get_standard_kernel())
-        segmenter = AggregateSegmenter(color_deconvoluter, struct_elem=get_standard_struct_elem())
-        dispatcher_classifier = AggregateDispatcherClassifier(cell_classifier, cell_dispatch_classifier, logger=logger)
-        SLDCWorkflow.__init__(self, segmenter, dispatcher_classifier, tile_builder, tile_max_width=tile_max_width,
-                              tile_max_height=tile_max_height, tile_overlap=overlap, logger=logger)

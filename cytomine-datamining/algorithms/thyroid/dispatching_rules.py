@@ -23,10 +23,12 @@ class BinaryClassifierRule(DispatchingRule):
         self._classifier = pyxit_classifier_adapter
 
     def evaluate(self, image, polygon):
-        return self._classifier.predict(image, polygon) > 0.5
+        cls, proba = self._classifier.predict(image, polygon)
+        return cls > 0.5
 
     def evaluate_batch(self, image, polygons):
-        return self._classifier.predict_batch(image, polygons) > 0.5
+        classes, probas = self._classifier.predict_batch(image, polygons)
+        return classes > 0.5
 
 
 class AggregateRule(BinaryClassifierRule):

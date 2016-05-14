@@ -1,16 +1,20 @@
 # -*- coding: utf-8 -*-
 import optparse
 
-from sldc import PostProcessor, WorkflowChain, FullImageWorkflowExecutor, Logger, StandardOutputLogger, SilentLogger, \
-    Loggable
+from cytomine import Cytomine
+
+from sldc import PostProcessor, FullImageWorkflowExecutor, Logger, StandardOutputLogger, SilentLogger, Loggable, \
+    WorkflowBuilder, WorkflowChainBuilder
+
+from helpers.datamining.colordeconvoluter import ColorDeconvoluter
 from helpers.utilities.datatype.polygon import affine_transform
-from image_providers import SlideProvider, AggregateWorkflowExecutor
-from slide_processing import SlideProcessingWorkflow
+
+from segmenters import AggregateSegmenter, SlideSegmenter, get_standard_kernel, get_standard_struct_elem
+from dispatching_rules import CellRule, AggregateRule
+from image_providers import SlideProvider
 from image_adapter import CytomineTileBuilder, TileCache, CytomineMaskedTileBuilder
-from aggregate_processing import AggregateProcessingWorkflow
 from ontology import ThyroidOntology
 from classifiers import PyxitClassifierAdapter
-from cytomine import Cytomine
 from cytomine.models import AlgoAnnotationTerm
 from helpers.utilities.cytominejob import CytomineJob
 
@@ -137,39 +141,63 @@ class ThyroidJob(CytomineJob, Loggable):
         cytomine = Cytomine(host, public_key, private_key, working_path, protocol,
                             base_path, verbose >= Logger.DEBUG, timeout)
         CytomineJob.__init__(self, cytomine, software_id, project_id)
+
+        # Build tile builders
         tile_builder = CytomineTileBuilder(cytomine)
         masked_tile_builder = CytomineMaskedTileBuilder(cytomine)
         tile_cache = TileCache(tile_builder, working_path)
 
-        # build useful classifiers
+        # Build useful classifiers and rules
         adapter_builder_func = PyxitClassifierAdapter.build_from_pickle
-        aggr_classifier = adapter_builder_func(aggr_classif, tile_cache, self._logger, n_jobs=n_jobs)
-        cell_classifier = adapter_builder_func(cell_classif, tile_cache, self._logger, n_jobs=n_jobs)
-        aggr_dispatch = adapter_builder_func(aggr_dispatch_classif, tile_cache, self._logger, n_jobs=n_jobs)
-        cell_dispatch = adapter_builder_func(cell_dispatch_classif, tile_cache, self._logger, n_jobs=n_jobs)
+        aggr_classifier = adapter_builder_func(aggr_classif, tile_cache, self.logger, n_jobs=n_jobs)
+        cell_classifier = adapter_builder_func(cell_classif, tile_cache, self.logger, n_jobs=n_jobs)
+        aggr_dispatch = adapter_builder_func(aggr_dispatch_classif, tile_cache, self.logger, n_jobs=n_jobs)
+        cell_dispatch = adapter_builder_func(cell_dispatch_classif, tile_cache, self.logger, n_jobs=n_jobs)
+        cell_rule = CellRule(cell_dispatch, logger=self.logger)
+        aggregate_rule = AggregateRule(aggr_dispatch, logger=self.logger)
 
-        # build workflow chain components
-        image_provider = SlideProvider(cytomine, slide_ids)
-        slide_workflow = SlideProcessingWorkflow(tile_builder, cell_classifier, aggr_classifier, cell_dispatch,
-                                                 aggr_dispatch, tile_max_width=tile_max_width,
-                                                 tile_max_height=tile_max_height, logger=self._logger)
-        aggre_workflow = AggregateProcessingWorkflow(masked_tile_builder, cell_classifier, cell_dispatch,
-                                                     tile_max_width=tile_max_width, tile_max_height=tile_max_height,
-                                                     logger=self._logger)
-        aggre_workflow_executor = AggregateWorkflowExecutor(cytomine, aggre_workflow, logger=self._logger)
-        post_processor = CytominePostProcessor(cytomine, logger=self._logger)
+        # Build workflows
+        workflow_builder = WorkflowBuilder(n_jobs=n_jobs)
+        color_deconvoluter = ColorDeconvoluter()
+        color_deconvoluter.set_kernel(get_standard_kernel())
 
-        # build the workflow chain
-        workflow_executors = [FullImageWorkflowExecutor(slide_workflow)]  # , aggre_workflow_executor]
-        self._chain = WorkflowChain(image_provider, workflow_executors, post_processor, logger=self._logger)
+        # Builder workflow 1 (slide processing)
+        workflow_builder.set_parallel()
+        workflow_builder.set_segmenter(SlideSegmenter(color_deconvoluter))
+        workflow_builder.add_classifier(cell_rule, cell_classifier)
+        workflow_builder.add_classifier(aggregate_rule, aggr_classifier)
+        workflow_builder.set_tile_size(tile_max_width, tile_max_height)
+        workflow_builder.set_logger(self.logger)
+        workflow_builder.set_tile_builder(tile_builder)
+
+        slide_workflow = workflow_builder.get()
+
+        # Build workflow 2 (aggregate processing)
+        workflow_builder.set_parallel()
+        workflow_builder.set_segmenter(AggregateSegmenter(color_deconvoluter, struct_elem=get_standard_struct_elem()))
+        workflow_builder.add_classifier(cell_rule, cell_classifier)
+        workflow_builder.set_tile_size(tile_max_width, tile_max_height)
+        workflow_builder.set_logger(self.logger)
+        workflow_builder.set_tile_builder(masked_tile_builder)
+
+        aggregate_workflow = workflow_builder.get()
+
+        # Build workflow chain
+        chain_builder = WorkflowChainBuilder()
+        chain_builder.set_image_provider(SlideProvider(cytomine, slide_ids))
+        chain_builder.add_executor(FullImageWorkflowExecutor(slide_workflow, logger=self.logger))
+        # chain_builder.add_executor(AggregateWorkflowExecutor(cytomine, aggregate_workflow, logger=self.logger))
+        chain_builder.set_post_processor(CytominePostProcessor(cytomine, logger=self.logger))
+
+        self._chain = chain_builder.get()
 
     def run(self):
         try:
-            self._logger.info("ThyroidJob : start thyroid workflow.")
+            self.logger.info("ThyroidJob : start thyroid workflow.")
             self._chain.execute()
-            self._logger.info("ThyroidJob : end thyroid workflow.")
+            self.logger.info("ThyroidJob : end thyroid workflow.")
         except Exception as e:
-            self._logger.error("ThyroidJob : error while executing workflow : {}.".format(e.message))
+            self.logger.error("ThyroidJob : error while executing workflow : {}.".format(e.message))
 
 
 def arr2str(arr):

@@ -48,7 +48,7 @@ class PyxitClassifierAdapter(PolygonClassifier, Loggable):
         ret_probas = [0.0] * len(polygons)
         for prediction, proba, i in zip(predictions, probas, extracted):
             ret_classes[i] = prediction
-            ret_probas[i] = proba
+            ret_probas[i] = np.max(proba)
         return np.array(ret_classes), np.array(ret_probas)
 
     def _predict(self, X):

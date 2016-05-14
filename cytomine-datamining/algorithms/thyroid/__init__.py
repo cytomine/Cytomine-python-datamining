@@ -1,16 +1,12 @@
 
 from classifiers import PyxitClassifierAdapter, PolygonClassifier
 from dispatching_rules import CellRule, AggregateRule
-from aggregate_processing import AggregateDispatcherClassifier, AggregateSegmenter, AggregateProcessingWorkflow
-from slide_processing import SlideDispatcherClassifier, SlideSegmenter
 from image_adapter import CytomineTile, CytomineSlide, CytomineTileBuilder, TileCache
 from image_providers import SlideProvider, AggregateWorkflowExecutor
-from workflow import SlideProcessingWorkflow
 from ontology import ThyroidOntology
+from segmenters import SlideSegmenter, AggregateSegmenter
 
 __all__ = [
-    "PyxitClassifierAdapter", "CellRule", "AggregateDispatcherClassifier", "SlideProcessingWorkflow", "CytomineTile",
-    "SlideProvider", "PolygonClassifier", "AggregateSegmenter", "SlideDispatcherClassifier", "TileCache",
-    "CytomineSlide", "AggregateWorkflowExecutor", "AggregateRule", "AggregateProcessingWorkflow", "SlideSegmenter",
-    "CytomineTileBuilder", "ThyroidOntology"
+    "PyxitClassifierAdapter", "CellRule", "CytomineTile", "SlideProvider", "PolygonClassifier", "AggregateSegmenter",
+    "TileCache", "CytomineSlide", "AggregateRule", "SlideSegmenter", "CytomineTileBuilder", "ThyroidOntology"
 ]

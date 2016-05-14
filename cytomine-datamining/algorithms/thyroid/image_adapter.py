@@ -16,7 +16,7 @@ __author__ = "Mormont Romain <romain.mormont@gmail.com>"
 __version__ = "0.1"
 
 
-def _get_crop(cytomine, image_inst, geometry, zoom=0):
+def _get_crop(cytomine, image_inst, geometry):
     """
     Download the crop corresponding to bounds on the given image instance
     from cytomine
@@ -34,8 +34,8 @@ def _get_crop(cytomine, image_inst, geometry, zoom=0):
     """
     bounds = dict()
     bounds["x"], bounds["y"], bounds["w"], bounds["h"] = geometry
-    url = "{}{}{}{}?zoom={}".format(cytomine._Cytomine__protocol, cytomine._Cytomine__host,
-                                   cytomine._Cytomine__base_path, image_inst.get_crop_url(bounds), zoom)
+    url = "{}{}{}{}".format(cytomine._Cytomine__protocol, cytomine._Cytomine__host, cytomine._Cytomine__base_path,
+                            image_inst.get_crop_url(bounds))
     resp, content = cytomine.fetch_url(url)
     if resp.status != 200:
         raise IOError("Couldn't fetch the crop for image {} and bounds {} from server (status : {}).".format(image_inst.id, geometry, resp.status))
@@ -143,6 +143,10 @@ class CytomineTile(Tile):
     def _tile_box(self):
         offset_x, offset_y = self.abs_offset
         return box(offset_x, offset_y, offset_x + self.width, offset_y + self.height)
+
+    def __getstate__(self):
+        self._cytomine._Cytomine__conn = None  # delete socket to make the tile serializable
+        return self.__dict__
 
 
 class CytomineTileBuilder(TileBuilder):
