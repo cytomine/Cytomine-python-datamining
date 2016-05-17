@@ -280,9 +280,16 @@ def main(argv):
         y_test = np.array([mapper.map(to_map) for to_map in y_test])
 
     # extract subwindows on learning set
-    print "Extract subwindows..."
-    _X, _y = pyxit.extract_subwindows(X, y)
-    _labels = np.repeat(labels, params.pyxit_n_subwindows)
+    # print "Number of images : {}".format(X.shape[0])
+    # print "Number of windows: {}".format(params.pyxit_n_subwindows)
+    # print "Extract a total of {} subwindows...".format(params.pyxit_n_subwindows * X.shape[0])
+    # pyxit.verbose = 1
+    # pyxit.n_jobs = 1
+    # _X, _y = pyxit.extract_subwindows(X, y)
+    # pyxit.n_jobs = params.pyxit_n_jobs
+    # pyxit.verbose = 0
+    # print "Windows extracted..."
+    # _labels = np.repeat(labels, params.pyxit_n_subwindows)
 
     # prepare the cross validation
     print "Prepare cross validation..."
@@ -297,13 +304,13 @@ def main(argv):
         parameters_score = []
         for j, (train, test) in enumerate(cv.split(X, y, labels)):
             # Set the parameters and split windows into train and test sets
-            _train, _test = where_in(labels[train], _labels)
+            # _train, _test = where_in(labels[train], _labels)
             print "[CV] {} ({}/{})".format(parameters, j+1, split_count)
             estimator = clone(pyxit)
             estimator.set_params(**parameters)
             start = time.time()
-            estimator.fit(X[train], y[train], _X=_X[_train], _y=_y[_train])
-            curr_score = accuracy_score(y[test], estimator.predict(X[test], _X=_X[_test]))
+            estimator.fit(X[train], y[train])  # , _X=_X[_train], _y=_y[_train])
+            curr_score = accuracy_score(y[test], estimator.predict(X[test]))  # , _X=_X[_test]))
             duration = time.time() - start
             print "[CV]   {} - {} in {}".format(parameters, round(curr_score, 4), logger.short_format_time(duration))
             parameters_score.append(curr_score)
@@ -321,7 +328,7 @@ def main(argv):
     if is_test_set_provided:
         best_estimator = clone(pyxit)
         best_estimator.set_params(**params_grid[best_index])
-        best_estimator.fit(X, y, _X=_X, _y=_y)
+        best_estimator.fit(X, y)  # s, _X=_X, _y=_y)
 
     # refit with the best parameters
     print "Best parameters : {}".format(best_params)
