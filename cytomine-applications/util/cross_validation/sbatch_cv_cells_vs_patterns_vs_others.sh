@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH --job-name=cv_cells_vs_patterns_vs_others_new_params
-#SBATCH --output=/home/mass/GRD/r.mormont/out/validation/cv_cells_vs_patterns_vs_others_new_params.res
+#SBATCH --job-name=cv_cpo3
+#SBATCH --output=/home/mass/GRD/r.mormont/out/validation/cv_cpo3.res
 #SBATCH --ntasks=40
 #SBATCH --cpus-per-task=1
 #SBATCH --time=192:00:00
@@ -64,7 +64,7 @@
     --cv_images_out 1 \
     --pyxit_n_jobs 40 \
     --pyxit_dir_ls "/home/mass/GRD/r.mormont/nobackup/cv/ls" \
-    --forest_n_estimators 100 \
+    --forest_n_estimators 20 \
     --pyxit_n_subwindows 100 \
     --pyxit_colorspace 1 \
         --pyxit_colorspace 2 \
@@ -79,5 +79,5 @@
         --forest_max_features 28 \
         --forest_max_features 384 \
         --forest_max_features 768 \
-    --svm 1 \
+    --svm 0 \
     --svm_c 0.1

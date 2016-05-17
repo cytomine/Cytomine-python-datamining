@@ -1,6 +1,6 @@
 #!/bin/bash
 
-/home/mass/GRD/r.mormont/miniconda/bin/python -m pdb /home/mass/GRD/r.mormont/sftp/cytomine-applications/util/cross_validation/pyxit_cross_validator.py \
+/home/mass/GRD/r.mormont/miniconda/bin/python /home/mass/GRD/r.mormont/sftp/cytomine-applications/util/cross_validation/pyxit_cross_validator.py \
     --cytomine_host "beta.cytomine.be" \
     --cytomine_public_key "ad014190-2fba-45de-a09f-8665f803ee0b" \
     --cytomine_private_key "767512dd-e66f-4d3c-bb46-306fa413a5eb" \
@@ -50,9 +50,9 @@
         --cytomine_test_images 186842285 \
     --cytomine_verbose 0 \
     --cv_images_out 1 \
-    --pyxit_n_subwindows 2 \
+    --pyxit_n_subwindows 50 \
     --pyxit_colorspace 2 \
-    --pyxit_n_jobs 1 \
+    --pyxit_n_jobs 2 \
     --pyxit_min_size 0.6 \
     --pyxit_max_size 1.0 \
     --pyxit_dir_ls "/home/mass/GRD/r.mormont/nobackup/cv/test" \
