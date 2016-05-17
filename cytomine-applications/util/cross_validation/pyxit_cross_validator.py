@@ -293,42 +293,52 @@ def main(argv):
 
     # prepare the cross validation
     print "Prepare cross validation..."
-    params_grid = ParameterGrid(cv_params)
-    cv = LeavePLabelOut(params.cv_images_out)
-    split_count = cv.get_n_splits(X, y, labels)
-    print "[CV] Fitting {} folds for each of {} candidates, totalling {} fits.".format(split_count, len(params_grid),
-                                                                                       split_count * len(params_grid))
+    pyxit.n_jobs = 1
+    pyxit.base_estimator.n_jobs = 1
+    grid = GridSearchCV(pyxit, cv_params, scoring=accuracy_scoring, cv=LeavePLabelOut(params.cv_images_out),
+                        verbose=10, n_jobs=params.pyxit_n_jobs, refit=is_test_set_provided)
 
-    scores = []
-    for i, parameters in enumerate(params_grid):
-        parameters_score = []
-        for j, (train, test) in enumerate(cv.split(X, y, labels)):
-            # Set the parameters and split windows into train and test sets
-            # _train, _test = where_in(labels[train], _labels)
-            print "[CV] {} ({}/{})".format(parameters, j+1, split_count)
-            estimator = clone(pyxit)
-            estimator.set_params(**parameters)
-            start = time.time()
-            estimator.fit(X[train], y[train])  # , _X=_X[_train], _y=_y[_train])
-            curr_score = accuracy_score(y[test], estimator.predict(X[test]))  # , _X=_X[_test]))
-            duration = time.time() - start
-            print "[CV]   {} - {} in {}".format(parameters, round(curr_score, 4), logger.short_format_time(duration))
-            parameters_score.append(curr_score)
+    grid.fit(X, y, labels)
 
-        avg_score = np.mean(parameters_score)
-        print "[CV] For parameters {}".format(parameters)
-        print "[CV]   => average score : {}".format(avg_score)
-        scores.append(avg_score)
+    # cv = LeavePLabelOut(params.cv_images_out)
+    # split_count = cv.get_n_splits(X, y, labels)
+    # print "[CV] Fitting {} folds for each of {} candidates, totalling {} fits.".format(split_count, len(params_grid),
+    #                                                                                    split_count * len(params_grid))
+
+    # scores = []
+    # for i, parameters in enumerate(params_grid):
+    #     parameters_score = []
+    #     for j, (train, test) in enumerate(cv.split(X, y, labels)):
+    #         # Set the parameters and split windows into train and test sets
+    #         # _train, _test = where_in(labels[train], _labels)
+    #         print "[CV] {} ({}/{})".format(parameters, j+1, split_count)
+    #         estimator = clone(pyxit)
+    #         estimator.set_params(**parameters)
+    #         start = time.time()
+    #         estimator.fit(X[train], y[train])  # , _X=_X[_train], _y=_y[_train])
+    #         curr_score = accuracy_score(y[test], estimator.predict(X[test]))  # , _X=_X[_test]))
+    #         duration = time.time() - start
+    #         print "[CV]   {} - {} in {}".format(parameters, round(curr_score, 4), logger.short_format_time(duration))
+    #         parameters_score.append(curr_score)
+    #
+    #     avg_score = np.mean(parameters_score)
+    #     print "[CV] For parameters {}".format(parameters)
+    #     print "[CV]   => average score : {}".format(avg_score)
+    #     scores.append(avg_score)
 
     # Extract best parameters
-    best_index = np.argmax(scores)
-    best_params = params_grid[best_index]
-    best_score = scores[best_index]
-    best_estimator = None
-    if is_test_set_provided:
-        best_estimator = clone(pyxit)
-        best_estimator.set_params(**params_grid[best_index])
-        best_estimator.fit(X, y)  # s, _X=_X, _y=_y)
+    # best_index = np.argmax(scores)
+    # best_params = params_grid[best_index]
+    # best_score = scores[best_index]
+    # best_estimator = None
+    # if is_test_set_provided:
+    #     best_estimator = clone(pyxit)
+    #     best_estimator.set_params(**params_grid[best_index])
+    #     best_estimator.fit(X, y)  # s, _X=_X, _y=_y)
+
+    best_params = grid.best_params_
+    best_score = grid.best_score_
+    best_estimator = grid.best_estimator_
 
     # refit with the best parameters
     print "Best parameters : {}".format(best_params)
