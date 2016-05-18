@@ -159,9 +159,9 @@ class WorkflowInformation(object):
         return self._timing
 
     def __iter__(self):
-        self.iterator()
+        self.results()
 
-    def iterator(self, filter_dispatch=None, filter_classes=None):
+    def results(self, filter_dispatch=None, filter_classes=None):
         """Yields an iterator that goes through the list of polygons of the workflow information
         The result is a tuple containing in this order the polygon, the dispatch index and the class
 
@@ -251,7 +251,7 @@ class WorkflowInformationCollection(object):
             The classes number to exclude from the iterated list
         """
         for workflow_info in self._items:
-            for polygon, dispatch, cls, proba in workflow_info.iterator(filter_classes=filter_classes,
-                                                                        filter_dispatch=filter_dispatch):
+            for polygon, dispatch, cls, proba in workflow_info.results(filter_classes=filter_classes,
+                                                                       filter_dispatch=filter_dispatch):
                 yield polygon, dispatch, cls, proba
         return

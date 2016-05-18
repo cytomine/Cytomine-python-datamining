@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from joblib import Parallel, delayed
+from joblib import delayed
 
 from image import Image, TileBuilder, TileTopologyIterator
 from merger import Merger
@@ -13,7 +13,38 @@ __author__ = "Romain Mormont <romainmormont@hotmail.com>"
 __version = "0.1"
 
 
-def _parallel_sl_with_timing(tile, segmenter, locator):
+def _segment_locate(tile, segmenter, locator, timing):
+    """Load the tile numpy representation and applies it segmentation and location using the given objects
+
+        Parameters
+        ----------
+        tile: Tile
+            The tile to process for the segment locate
+        segmenter: Segmenter
+            For segmenting the image
+        locator: Locator
+            For converting a mask to polygons
+        timing: WorkflowTiming
+            The workflow timing object for measuring the execution times of the various steps
+
+        Returns
+        -------
+        polygons: iterable (subtype: shapely.geometry.Polygon)
+            Iterable containing the polygons found by the locate step
+        """
+    timing.start_loading()
+    np_image = tile.np_image
+    timing.end_loading()
+    timing.start_segment()
+    segmented = segmenter.segment(np_image)
+    timing.end_segment()
+    timing.start_location()
+    located = locator.locate(segmented, offset=tile.offset)
+    timing.end_location()
+    return located
+
+
+def _sl_with_timing(tile, segmenter, locator):
     """Helper function for parallel execution. Error occurring in this method is notified by returning None in place of
     the timing object.
 
@@ -36,15 +67,7 @@ def _parallel_sl_with_timing(tile, segmenter, locator):
         The polygons found in the tile
     """
     timing = WorkflowTiming()
-    timing.start_fetching()
-    np_image = tile.np_image
-    timing.end_fetching()
-    timing.start_segment()
-    segmented = segmenter.segment(np_image)
-    timing.end_segment()
-    timing.start_location()
-    located = locator.locate(segmented, offset=tile.offset)
-    timing.end_location()
+    located = _segment_locate(tile, segmenter, locator, timing)
     return timing, tile, located
 
 
@@ -55,7 +78,7 @@ class SLDCWorkflow(Loggable):
 
     def __init__(self, segmenter, dispatcher_classifier, tile_builder,
                  tile_max_width=1024, tile_max_height=1024, tile_overlap=5,
-                 boundary_thickness=7, logger=SilentLogger(), worker_pool=None):
+                 dist_tolerance=7, logger=SilentLogger(), worker_pool=None):
         """Constructor for SLDCWorkflow objects
 
         Parameters
@@ -72,8 +95,8 @@ class SLDCWorkflow(Loggable):
             The maximum height of the tiles when iterating over the image
         tile_overlap: int (optional, default: 5)
             The number of pixels of overlap between tiles when iterating over the image
-        boundary_thickness: int (optional, default, 7)
-            The thickness between of the boundaries between the tiles for merging
+        dist_tolerance: int (optional, default, 7)
+            Maximal distance between two polygons so that they are considered from the same object
         logger: Logger (optional, default: SilentLogger)
             A logger object
         worker_pool: Parallel (optional, default: null)
@@ -86,7 +109,7 @@ class SLDCWorkflow(Loggable):
         self._tile_builder = tile_builder
         self._segmenter = segmenter
         self._locator = Locator()
-        self._merger = Merger(boundary_thickness)
+        self._merger = Merger(dist_tolerance)
         self._dispatch_classifier = dispatcher_classifier
         self._pool = worker_pool
         self._n_jobs = worker_pool.n_jobs if self._pool is not None else 1
@@ -122,7 +145,7 @@ class SLDCWorkflow(Loggable):
 
         # log end of segment locate
         self.logger.info("SLDCWorkflow : end segment/locate.\n" +
-                         "SLDCWorkflow : {} tile(s) processed in {} s.\n".format(len(polygons_tiles), timing.sl_total_duration()) +
+                         "SLDCWorkflow : {} tile(s) processed in {} s.\n".format(len(polygons_tiles), timing.lsl_total_duration()) +
                          "SLDCWorkflow : {} polygon(s) found on those tiles.".format(sum([len(polygons) for _, polygons in polygons_tiles])))
 
         # merge
@@ -158,16 +181,7 @@ class SLDCWorkflow(Loggable):
             Iterable containing the polygons found by the locate step
         """
         try:
-            timing.start_fetching()
-            np_image = tile.np_image
-            timing.end_fetching()
-            timing.start_segment()
-            segmented = self._segmenter.segment(np_image)
-            timing.end_segment()
-            timing.start_location()
-            located = self._locator.locate(segmented, offset=tile.offset)
-            timing.end_location()
-            return located
+            return _segment_locate(tile, self._segmenter, self._locator, timing)
         except TileExtractionException as e:
             self.logger.warning("SLDCWorkflow : skip tile {} because it couldn't be extracted.\n".format(tile.identifier) +
                                 "SLDCWorkflow : fetch error : {}".format(e.message))
@@ -201,12 +215,14 @@ class SLDCWorkflow(Loggable):
             containing the polygons found on the tile
         """
         polygons_tiles = list()
+        timing.start_lsl()
         for i, tile in enumerate(tile_iterator):
             # log percentage of progress if there are enough tiles
             if tile_topology.tile_count > 25 and (i + 1) % (tile_topology.tile_count // 10) == 0:
                 self.logger.info("SLDCWorkflow : {}/{} tiles processed (segment/locate).\n".format(i+1, tile_topology.tile_count) +
                                  "SLDCWorkflow : segment/locate duration is {} s until now.".format(timing.sl_total_duration()))
             polygons_tiles.append((tile, self._segment_locate(tile, timing)))
+        timing.end_lsl()
         return polygons_tiles
 
     def _sl_parallel(self, tile_iterator, timing):
@@ -225,36 +241,14 @@ class SLDCWorkflow(Loggable):
             containing the polygons found on the tile
         """
         # execute in parallel
-        timing.start_fsl()
-        results = self._pool(delayed(_parallel_sl_with_timing)(tile, self._segmenter, self._locator)
-                             for tile in tile_iterator)
-        timing.end_fsl()
+        timing.start_lsl()
+        results = self._pool(delayed(_sl_with_timing)(tile, self._segmenter, self._locator) for tile in tile_iterator)
+        timing.end_lsl()
         # merge sub timings
         for sub_timing, _, _ in results:
             if sub_timing is None:
                 self._logger.warning("SLDCWorkflow : Tile {} couldn't be fetched during parallel computations.")
-            timing.merge(sub_timing)
+            else:
+                timing.merge(sub_timing)
         # return tiles polygons
         return [(tile, [] if sub_timing is None else polygons) for sub_timing, tile, polygons in results]
-
-    def _sl_with_timing(self, tile):
-        """Execute fetching, segmentation and location. The timing object is built in this function and passed to
-        self._segment_locate.
-
-        Parameters
-        ----------
-        tile: Tile
-            The tile to process
-
-        Returns
-        -------
-        timing: WorkflowTiming
-            The timing object containing information about the execution times for the tile
-        tile: Tile
-            The processed tile
-        polygons: iterable
-            The found polygons
-        """
-        timing = WorkflowTiming()
-        polygons = self._segment_locate(tile, timing)
-        return timing, tile, polygons

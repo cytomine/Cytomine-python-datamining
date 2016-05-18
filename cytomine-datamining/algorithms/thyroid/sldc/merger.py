@@ -79,16 +79,15 @@ class Graph(object):
 class Merger(object):
     """A class for merging polygons from neighbouring tiles of an image
     """
-    def __init__(self, boundary_thickness):
+    def __init__(self, tolerance):
         """Constructor for Merger objects
 
         Parameters:
         -----------
-        boundary_thickness: int
-            Distance from the actual object boundary at which an object is considered as
-            touching the boundary
+        tolerance: int
+            Maximal distance between two polygons so that they are considered from the same object
         """
-        self._boundary_thickness = boundary_thickness
+        self._tolerance = tolerance
 
     def merge(self, polygons_tiles, tile_topology):
         """Merge the polygons passed in a per-tile fashion according to the tile topology
@@ -141,7 +140,7 @@ class Merger(object):
         """
         for poly1 in polygons1:
             for poly2 in polygons2:
-                if polygons_dict[poly1].distance(polygons_dict[poly2]) < self._boundary_thickness:
+                if polygons_dict[poly1].distance(polygons_dict[poly2]) < self._tolerance:
                     geom_graph.add_edge(poly1, poly2)
 
     def _do_merge(self, geom_graph, polygons_dict):
@@ -161,7 +160,7 @@ class Merger(object):
             An iterable of polygons objects containing the merged polygons
         """
         components = geom_graph.connex_components()
-        dilation_dist = self._boundary_thickness
+        dilation_dist = self._tolerance
         join = JOIN_STYLE.mitre
         results = []
         for component in components:

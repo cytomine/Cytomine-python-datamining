@@ -123,7 +123,7 @@ class DispatcherClassifier(Loggable):
         self._classifiers = classifiers
         self._fail_callback = fail_callback if fail_callback is not None else (lambda x: None)
 
-    def dispatch_classify(self, image, polygon):
+    def dispatch_classify(self, image, polygon, timing):
         """Dispatch a single polygon to its corresponding classifier according to the dispatching rules,
         then compute and return the associated prediction.
 
@@ -133,6 +133,8 @@ class DispatcherClassifier(Loggable):
             The image to which belongs the polygon
         polygon: shapely.geometry.Polygon
             The polygon of which the class must be predicted
+        timing: WorkflowTiming
+            The timing object for computing the execution times of dispatching and classification
 
         Returns
         -------
@@ -146,12 +148,8 @@ class DispatcherClassifier(Loggable):
         dispatch: int
             The index of the rule that matched the polygon, -1 if none did
         """
-        matching_rule = self._dispatch_index(image, polygon)
-        if matching_rule == -1:
-            return self._fail_callback(polygon), 0.0, matching_rule
-        else:
-            cls, probability = self._classifiers[matching_rule].predict(image, polygon)
-            return cls, probability, matching_rule
+        classes, probabilities, indexes = self.dispatch_classify_batch(image, [polygon], timing)
+        return classes[0], probabilities[0], indexes[0]
 
     def dispatch_classify_batch(self, image, polygons, timing):
         """Apply the dispatching and classification steps to an ensemble of polygons.
@@ -222,7 +220,8 @@ class DispatcherClassifier(Loggable):
         self.logger.info("DispatcherClassifier : end classification.")
         return predict_list, probabilities_list, dispatch_list
 
-    def _split_by_rule(self, image, rule, polygons, poly_indexes, timing):
+    @staticmethod
+    def _split_by_rule(image, rule, polygons, poly_indexes, timing):
         """Given a rule, splits all the poly_indexes list into two lists. The first list contains
         the indexes corresponding to the polygons that were evaluated True by the rule, the indexes that
         were evaluated False by the rule.

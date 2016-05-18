@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+from abc import ABCMeta
+
+import numpy as np
 
 from sldc import DispatchingRule, SilentLogger
 from classifiers import PyxitClassifierAdapter
@@ -7,27 +10,25 @@ __author__ = "Mormont Romain <romain.mormont@gmail.com>"
 __version__ = "0.1"
 
 
-class BinaryClassifierRule(DispatchingRule):
+class ClassifierRule(DispatchingRule):
+    """"""
+    __metaclass__ = ABCMeta
+
     def __init__(self, pyxit_classifier_adapter, logger=SilentLogger()):
-        """Constructor for BinaryClassifierRule object
-        The evaluate returns true if the classifier predicts 1, it returns false otherwise
+        """Constructor for ClassifierRule object
 
         Parameters
         ----------
         pyxit_classifier_adapter: PyxitClassifierAdapter
-            A pyxit binary classifier
+            A pyxit classifier
         logger: Logger (optional, default: a SilentLogger instance)
             A logger object
         """
         DispatchingRule.__init__(self, logger=logger)
         self._classifier = pyxit_classifier_adapter
 
-    def evaluate_batch(self, image, polygons):
-        classes, probas = self._classifier.predict_batch(image, polygons)
-        return classes > 0.5
 
-
-class AggregateRule(BinaryClassifierRule):
+class AggregateRule(ClassifierRule):
     def __init__(self, pyxit_classifier_adapter, logger=SilentLogger()):
         """Constructor for AggregateRule object
 
@@ -38,10 +39,14 @@ class AggregateRule(BinaryClassifierRule):
         logger: Logger (optional, default: a SilentLogger instance)
             A logger object
         """
-        BinaryClassifierRule.__init__(self, pyxit_classifier_adapter, logger=logger)
+        ClassifierRule.__init__(self, pyxit_classifier_adapter, logger=logger)
+
+    def evaluate_batch(self, image, polygons):
+        classes, proba = self._classifier.predict_batch(image, polygons)
+        return classes < 0.5
 
 
-class CellRule(BinaryClassifierRule):
+class CellRule(ClassifierRule):
     def __init__(self, pyxit_classifier_adapter, logger=SilentLogger()):
         """Constructor for CellRule object
 
@@ -52,4 +57,8 @@ class CellRule(BinaryClassifierRule):
         logger: Logger (optional, default: a SilentLogger instance)
             A logger object
         """
-        BinaryClassifierRule.__init__(self, pyxit_classifier_adapter, logger=logger)
+        ClassifierRule.__init__(self, pyxit_classifier_adapter, logger=logger)
+
+    def evaluate_batch(self, image, polygons):
+        classes, proba = self._classifier.predict_batch(image, polygons)
+        return np.logical_and(classes > 0.5, classes < 1.5)

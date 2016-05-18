@@ -46,7 +46,7 @@ class CytominePostProcessor(PostProcessor):
 
         # extract polygons from first run
         slide_processing = workflow_info_collection[0]
-        for polygon, dispatch, cls, proba in slide_processing.iterator():
+        for polygon, dispatch, cls, proba in slide_processing.results():
             upload_fn = self._upload_fn(image, polygon)
             if dispatch == 0:  # cell
                 upload_fn(ThyroidOntology.CELL_INCL if cls == 1 else ThyroidOntology.CELL_NORM, proba)
@@ -54,9 +54,9 @@ class CytominePostProcessor(PostProcessor):
                 upload_fn(ThyroidOntology.PATTERN_PROLIF if cls == 1 else ThyroidOntology.PATTERN_NORM, proba)
         slide_processing.timing.report(self.logger)
 
-        # # extract polygons from second run
+        # extract polygons from second run
         # aggre_processing = workflow_info_collection[1]
-        # for polygon, dispatch, cls in aggre_processing.iterator():
+        # for polygon, dispatch, cls in aggre_processing.results():
         #     upload_fn = self._upload_fn(image, polygon)
         #     if dispatch == 0:
         #         upload_fn(ThyroidOntology.CELL_INCL if cls == 1 else ThyroidOntology.CELL_NORM)
@@ -79,10 +79,9 @@ class CytominePostProcessor(PostProcessor):
 
 
 class ThyroidJob(CytomineJob, Loggable):
-    def __init__(self, cell_classif, aggr_classif, cell_dispatch_classif, aggr_dispatch_classif,
-                 host, public_key, private_key, software_id, project_id,
-                 slide_ids, working_path="/tmp", protocol="http://", base_path="/api/", verbose=Logger.INFO,
-                 timeout=120, n_jobs=1, tile_max_width=1024, tile_max_height=1024):
+    def __init__(self, cell_classif, aggr_classif, dispatch_classif, host, public_key, private_key, software_id,
+                 project_id, slide_ids, working_path="/tmp", protocol="http://", base_path="/api/",
+                 verbose=Logger.INFO, timeout=120, n_jobs=1, tile_max_width=1024, tile_max_height=1024):
         """
         Create a standard thyroid application with the given parameters.
         Standard implies :
@@ -102,10 +101,8 @@ class ThyroidJob(CytomineJob, Loggable):
             The cell classifier pickle file path
         aggr_classif: string
             The architectural pattern classifier pickle file path
-        cell_dispatch_classif: string
+        dispatch_classif: string
             The classifier for dispatching cells pickle file path
-        aggr_dispatch_classif: string
-            The classifier for dispaching aggregates pickle file path
         host : str
             The Cytomine server host URL
         public_key : str
@@ -151,10 +148,9 @@ class ThyroidJob(CytomineJob, Loggable):
         adapter_builder_func = PyxitClassifierAdapter.build_from_pickle
         aggr_classifier = adapter_builder_func(aggr_classif, tile_cache, self.logger, n_jobs=n_jobs)
         cell_classifier = adapter_builder_func(cell_classif, tile_cache, self.logger, n_jobs=n_jobs)
-        aggr_dispatch = adapter_builder_func(aggr_dispatch_classif, tile_cache, self.logger, n_jobs=n_jobs)
-        cell_dispatch = adapter_builder_func(cell_dispatch_classif, tile_cache, self.logger, n_jobs=n_jobs)
-        cell_rule = CellRule(cell_dispatch, logger=self.logger)
-        aggregate_rule = AggregateRule(aggr_dispatch, logger=self.logger)
+        dispatch_classifier = adapter_builder_func(dispatch_classif, tile_cache, self.logger, n_jobs=n_jobs)
+        cell_rule = CellRule(dispatch_classifier, logger=self.logger)
+        aggregate_rule = AggregateRule(dispatch_classifier, logger=self.logger)
 
         # Build workflows
         workflow_builder = WorkflowBuilder(n_jobs=n_jobs)
@@ -162,7 +158,6 @@ class ThyroidJob(CytomineJob, Loggable):
         color_deconvoluter.set_kernel(get_standard_kernel())
 
         # Builder workflow 1 (slide processing)
-        workflow_builder.set_parallel()
         workflow_builder.set_segmenter(SlideSegmenter(color_deconvoluter))
         workflow_builder.add_classifier(cell_rule, cell_classifier)
         workflow_builder.add_classifier(aggregate_rule, aggr_classifier)
@@ -173,7 +168,6 @@ class ThyroidJob(CytomineJob, Loggable):
         slide_workflow = workflow_builder.get()
 
         # Build workflow 2 (aggregate processing)
-        workflow_builder.set_parallel()
         workflow_builder.set_segmenter(AggregateSegmenter(color_deconvoluter, struct_elem=get_standard_struct_elem()))
         workflow_builder.add_classifier(cell_rule, cell_classifier)
         workflow_builder.set_tile_size(tile_max_width, tile_max_height)
@@ -219,10 +213,8 @@ def main(argv):
                       help="File where the cell classifier has been pickled")
     parser.add_option("--aggregate_classifier", type='string', default="", dest="aggregate_classifier",
                       help="File where the architectural pattern classifier has been pickled")
-    parser.add_option("--cell_dispatch_classifier", type='string', default="", dest="cell_dispatch_classifier",
-                      help="File where the cell dispatch classifier has been pickled")
-    parser.add_option("--aggregate_dispatch_classifier", type='string', default="", dest="aggregate_dispatch_classifier",
-                      help="File where the aggregate dispatch classifier has been pickled")
+    parser.add_option("--dispatch_classifier", type='string', default="", dest="dispatch_classifier",
+                      help="File where the dispatch classifier has been pickled")
     parser.add_option("--host", type='string', default="", dest="host",
                       help="Cytomine server host URL")
     parser.add_option("--public_key", type='string', default="", dest="public_key",
@@ -254,8 +246,8 @@ def main(argv):
 
     options, arguments = parser.parse_args(args=argv)
 
-    with ThyroidJob(options.cell_classifier, options.aggregate_classifier, options.cell_dispatch_classifier,
-                    options.aggregate_dispatch_classifier, options.host, options.public_key, options.private_key,
+    with ThyroidJob(options.cell_classifier, options.aggregate_classifier,
+                    options.dispatch_classifier, options.host, options.public_key, options.private_key,
                     options.software_id, options.project_id, str2list(options.slide_ids),
                     verbose=options.verbose, n_jobs=options.n_jobs, protocol=options.protocol,
                     base_path=options.base_path, working_path=options.working_path,

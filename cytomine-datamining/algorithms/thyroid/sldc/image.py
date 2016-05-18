@@ -638,8 +638,8 @@ class TileTopology(object):
         """
         self._check_identifier(identifier)
         row, col = self._tile_coord(identifier)
-        offset_x = 0 if col == 0 else col * (self._max_width - self._overlap)
-        offset_y = 0 if row == 0 else row * (self._max_height - self._overlap)
+        offset_x = col * (self._max_width - self._overlap)
+        offset_y = row * (self._max_height - self._overlap)
         return offset_x, offset_y
 
     def tile_neighbours(self, identifier):

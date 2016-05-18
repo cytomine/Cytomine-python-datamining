@@ -9,7 +9,7 @@ __version__ = "0.1"
 
 class PyxitClassifierAdapter(PolygonClassifier, Loggable):
 
-    def __init__(self, pyxit_classifier, tile_cache, classes, logger=SilentLogger()):
+    def __init__(self, pyxit_classifier, tile_cache, classes, svm=None, logger=SilentLogger()):
         """Constructor for PyxitClassifierAdapter objects
 
         Parameters
@@ -22,12 +22,15 @@ class PyxitClassifierAdapter(PolygonClassifier, Loggable):
             An array containing the classes labels
         logger: Logger
             A logger object
+        svm: LinearSVC (optional, default: None)
+            The SVC classifier to apply the svm layer above Pyxit
         """
         PolygonClassifier.__init__(self)
         Loggable.__init__(self, logger)
         self._pyxit_classifier = pyxit_classifier
         self._tile_cache = tile_cache
         self._classes = classes
+        self._svm = svm
 
     def predict_batch(self, image, polygons):
         # Pyxit classifier takes images from the filesystem
@@ -66,9 +69,18 @@ class PyxitClassifierAdapter(PolygonClassifier, Loggable):
         probas: list of float
             The probabilities
         """
-        probas = self._pyxit_classifier.predict_proba(X)
-        best_index = np.argmax(probas, axis=1)
-        return self._classes.take(best_index, axis=0).astype('int'), probas
+        if self._svm is None:
+            probas = self._pyxit_classifier.predict_proba(X)
+            best_index = np.argmax(probas, axis=1)
+            return self._classes.take(best_index, axis=0).astype('int'), probas
+        else:
+            Xt = self._pyxit_classifier.transform(X)
+            if hasattr(self._svm, "predict_proba"):
+                probas = self._svm.predict_proba(Xt)
+                best_index = np.argmax(probas, axis=1)
+                return self._classes.take(best_index, axis=0).astype('int'), probas
+            else:
+                return self._svm.predict(Xt), np.ones((X.shape[0],))
 
     @staticmethod
     def build_from_pickle(model_path, tile_builder, logger, n_jobs=1):
@@ -96,10 +108,12 @@ class PyxitClassifierAdapter(PolygonClassifier, Loggable):
         containing the classes, and the second is the PyxitClassifier object
         """
         with open(model_path, "rb") as model_file:
+            type = pickle.load(model_file)
             classes = pickle.load(model_file)
             classifier = pickle.load(model_file)
             classifier.n_jobs = n_jobs
-            classifier.verbose = 10 if logger.level > Logger.DEBUG else 0
+            classifier.verbose = 10 if logger.level >= Logger.DEBUG else 0
             classifier.base_estimator.n_jobs = n_jobs
-            classifier.base_estimator.verbose = 10 if logger.level > logger.DEBUG else 0
-        return PyxitClassifierAdapter(classifier, tile_builder, classes, logger=logger)
+            classifier.base_estimator.verbose = 10 if logger.level >= logger.DEBUG else 0
+            svm = pickle.load(model_file) if type == "svm" else None
+        return PyxitClassifierAdapter(classifier, tile_builder, classes, svm=svm, logger=logger)

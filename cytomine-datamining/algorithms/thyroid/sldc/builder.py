@@ -6,6 +6,7 @@ from dispatcher import DispatcherClassifier, CatchAllRule
 from workflow import SLDCWorkflow
 from logging import SilentLogger
 from errors import MissingComponentException
+from image import DefaultTileBuilder
 
 __author__ = "Mormont Romain <romainmormont@hotmail.com>"
 __version__ = "0.1"
@@ -31,7 +32,7 @@ class WorkflowBuilder(object):
         self._tile_max_width = None
         self._tile_max_height = None
         self._overlap = None
-        self._boundary_thickness = None
+        self._distance_tolerance = None
         self._logger = None
         self._tile_builder = None
         self._parallel = None
@@ -40,25 +41,31 @@ class WorkflowBuilder(object):
     def _reset(self):
         """Reset the sldc workflow fields to their default values"""
         self._segmenter = None
-        self._tile_builder = None
+        self._tile_builder = DefaultTileBuilder()
         self._rules = []
         self._classifiers = []
         self._tile_max_width = 1024
         self._tile_max_height = 1024
         self._overlap = 5
-        self._boundary_thickness = 7
-        self._parallel = False
+        self._distance_tolerance = 7
+        self._parallel = self._pool.n_jobs > 1
         self._logger = SilentLogger()
 
-    def set_parallel(self):
-        """Enable parallel processing for the workflow
+    def set_parallel(self, in_parallel=True):
+        """Enable/Disable parallelism parallel processing for the workflow
+        By default, parallelism is enabled if the number of jobs passed in the constructor is more than 0.
+
+        Parameters
+        ----------
+        in_parallel: bool (optional, default: True)
+            True for executing the workflow in parallel, False to execute it sequentially
 
         Returns
         -------
         builder: WorkflowBuilder
             The builder
         """
-        self._parallel = True
+        self._parallel = in_parallel
         return self
 
     def set_segmenter(self, segmenter):
@@ -92,7 +99,7 @@ class WorkflowBuilder(object):
         return self
 
     def set_tile_builder(self, tile_builder):
-        """Set the tile builder (mandatory)
+        """Set the tile builder
         Parameters
         ----------
         tile_builder: TileBuilder
@@ -104,6 +111,17 @@ class WorkflowBuilder(object):
             The builder
         """
         self._tile_builder = tile_builder
+        return self
+
+    def set_default_tile_builder(self):
+        """Set the default tile builder as tile builder
+
+        Returns
+        -------
+        builder: WorkflowBuilder
+            The builder
+        """
+        self._tile_builder = DefaultTileBuilder()
         return self
 
     def set_tile_size(self, width, height):
@@ -139,19 +157,19 @@ class WorkflowBuilder(object):
         self._overlap = overlap
         return self
 
-    def set_boundary_thickness(self, thickness):
-        """Set the boundary thickness. If not called, a thickness of 7 is provided by default.
+    def set_distance_tolerance(self, tolerance):
+        """Set the distance tolerance. If not called, a thickness of 7 is provided by default.
         Parameters
         ----------
-        thickness: int
-            The boundary thickness
+        tolerance: int
+            The maximal distance between two polygons so that they are considered from the same object
 
         Returns
         -------
         builder: WorkflowBuilder
             The builder
         """
-        self._boundary_thickness = thickness
+        self._distance_tolerance = tolerance
         return self
 
     def add_classifier(self, rule, classifier):
@@ -200,7 +218,7 @@ class WorkflowBuilder(object):
 
         dispatcher_classifier = DispatcherClassifier(self._rules, self._classifiers, logger=self._logger)
         workflow = SLDCWorkflow(self._segmenter, dispatcher_classifier, self._tile_builder,
-                                boundary_thickness=self._boundary_thickness,
+                                dist_tolerance=self._distance_tolerance,
                                 tile_max_height=self._tile_max_height, tile_max_width=self._tile_max_width,
                                 tile_overlap=self._overlap, logger=self._logger,
                                 worker_pool=self._pool if self._parallel else None)

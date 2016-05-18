@@ -12,7 +12,7 @@ class WorkflowTiming(object):
     WorkflowTiming objects can be combined (their stored execution times are added)
 
     Class constants:
-        - FETCHING : Time for loading image into memory (call of tile.np_image)
+        - LOADING : Time required for loading image into memory (call of tile.np_image)
         - SEGMENTATION : Time for segmenting the tiles (call of segmenter.segment)
         - MERGING : Time for merging the polygons found in the tiles (call of merger.merge)
         - LOCATION : Time for locating the polygons in the segmented tiles (call of locator.locate)
@@ -23,37 +23,37 @@ class WorkflowTiming(object):
                 sequential execution. Less then these in case of parallel execution)
     """
 
-    FETCHING = "fetching"
+    LOADING = "loading"
     SEGMENTATION = "segmentation"
     MERGING = "merging"
     LOCATION = "location"
     DISPATCH = "dispatch"
     CLASSIFY = "classify"
-    FSL = "fetch_segment_locate"
+    LSL = "load_segment_locate"
 
     def __init__(self):
         """Construct a WorkflowTiming object
         """
         self._durations = {
-            WorkflowTiming.FETCHING: [],
+            WorkflowTiming.LOADING: [],
             WorkflowTiming.SEGMENTATION: [],
             WorkflowTiming.MERGING: [],
             WorkflowTiming.LOCATION: [],
             WorkflowTiming.DISPATCH: [],
             WorkflowTiming.CLASSIFY: [],
-            WorkflowTiming.FSL: []
+            WorkflowTiming.LSL: []
         }
         self._start_dict = dict()
 
-    def start_fetching(self):
-        """Record the start for the 'fetching' phase
+    def start_loading(self):
+        """Record the start for the 'loading' phase
         """
-        self._record_start(WorkflowTiming.FETCHING)
+        self._record_start(WorkflowTiming.LOADING)
 
-    def end_fetching(self):
-        """Record the end for the 'fetching' phase
+    def end_loading(self):
+        """Record the end for the 'loading' phase
         """
-        self._record_end(WorkflowTiming.FETCHING)
+        self._record_end(WorkflowTiming.LOADING)
 
     def start_segment(self):
         """Record the start for the 'segment' phase
@@ -105,15 +105,15 @@ class WorkflowTiming(object):
         """
         self._record_end(WorkflowTiming.MERGING)
 
-    def start_fsl(self):
-        """Record the start for the 'fetch_segment_locate' phase
+    def start_lsl(self):
+        """Record the start for the 'load_segment_locate' phase
         """
-        self._record_start(WorkflowTiming.FSL)
+        self._record_start(WorkflowTiming.LSL)
 
-    def end_fsl(self):
-        """Record the end for the 'fetch_segment_locate' phase
+    def end_lsl(self):
+        """Record the end for the 'load_segment_locate' phase
         """
-        self._record_end(WorkflowTiming.FSL)
+        self._record_end(WorkflowTiming.LSL)
 
     def statistics(self):
         """Compute time statistics tuples for each phase of the algorithm
@@ -143,6 +143,15 @@ class WorkflowTiming(object):
             The execution time in second
         """
         return self.total_duration_of([WorkflowTiming.SEGMENTATION, WorkflowTiming.LOCATION])
+
+    def lsl_total_duration(self):
+        """Return the total execution time for the loading, segment and locate phase
+        Returns
+        -------
+        time: float
+            The execution time in second
+        """
+        return self.total_duration_of([WorkflowTiming.LSL])
 
     def dc_total_duration(self):
         """Return the total execution time for dispatching and classifying polygons recoreded so far
