@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=cv_cpo3
 #SBATCH --output=/home/mass/GRD/r.mormont/out/validation/cv_cpo3.res
-#SBATCH --ntasks=40
+#SBATCH --ntasks=120
 #SBATCH --cpus-per-task=1
 #SBATCH --time=192:00:00
 #SBATCH --mem=700G
@@ -62,22 +62,20 @@
         --cytomine_test_images 716528 \
     --cytomine_verbose 0 \
     --cv_images_out 1 \
-    --pyxit_n_jobs 40 \
+    --pyxit_n_jobs 120 \
     --pyxit_dir_ls "/home/mass/GRD/r.mormont/nobackup/cv/ls" \
     --forest_n_estimators 20 \
     --pyxit_n_subwindows 100 \
     --pyxit_colorspace 1 \
         --pyxit_colorspace 2 \
-    --pyxit_min_size 0.1 \
-        --pyxit_min_size 0.3 \
+    --pyxit_min_size 0.3 \
         --pyxit_min_size 0.5 \
     --pyxit_max_size 1.0 \
         --pyxit_max_size 0.8 \
-        --pyxit_max_size 0.6 \
-    --forest_min_samples_split 578 \
+    --forest_min_samples_split 397 \
     --forest_max_features 1 \
         --forest_max_features 28 \
         --forest_max_features 384 \
         --forest_max_features 768 \
-    --svm 0 \
-    --svm_c 0.1
+    --svm 1 \
+    --svm_c 1.0

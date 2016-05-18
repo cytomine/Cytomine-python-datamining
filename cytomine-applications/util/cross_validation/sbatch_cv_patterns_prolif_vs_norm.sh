@@ -1,10 +1,10 @@
 #!/bin/bash
-#SBATCH --job-name=cv_prolif_vs_norm
-#SBATCH --output=/home/mass/GRD/r.mormont/out/validation/cv_prolif_vs_norm.res
+#SBATCH --job-name=cv_prolif_vs_norm2
+#SBATCH --output=/home/mass/GRD/r.mormont/out/validation/cv_prolif_vs_norm2.res
 #SBATCH --ntasks=120
 #SBATCH --cpus-per-task=1
 #SBATCH --time=64:00:00
-#SBATCH --mem=1000G
+#SBATCH --mem=500G
 #SBATCH --partition=Cytomine
 /home/mass/GRD/r.mormont/miniconda/bin/python /home/mass/GRD/r.mormont/sftp/cytomine-applications/util/cross_validation/pyxit_cross_validator.py \
     --cytomine_host "beta.cytomine.be" \
@@ -68,13 +68,15 @@
     --pyxit_n_subwindows 100 \
     --pyxit_colorspace 2 \
         --pyxit_colorspace 1 \
-    --pyxit_min_size 0.3 \
+    --pyxit_min_size 0.2 \
+        --pyxit_min_size 0.3 \
     --pyxit_max_size 0.4 \
+        --pyxit_max_size 0.5 \
     --forest_min_samples_split 135 \
     --forest_max_features 1 \
         --forest_max_features 28 \
         --forest_max_features 384 \
         --forest_max_features 768 \
     --svm 1 \
-    --svm_c 0.1
+    --svm_c 1.0
 

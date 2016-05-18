@@ -78,4 +78,4 @@
         --forest_max_features 384 \
         --forest_max_features 768 \
     --svm 1 \
-    --svm_c 0.1
+    --svm_c 1.0
