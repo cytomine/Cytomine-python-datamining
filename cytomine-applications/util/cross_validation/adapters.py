@@ -73,6 +73,13 @@ class PyxitClassifierAdapter(PyxitClassifier):
             self.min_size, self.max_size = params["window_sizes"]
         return self
 
+    def equivalent_pyxit(self):
+        return PyxitClassifier(self.base_estimator, n_subwindows=self.n_subwindows, min_size=self.min_size,
+                               max_size=self.max_size, target_width=self.target_width, target_height=self.target_height,
+                               n_jobs=self.n_jobs, interpolation=self.interpolation, transpose=self.transpose,
+                               colorspace=self.colorspace, fixed_size=self.fixed_size, random_state=self.random_state,
+                               verbose=self.verbose, get_output=self.get_output)
+
 
 class SVMPyxitClassifierAdapter(PyxitClassifierAdapter):
     def __init__(self, base_estimator,
@@ -126,3 +133,7 @@ class SVMPyxitClassifierAdapter(PyxitClassifierAdapter):
         if "C" in params:
             self._svm.C = params["C"]
         return self
+
+    @property
+    def svm(self):
+        return self._svm

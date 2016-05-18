@@ -1,16 +1,14 @@
 # -*- coding: utf-8 -*-
 import optparse
 import os
+import pickle
 
 import numpy as np
 import sys
 
-import time
-
 from sklearn.base import clone
 from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score
-from sklearn.model_selection import GridSearchCV, ParameterGrid
-from sklearn.externals.joblib import logger
+from sklearn.model_selection import GridSearchCV
 from sklearn.utils import check_random_state
 
 from util import str2bool, mk_window_size_tuples, accuracy_scoring, print_cm
@@ -24,6 +22,15 @@ from sklearn.model_selection import LeavePLabelOut, cross_val_score
 
 __author__ = "Mormont Romain <romain.mormont@gmail.com>"
 __version__ = "0.1"
+
+
+def pickle_pyxit_adapter(pyxit, file):
+    svm = isinstance(pyxit, SVMPyxitClassifierAdapter)
+    pickle.dump("svm" if svm else "normal", file)
+    pickle.dump(pyxit.classes_, file)
+    pickle.dump(pyxit.equivalent_pyxit(), file)
+    if svm:
+        pickle.dump(pyxit.svm, file)
 
 
 def mk_pyxit(params, random_state=0):
@@ -189,6 +196,8 @@ def main(argv):
                  help="True for extracting windows having a fixed size, False for randomly picked size.")
     p.add_option('--pyxit_dir_ls', type="string", default="/tmp/ls", dest="pyxit_dir_ls",
                  help="The directory in which will be stored the images of the learning set.")
+    p.add_option('--pyxit_save_to', type="string", default=None, dest="save_to",
+                 help="The file path to which the best model should be saved")
 
     p.add_option('--cv_images_out', type="int", default=1, dest="cv_images_out",
                  help="The number of images to leave out for the cross validation")
@@ -296,7 +305,7 @@ def main(argv):
     pyxit.n_jobs = 1
     pyxit.base_estimator.n_jobs = 1
     grid = GridSearchCV(pyxit, cv_params, scoring=accuracy_scoring, cv=LeavePLabelOut(params.cv_images_out),
-                        verbose=10, n_jobs=params.pyxit_n_jobs, refit=is_test_set_provided)
+                        verbose=10, n_jobs=params.pyxit_n_jobs, refit=False)
 
     grid.fit(X, y, labels)
 
@@ -338,11 +347,29 @@ def main(argv):
 
     best_params = grid.best_params_
     best_score = grid.best_score_
-    best_estimator = grid.best_estimator_
+    best_estimator = None
+
+    if is_test_set_provided or params.save_to is not None:
+        best_estimator = clone(pyxit)
+        pyxit.n_jobs = params.pyxit_n_jobs
+        pyxit.base_estimator = params.pyxit_n_jobs
+        best_estimator.fit(X, y)
 
     # refit with the best parameters
     print "Best parameters : {}".format(best_params)
     print "Best score      : {}".format(best_score)
+
+    # save model if requested
+    if params.save_to is not None:
+        print "Save model at {}...".format(params.save_to)
+        path = params.save_to
+        # create directory if it doesn't exist
+        dirname = os.path.dirname(path)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+        # pickle the model
+        with open(path, "w+") as file:
+            pickle_pyxit_adapter(best_estimator, file)
 
     if is_test_set_provided:
         print "Apply best model on test set..."

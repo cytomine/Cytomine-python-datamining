@@ -50,9 +50,10 @@
         --cytomine_test_images 186842285 \
     --cytomine_verbose 0 \
     --cv_images_out 1 \
-    --pyxit_n_subwindows 50 \
+    --pyxit_save_to "/home/mass/GRD/r.mormont/nobackup/models/test/test_pickle.pkl" \
+    --pyxit_n_subwindows 2 \
     --pyxit_colorspace 2 \
-    --pyxit_n_jobs 2 \
+    --pyxit_n_jobs 1 \
     --pyxit_min_size 0.6 \
     --pyxit_max_size 1.0 \
     --pyxit_dir_ls "/home/mass/GRD/r.mormont/nobackup/cv/test" \
