@@ -459,6 +459,9 @@ class Tile(ImageWindow):
         except Exception as e:
             raise TileExtractionException("Cannot extract the tile : {}".format(e.message))
 
+    def __str__(self):
+        return "({},{},{},{})".format(self.width, self.height, self.offset_x, self.offset_y)
+
 
 class TileBuilder(object):
     """An interface to be implemented by any class which builds specific tiles

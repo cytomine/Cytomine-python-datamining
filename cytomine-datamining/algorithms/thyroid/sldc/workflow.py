@@ -66,9 +66,12 @@ def _sl_with_timing(tile, segmenter, locator):
     polygons: iterable (subtype: shapely.geometry.Polygon)
         The polygons found in the tile
     """
-    timing = WorkflowTiming()
-    located = _segment_locate(tile, segmenter, locator, timing)
-    return timing, tile, located
+    try:
+        timing = WorkflowTiming()
+        located = _segment_locate(tile, segmenter, locator, timing)
+        return timing, tile, located
+    except TileExtractionException:
+        return None, tile, []
 
 
 class SLDCWorkflow(Loggable):
@@ -245,9 +248,9 @@ class SLDCWorkflow(Loggable):
         results = self._pool(delayed(_sl_with_timing)(tile, self._segmenter, self._locator) for tile in tile_iterator)
         timing.end_lsl()
         # merge sub timings
-        for sub_timing, _, _ in results:
+        for sub_timing, tile, _ in results:
             if sub_timing is None:
-                self._logger.warning("SLDCWorkflow : Tile {} couldn't be fetched during parallel computations.")
+                self._logger.warning("SLDCWorkflow : Tile {} couldn't be fetched during parallel computations.".format(tile))
             else:
                 timing.merge(sub_timing)
         # return tiles polygons

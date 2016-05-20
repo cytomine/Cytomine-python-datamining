@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import cv2
+import numpy as np
+import scipy
 from shapely.validation import explain_validity
 from shapely.geometry import Polygon
 from shapely.affinity import affine_transform as aff_transfo
 from functools import partial
+from scipy.ndimage.morphology import binary_hit_or_miss
 
 __author__ = "Begon Jean-Michel <jm.begon@gmail.com>"
 __contributors__ = ["Romain Mormont <r.mormont@student.ulg.ac.be>"]
@@ -59,12 +62,49 @@ def identity(x):
     return x
 
 
+def process_mask(mask):
+    """Remove patterns from the mask that'd yield invalid polygons
+    Inspired from: https://goo.gl/fTxuqk
+    Parameters
+    ----------
+    mask: ndarray
+        The binary mask
+
+    Returns
+    -------
+    cleaned: ndarray
+        The cleaned mask
+    """
+    structures = list()
+    # remove down-left to up-right diagonal pattern
+    structures.append((np.array([[0, 0, 1], [0, 1, 0], [0, 0, 0]]), np.array([[0, 1, 0], [0, 0, 1], [0, 0, 0]])))
+    # remove up-left to down-right diagonal pattern
+    structures.append((np.array([[1, 0, 0], [0, 1, 0], [0, 0, 0]]), np.array([[0, 1, 0], [1, 0, 0], [0, 0, 0]])))
+    # Does removing the second pattern can recreate the first one ? If so, how to avoid it? (iterative way?)
+    # remove up line
+    structures.append((np.array([[0, 0, 0], [0, 1, 0], [0, 1, 0]]), np.array([[0, 0, 0], [1, 0, 1], [0, 0, 0]])))
+    # remove down line
+    structures.append((np.array([[0, 1, 0], [0, 1, 0], [0, 0, 0]]), np.array([[0, 0, 0], [1, 0, 1], [0, 0, 0]])))
+    # remove left line
+    structures.append((np.array([[0, 0, 0], [0, 1, 1], [0, 0, 0]]), np.array([[0, 1, 0], [0, 0, 0], [0, 1, 0]])))
+    # remove right line
+    structures.append((np.array([[0, 0, 0], [1, 1, 0], [0, 0, 0]]), np.array([[0, 1, 0], [0, 0, 0], [0, 1, 0]])))
+
+    for struct1, struct2 in structures:
+        pattern_mask = binary_hit_or_miss(mask, structure1=struct1, structure2=struct2).astype(np.uint8)
+        pattern_mask[pattern_mask == 1] = 255
+        pattern_mask[pattern_mask == 0] = 0
+        mask = mask - pattern_mask
+
+    return mask
+
+
 class Locator(object):
     """A class providing methods for extracting polygons from a binary mask.
     """
-
     def locate(self, segmented, offset=None):
         """Extract polygons for the foreground elements of the segmented image.
+        Inspired from: https://goo.gl/HYPrR1
         Parameters
         ----------
         segmented: ndarray (shape: (width, height))
@@ -80,7 +120,9 @@ class Locator(object):
             An iterable containing the polygons extracted from the segmented image. The reference
             point (0,0) for the polygons coordinates is the upper-left corner of the initial image.
         """
-        # borrowed from cytomine_utilities.objectfinder (v 1.0)
+        # clean invalid patterns from the mask
+        segmented = process_mask(segmented)
+
         # CV_RETR_EXTERNAL to only get external contours.
         contours, hierarchy = cv2.findContours(segmented.copy(),
                                                cv2.RETR_CCOMP,
