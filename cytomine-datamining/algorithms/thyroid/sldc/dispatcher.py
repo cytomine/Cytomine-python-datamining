@@ -104,7 +104,7 @@ class DispatcherClassifier(Loggable):
     them.
     """
 
-    def __init__(self, rules, classifiers, fail_callback=None, logger=SilentLogger()):
+    def __init__(self, rules, classifiers, dispatching_labels=None, fail_callback=None, logger=SilentLogger()):
         """Constructor for ClassifierDispatcher object
 
         Parameters
@@ -113,6 +113,9 @@ class DispatcherClassifier(Loggable):
             An iterable containing DispatchingRule objects implementing the polygon dispatching logic.
         classifiers: iterable (subtype: PolygonClassifiers, size: N)
             An iterable of polygon classifiers associated with the rules.
+        dispatching_labels: iterable (optional, default: integer indexes, size: N)
+            The labels identifying the dispatchers and classifiers. If the user doesn't provide labels,
+            integer indexes of the dispatchers in the rules list are used.
         fail_callback: callable (optional, default: None)
             A callback to which is passed the polygon if none of the predicates returned True.
             This callback should return the value expected for a polygon which doesn't match any rule.
@@ -121,6 +124,7 @@ class DispatcherClassifier(Loggable):
         Loggable.__init__(self, logger)
         self._rules = rules
         self._classifiers = classifiers
+        self._dispatching_labels = list(range(len(rules))) if dispatching_labels is None else dispatching_labels
         self._fail_callback = fail_callback if fail_callback is not None else (lambda x: None)
 
     def dispatch_classify(self, image, polygon, timing):
@@ -146,10 +150,10 @@ class DispatcherClassifier(Loggable):
         probability: float
             The probability associated with the prediction (0.0 if the polygon wasn't dispatched)
         dispatch: int
-            The index of the rule that matched the polygon, -1 if none did
+            The identifier of the rule that matched the polygon (see dispatch_classify_batch)
         """
-        classes, probabilities, indexes = self.dispatch_classify_batch(image, [polygon], timing)
-        return classes[0], probabilities[0], indexes[0]
+        classes, probabilities, dispatches = self.dispatch_classify_batch(image, [polygon], timing)
+        return classes[0], probabilities[0], dispatches[0]
 
     def dispatch_classify_batch(self, image, polygons, timing):
         """Apply the dispatching and classification steps to an ensemble of polygons.
@@ -172,8 +176,11 @@ class DispatcherClassifier(Loggable):
             returned.
         probabilities: iterable (subtype: float, range: [0,1], size: N)
             The probabilities associated with each predicted classes (0.0 for polygons that were not dispatched)
-        dispatches: iterable (subtype: int, size: N)
-            A iterable of integers of which the ith one is the index of the rule that matched the ith polygon.
+        dispatches: iterable (size: N)
+            An iterable containing the identifiers of the rule that matched the polygons. If dispatching labels were
+            provided at construction, those are used to identify the rules. Otherwise, the integer indexes of the rules
+            in the list provided at construction are used. Polygons that weren't matched by any rule are returned -1 as
+            dispatch index.
         """
         match_dict = dict()  # maps rule indexes with matching polygons
         poly_ind_dict = dict()  # maps rule indexes with index of the polygons in the passed array
@@ -215,7 +222,7 @@ class DispatcherClassifier(Loggable):
             # list and dispatch id in dispatch list
             emplace(predictions, predict_list, poly_ind_dict[index])
             emplace(probabilities, probabilities_list, poly_ind_dict[index])
-            emplace(np.full((len(predictions),), index, dtype="int"), dispatch_list, poly_ind_dict[index])
+            emplace([self._dispatching_labels[index]] * len(predictions), dispatch_list, poly_ind_dict[index])
 
         self.logger.info("DispatcherClassifier : end classification.")
         return predict_list, probabilities_list, dispatch_list

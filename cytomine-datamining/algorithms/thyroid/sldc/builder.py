@@ -29,6 +29,7 @@ class WorkflowBuilder(object):
         self._segmenter = None
         self._rules = None
         self._classifiers = None
+        self._dispatching_labels = None
         self._tile_max_width = None
         self._tile_max_height = None
         self._overlap = None
@@ -44,6 +45,7 @@ class WorkflowBuilder(object):
         self._tile_builder = DefaultTileBuilder()
         self._rules = []
         self._classifiers = []
+        self._dispatching_labels = []
         self._tile_max_width = 1024
         self._tile_max_height = 1024
         self._overlap = 5
@@ -172,7 +174,7 @@ class WorkflowBuilder(object):
         self._distance_tolerance = tolerance
         return self
 
-    def add_classifier(self, rule, classifier):
+    def add_classifier(self, rule, classifier, dispatching_label=None):
         """Add a classifier to which polygons can be dispatched (mandatory, at least on time).
 
         Parameters
@@ -181,21 +183,32 @@ class WorkflowBuilder(object):
             The dispatching rule that matches the polygons to be dispatched to the classifier
         classifier: PolygonClassifier
             The polygon that classifies polygons
+        dispatching_label: key (optional, default: None)
+            The dispatching label for this classifier. By default, (n) is used where n is the number of rules and
+            classifiers added before.
 
         Returns
         -------
         builder: WorkflowBuilder
             The builder
         """
+        self._dispatching_labels.append(dispatching_label if dispatching_label is not None else len(self._rules))
         self._rules.append(rule)
         self._classifiers.append(classifier)
         return self
 
-    def add_catchall_classifier(self, classifier):
+    def add_catchall_classifier(self, classifier, dispatching_label="catchall"):
         """Add a classifier which is dispatched all the polygons that were note dispatched by the previously added
         classifiers.
+
+        Parameters
+        ----------
+        classifier: PolygonClassifier
+            The classifier
+        dispatching_label: key (optional, default: "catchall")
+            The dispatching label
         """
-        return self.add_classifier(CatchAllRule(), classifier)
+        return self.add_classifier(CatchAllRule(), classifier, dispatching_label=dispatching_label)
 
     def get(self):
         """Build the workflow with the set parameters
@@ -216,7 +229,8 @@ class WorkflowBuilder(object):
         if len(self._rules) == 0 or len(self._classifiers) == 0:
             raise MissingComponentException("Missing classifiers.")
 
-        dispatcher_classifier = DispatcherClassifier(self._rules, self._classifiers, logger=self._logger)
+        dispatcher_classifier = DispatcherClassifier(self._rules, self._classifiers,
+                                                     dispatching_labels=self._dispatching_labels, logger=self._logger)
         workflow = SLDCWorkflow(self._segmenter, dispatcher_classifier, self._tile_builder,
                                 dist_tolerance=self._distance_tolerance,
                                 tile_max_height=self._tile_max_height, tile_max_width=self._tile_max_width,

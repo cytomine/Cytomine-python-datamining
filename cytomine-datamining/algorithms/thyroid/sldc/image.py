@@ -192,11 +192,13 @@ class Image(object):
         topology = TileTopology(self, max_width=max_width, max_height=max_height, overlap=overlap)
         return TileTopologyIterator(builder, topology)
 
-    def tile_topology(self, max_width=1024, max_height=1024, overlap=0):
+    def tile_topology(self, tile_builder, max_width=1024, max_height=1024, overlap=0):
         """Builds a tile topology for this the image
 
         Parameters
         ----------
+        tile_builder: TileBuilder
+            The tile builder
         max_width: int (optional, default: 1024)
             The maximum width of the tiles to build
         max_height: int (optional, default: 1024)
@@ -209,7 +211,7 @@ class Image(object):
         topology: TileTopology
             The image tile topology
         """
-        return TileTopology(self, max_width=max_width, max_height=max_height, overlap=overlap)
+        return TileTopology(self, tile_builder,  max_width=max_width, max_height=max_height, overlap=overlap)
 
     def _check_tile_offset(self, offset):
         """Check whether the given tile offset belongs to the image
@@ -557,7 +559,7 @@ class TileTopologyIterator(object):
     def __iter__(self):
         for tile_identifier in range(1, self._topology.tile_count + 1):
             try:
-                yield self._topology.tile(tile_identifier, self._builder)
+                yield self._topology.tile(tile_identifier)
             except TileExtractionException, e:
                 if not self._silent_fail:
                     raise e
@@ -581,13 +583,15 @@ class TileTopology(object):
     total number of tiles...) are implemented as efficiently as possible (in general, O(1)).
     """
 
-    def __init__(self, image, max_width=1024, max_height=1024, overlap=0):
+    def __init__(self, image, tile_builder, max_width=1024, max_height=1024, overlap=0):
         """Constructor for TileTopology objects
 
         Parameters
         ----------
         image: Image
             The image for which the topology must be built
+        tile_builder: TileBuilder
+            The builder for building the tiles
         max_width: int (optional, default: 1024)
             The maximum width of the tiles
         max_height: int (optional, default: 1024)
@@ -601,19 +605,18 @@ class TileTopology(object):
         The same goes if the image's dimensions are smaller than (max_width, max_height).
         """
         self._image = image
+        self._tile_builder = tile_builder
         self._max_width = max_width
         self._max_height = max_height
         self._overlap = overlap
 
-    def tile(self, identifier, tile_builder):
+    def tile(self, identifier):
         """Extract and build the tile corresponding to the given identifier.
 
         Parameters
         ----------
         identifier: int
             A tile identifier
-        tile_builder : TileBuilder
-            A builder for building a Tile object from the extracted tile
 
         Returns
         -------
@@ -622,7 +625,7 @@ class TileTopology(object):
         """
         self._check_identifier(identifier)
         offset = self.tile_offset(identifier)
-        tile = self._image.tile(tile_builder, offset, self._max_width, self._max_height)
+        tile = self._image.tile(self._tile_builder, offset, self._max_width, self._max_height)
         tile.identifier = identifier
         return tile
 
@@ -763,3 +766,51 @@ class TileTopology(object):
             The number of tile that fits in the image dimension given the tile_width and overlap constraints
         """
         return 1 if length < tile_length else int(math.ceil(float(length - overlap) / (tile_length - overlap)))
+
+    def partition_tiles(self, n_batches):
+        """Partition the tiles into a given number of batches of similar sizes (if the number of batches is greater than
+        the number of tiles N in the topology, N batches are returned).
+
+        Parameters
+        ----------
+        n_batches: int
+            The number of batches
+
+        Returns
+        -------
+        batches: iterable (subtype: iterable (subtype: Tile), size: min(n_batches, N))
+            The batches of tiles
+        """
+        if n_batches >= self.tile_count:
+            return [[tile] for tile in self]
+        batches = [[] for _ in range(0, n_batches)]
+        current_batch = 0
+        bigger_batch_count = self.tile_count % n_batches
+        smaller_batch_size = (self.tile_count / n_batches)
+        bigger_batch_size = (self.tile_count / n_batches) + 1
+        for tile in self:
+            batches[current_batch].append(tile)
+            if (current_batch < bigger_batch_count and len(batches[current_batch]) >= bigger_batch_size) \
+                    or (current_batch >= bigger_batch_count and len(batches[current_batch]) >= smaller_batch_size):
+                # check whether the current batch is full and should be changed
+                current_batch += 1
+        return batches
+
+    def iterator(self, silent_fail=True):
+        """Return a tile topology iterator for running through the tile topology
+        Parameters
+        ----------
+        silent_fail: bool (optional, default: True)
+            True for enabling silent fail mode of the iterator, False otherwise
+
+        Returns
+        -------
+        iterator: TileTopologyIterator
+            The iterator object
+        """
+        return TileTopologyIterator(self._tile_builder, self, silent_fail=silent_fail)
+
+    def __iter__(self):
+        """TileTopology is iterable"""
+        for tile in self.iterator():
+            yield tile
