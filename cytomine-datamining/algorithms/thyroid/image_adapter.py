@@ -38,7 +38,7 @@ def _get_crop(cytomine, image_inst, geometry):
                             image_inst.get_crop_url(bounds))
     resp, content = cytomine.fetch_url(url)
     if resp.status != 200:
-        raise IOError("Couldn't fetch the crop for image {} and bounds {} from server (status : {}).".format(image_inst.id, geometry, resp.status))
+        raise IOError("Couldn't fetch the crop for image {} and bounds {} from server at url {} (status : {}).".format(image_inst.id, geometry, url, resp.status))
     tmp = cStringIO.StringIO(content)
     return PILImage.open(tmp)
 
