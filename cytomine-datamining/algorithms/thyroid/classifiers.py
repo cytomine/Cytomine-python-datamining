@@ -1,15 +1,51 @@
 # -*- coding: utf-8 -*-
 import pickle
 import numpy as np
-from sldc import PolygonClassifier, TileExtractionException, Loggable, SilentLogger, Logger
+from joblib import Parallel, delayed
+from sklearn.utils import check_random_state
+
+from sldc import PolygonClassifier, TileExtractionException, Loggable, SilentLogger, Logger, batch_split
 
 __author__ = "Mormont Romain <romain.mormont@gmail.com>"
 __version__ = "0.1"
 
 
+def _parallel_extract(image, polygons, tile_cache):
+    """Extract and cache the crops for the given polygons
+
+    Parameters
+    ----------
+    image: Image
+        The image from which the crops must be taken
+    polygons: iterable (subtype: shapely.geometry.Polygon)
+        The polygons of which the crops must be feteched
+    tile_cache: TileCache
+        The tile cache object
+
+    Returns
+    -------
+    paths: iterable (subtype: string)
+        The path of the caching file for the given image
+    extracted: iterable (subtype: int)
+        The indexes of the polygons successfully extracted
+    errors: iterable (subtype: string)
+        The error message explaining why some tiles couldn't be fetched. One error per non-fetched polygon.
+    """
+    errors = list()
+    paths = list()
+    extracted = list()
+    for i, polygon in enumerate(polygons):
+        try:
+            paths.append(tile_cache.polygon_fetch_and_cache(image, polygon))
+            extracted.append(i)
+        except TileExtractionException as e:
+            errors.append(e.message)
+    return paths, extracted, errors
+
+
 class PyxitClassifierAdapter(PolygonClassifier, Loggable):
 
-    def __init__(self, pyxit_classifier, tile_cache, classes, svm=None, logger=SilentLogger()):
+    def __init__(self, pyxit_classifier, tile_cache, classes, svm=None, logger=SilentLogger(), n_jobs=1):
         """Constructor for PyxitClassifierAdapter objects
 
         Parameters
@@ -24,6 +60,8 @@ class PyxitClassifierAdapter(PolygonClassifier, Loggable):
             A logger object
         svm: LinearSVC (optional, default: None)
             The SVC classifier to apply the svm layer above Pyxit
+        n_jobs: int (optional, default: 1)
+            The number of jobs for fetching the crops
         """
         PolygonClassifier.__init__(self)
         Loggable.__init__(self, logger)
@@ -31,19 +69,25 @@ class PyxitClassifierAdapter(PolygonClassifier, Loggable):
         self._tile_cache = tile_cache
         self._classes = classes
         self._svm = svm
+        self._pool = Parallel(n_jobs=n_jobs)
 
     def predict_batch(self, image, polygons):
         # Pyxit classifier takes images from the filesystem
         # So store the crops into files before passing the paths to the classifier
+        poly_batches = batch_split(self._pool.n_jobs, polygons)
+        fetched = self._pool(delayed(_parallel_extract)(image, batch, self._tile_cache) for batch in poly_batches)
+
         paths = list()
         extracted = list()
-        for i, polygon in enumerate(polygons):
-            try:
-                paths.append(self._tile_cache.polygon_fetch_and_cache(image, polygon))
-                extracted.append(i)
-            except TileExtractionException as e:
-                self.logger.w("PyxitClassifierAdapter: skip polygon because tile cannot be extracted.\n".format(i) +
-                              "PyxitClassifierAdapter: error : {}".format(e.message))
+        current_batch_size = 0
+        for i, (b_paths, b_extracted, b_errors) in enumerate(fetched):
+            paths += b_paths
+            extracted += (np.array(b_extracted) + current_batch_size).tolist()
+            current_batch_size += len(poly_batches[i])
+            # print errors
+            for error in b_errors:
+                self.logger.w("PyxitClassifierAdapter: skip polygon because tile cannot be extracted.\n" +
+                              "PyxitClassifierAdapter: error : {}".format(error))
 
         # merge predictions with missed tiles
         predictions, probas = self._predict(np.array(paths))
@@ -83,7 +127,7 @@ class PyxitClassifierAdapter(PolygonClassifier, Loggable):
                 return self._svm.predict(Xt), np.ones((X.shape[0],))
 
     @staticmethod
-    def build_from_pickle(model_path, tile_builder, logger, n_jobs=1):
+    def build_from_pickle(model_path, tile_builder, logger, random_state=None, n_jobs=1):
         """Builds a PyxitClassifierAdapter object from a pickled model
 
         Parameters
@@ -94,6 +138,8 @@ class PyxitClassifierAdapter(PolygonClassifier, Loggable):
             A tile builder object
         logger: Logger (optional, default: a SilentLogger object)
             A logger object
+        random_state: Random (optional, default: None)
+            Random number generator to be passed to the pyxit classifier
         n_jobs: int
             The number of jobs on which the classifiers should run
 
@@ -107,6 +153,7 @@ class PyxitClassifierAdapter(PolygonClassifier, Loggable):
         The first object pickled in the file in the path 'model_path' is an array
         containing the classes, and the second is the PyxitClassifier object
         """
+        random_state = check_random_state(random_state)
         with open(model_path, "rb") as model_file:
             type = pickle.load(model_file)
             classes = pickle.load(model_file)
@@ -115,5 +162,7 @@ class PyxitClassifierAdapter(PolygonClassifier, Loggable):
             classifier.verbose = 10 if logger.level >= Logger.DEBUG else 0
             classifier.base_estimator.n_jobs = n_jobs
             classifier.base_estimator.verbose = 10 if logger.level >= logger.DEBUG else 0
+            classifier.interpolation = 1  # nearest interpolation
+            classifier.random_state = random_state
             svm = pickle.load(model_file) if type == "svm" else None
-        return PyxitClassifierAdapter(classifier, tile_builder, classes, svm=svm, logger=logger)
+        return PyxitClassifierAdapter(classifier, tile_builder, classes, svm=svm, logger=logger, n_jobs=n_jobs)

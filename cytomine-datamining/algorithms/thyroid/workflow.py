@@ -2,6 +2,7 @@
 import optparse
 
 from cytomine import Cytomine
+from sklearn.utils import check_random_state
 
 from sldc import PostProcessor, FullImageWorkflowExecutor, Logger, StandardOutputLogger, SilentLogger, Loggable, \
     WorkflowBuilder, WorkflowChainBuilder
@@ -11,7 +12,7 @@ from helpers.utilities.datatype.polygon import affine_transform
 
 from segmenters import AggregateSegmenter, SlideSegmenter, get_standard_kernel, get_standard_struct_elem
 from dispatching_rules import CellRule, AggregateRule
-from image_providers import SlideProvider
+from image_providers import SlideProvider, AggregateWorkflowExecutor
 from image_adapter import CytomineTileBuilder, TileCache, CytomineMaskedTileBuilder
 from ontology import ThyroidOntology
 from classifiers import PyxitClassifierAdapter
@@ -23,7 +24,7 @@ __author__ = "Mormont Romain <romain.mormont@gmail.com>"
 __version__ = "0.1"
 
 
-class CytominePostProcessor(PostProcessor):
+class ThyroidPostProcessor(PostProcessor):
     """
     This post processor publish the annotation and classes with the predicted class
     """
@@ -48,18 +49,21 @@ class CytominePostProcessor(PostProcessor):
         slide_processing = workflow_info_collection[0]
         for polygon, dispatch, cls, proba in slide_processing.results():
             upload_fn = self._upload_fn(image, polygon)
-            if dispatch == 0:  # cell
+            if dispatch == "cell":  # cell
                 upload_fn(ThyroidOntology.CELL_INCL if cls == 1 else ThyroidOntology.CELL_NORM, proba)
-            elif dispatch == 1:  # pattern
+            elif dispatch == "aggregate":  # pattern
                 upload_fn(ThyroidOntology.PATTERN_PROLIF if cls == 1 else ThyroidOntology.PATTERN_NORM, proba)
+        self.logger.info("ThyroidPostProcessor: first pass")
         slide_processing.timing.report(self.logger)
 
         # extract polygons from second run
         # aggre_processing = workflow_info_collection[1]
-        # for polygon, dispatch, cls in aggre_processing.results():
+        # for polygon, dispatch, cls, proba in aggre_processing.results():
         #     upload_fn = self._upload_fn(image, polygon)
-        #     if dispatch == 0:
-        #         upload_fn(ThyroidOntology.CELL_INCL if cls == 1 else ThyroidOntology.CELL_NORM)
+        #     if dispatch == "cell":
+        #         upload_fn(ThyroidOntology.CELL_INCL if cls == 1 else ThyroidOntology.CELL_NORM, proba)
+        # self.logger.info("ThyroidPostProcessor: first pass")
+        # aggre_processing.timing.report(self.logger)
 
     def _upload_fn(self, image, polygon):
         """Return a callable taking one parameter. This callable uploads the polygon as annotation for the given image.
@@ -134,6 +138,7 @@ class ThyroidJob(CytomineJob, Loggable):
             The tiles max height
         """
         # Create Cytomine instance
+        random_state = check_random_state(0)
         Loggable.__init__(self, logger=StandardOutputLogger(verbose))
         cytomine = Cytomine(host, public_key, private_key, working_path, protocol,
                             base_path, verbose >= Logger.DEBUG, timeout)
@@ -146,9 +151,12 @@ class ThyroidJob(CytomineJob, Loggable):
 
         # Build useful classifiers and rules
         adapter_builder_func = PyxitClassifierAdapter.build_from_pickle
-        aggr_classifier = adapter_builder_func(aggr_classif, tile_cache, self.logger, n_jobs=n_jobs)
-        cell_classifier = adapter_builder_func(cell_classif, tile_cache, self.logger, n_jobs=n_jobs)
-        dispatch_classifier = adapter_builder_func(dispatch_classif, tile_cache, self.logger, n_jobs=n_jobs)
+        aggr_classifier = adapter_builder_func(aggr_classif, tile_cache, self.logger,
+                                               random_state=random_state, n_jobs=n_jobs)
+        cell_classifier = adapter_builder_func(cell_classif, tile_cache, self.logger,
+                                               random_state=random_state, n_jobs=n_jobs)
+        dispatch_classifier = adapter_builder_func(dispatch_classif, tile_cache, self.logger,
+                                                   random_state=random_state, n_jobs=n_jobs)
         cell_rule = CellRule(dispatch_classifier, logger=self.logger)
         aggregate_rule = AggregateRule(dispatch_classifier, logger=self.logger)
 
@@ -159,8 +167,8 @@ class ThyroidJob(CytomineJob, Loggable):
 
         # Builder workflow 1 (slide processing)
         workflow_builder.set_segmenter(SlideSegmenter(color_deconvoluter))
-        workflow_builder.add_classifier(cell_rule, cell_classifier)
-        workflow_builder.add_classifier(aggregate_rule, aggr_classifier)
+        workflow_builder.add_classifier(cell_rule, cell_classifier, dispatching_label="cell")
+        workflow_builder.add_classifier(aggregate_rule, aggr_classifier, dispatching_label="aggregate")
         workflow_builder.set_tile_size(tile_max_width, tile_max_height)
         workflow_builder.set_logger(self.logger)
         workflow_builder.set_tile_builder(tile_builder)
@@ -169,7 +177,7 @@ class ThyroidJob(CytomineJob, Loggable):
 
         # Build workflow 2 (aggregate processing)
         workflow_builder.set_segmenter(AggregateSegmenter(color_deconvoluter, struct_elem=get_standard_struct_elem()))
-        workflow_builder.add_classifier(cell_rule, cell_classifier)
+        workflow_builder.add_classifier(cell_rule, cell_classifier, dispatching_label="cell")
         workflow_builder.set_tile_size(tile_max_width, tile_max_height)
         workflow_builder.set_logger(self.logger)
         workflow_builder.set_tile_builder(masked_tile_builder)
@@ -181,7 +189,7 @@ class ThyroidJob(CytomineJob, Loggable):
         chain_builder.set_image_provider(SlideProvider(cytomine, slide_ids))
         chain_builder.add_executor(FullImageWorkflowExecutor(slide_workflow, logger=self.logger))
         # chain_builder.add_executor(AggregateWorkflowExecutor(cytomine, aggregate_workflow, logger=self.logger))
-        chain_builder.set_post_processor(CytominePostProcessor(cytomine, logger=self.logger))
+        chain_builder.set_post_processor(ThyroidPostProcessor(cytomine, logger=self.logger))
 
         self._chain = chain_builder.get()
 
@@ -191,7 +199,8 @@ class ThyroidJob(CytomineJob, Loggable):
             self._chain.execute()
             self.logger.info("ThyroidJob : end thyroid workflow.")
         except Exception as e:
-            self.logger.error("ThyroidJob : error while executing workflow : {}.".format(e.message))
+            self.logger.error("ThyroidJob : error while executing workflow \n" +
+                              "ThyroidJob : \"{}\".".format(e.message))
 
 
 def arr2str(arr):

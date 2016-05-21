@@ -26,13 +26,13 @@ class AggregateWorkflowExecutor(PolygonTranslatorWorkflowExecutor):
         WorkflowExecutor.__init__(self, workflow, logger=logger)
         self._cytomine = cytomine
 
-    def get_images(self, image, workflow_info_collection):
+    def get_windows(self, image, workflow_info_collection):
         if len(workflow_info_collection) != 1:
             raise RuntimeError("One execution expected, got {}.".format(len(workflow_info_collection)))
         workflow_information = workflow_info_collection[0]
         images = []
-        for polygon, dispatch, cls in workflow_information.iterator():
-            if dispatch == 1:  # is aggregate
+        for polygon, dispatch, cls, probas in workflow_information.results():
+            if dispatch == "aggregate":  # is aggregate
                 image_window = image.window_from_polygon(polygon)
                 trans_poly = translate(polygon, -image_window.offset_x, -image_window.offset_y)
                 masked_image = CytomineMaskedWindow.from_window(image_window, trans_poly)
