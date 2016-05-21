@@ -51,6 +51,7 @@
     --cytomine_verbose 0 \
     --cv_images_out 1 \
     --pyxit_save_to "/home/mass/GRD/r.mormont/nobackup/models/test/test_pickle.pkl" \
+    --pyxit_interpolation 1 \
     --pyxit_n_subwindows 2 \
     --pyxit_colorspace 2 \
     --pyxit_n_jobs 1 \
@@ -60,5 +61,5 @@
     --forest_n_estimators 2 \
     --forest_min_samples_split 1 \
     --forest_max_features 16 \
-    --svm 1 \
+    --svm 0 \
     --svm_c 1.0

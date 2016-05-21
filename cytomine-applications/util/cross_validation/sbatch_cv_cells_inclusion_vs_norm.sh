@@ -1,10 +1,10 @@
 #!/bin/bash
-#SBATCH --job-name=cv_incl_vs_norm
-#SBATCH --output=/home/mass/GRD/r.mormont/out/validation/cv_incl_vs_norm.res
+#SBATCH --job-name=cv_incl_vs_norm_build_no_svm
+#SBATCH --output=/home/mass/GRD/r.mormont/out/validation/cv_incl_vs_norm_build_no_svm.res
 #SBATCH --ntasks=120
 #SBATCH --cpus-per-task=1
 #SBATCH --time=192:00:00
-#SBATCH --mem=500G
+#SBATCH --mem=1000G
 #SBATCH --partition=Cytomine
 /home/mass/GRD/r.mormont/miniconda/bin/python /home/mass/GRD/r.mormont/sftp/cytomine-applications/util/cross_validation/pyxit_cross_validator.py \
     --cytomine_host "beta.cytomine.be" \
@@ -62,20 +62,19 @@
         --cytomine_test_images 716528 \
     --cytomine_verbose 0 \
     --cv_images_out 1 \
+    --pyxit_save_to "/home/mass/GRD/r.mormont/models/validated/incl_no_svm.pkl" \
     --pyxit_n_jobs 120 \
     --pyxit_dir_ls "/home/mass/GRD/r.mormont/nobackup/cv/ls" \
+    --pyxit_interpolation 1 \
     --forest_n_estimators 20 \
     --pyxit_n_subwindows 100 \
     --pyxit_colorspace 1 \
         --pyxit_colorspace 2 \
     --pyxit_min_size 0.6 \
-        --pyxit_min_size 0.7 \
     --pyxit_max_size 0.8 \
-        --pyxit_max_size 0.9 \
-    --forest_min_samples_split 215 \
+    --forest_min_samples_split 1 \
     --forest_max_features 1 \
         --forest_max_features 28 \
         --forest_max_features 384 \
         --forest_max_features 768 \
-    --svm 1 \
-    --svm_c 1.0
+    --svm 0

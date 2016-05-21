@@ -7,6 +7,7 @@ import numpy as np
 import sys
 
 from sklearn.base import clone
+from sklearn.grid_search import ParameterGrid
 from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score
 from sklearn.model_selection import GridSearchCV
 from sklearn.utils import check_random_state
@@ -305,7 +306,7 @@ def main(argv):
     pyxit.n_jobs = 1
     pyxit.base_estimator.n_jobs = 1
     grid = GridSearchCV(pyxit, cv_params, scoring=accuracy_scoring, cv=LeavePLabelOut(params.cv_images_out),
-                        verbose=10, n_jobs=params.pyxit_n_jobs, refit=False)
+                        verbose=10, n_jobs=params.pyxit_n_jobs, refit=is_test_set_provided or params.save_to is not None)
 
     grid.fit(X, y, labels)
 
@@ -347,13 +348,15 @@ def main(argv):
 
     best_params = grid.best_params_
     best_score = grid.best_score_
-    best_estimator = None
+    best_estimator = grid.best_estimator_
 
-    if is_test_set_provided or params.save_to is not None:
-        best_estimator = clone(pyxit)
-        pyxit.n_jobs = params.pyxit_n_jobs
-        pyxit.base_estimator = params.pyxit_n_jobs
-        best_estimator.fit(X, y)
+    # if is_test_set_provided or params.save_to is not None:
+    #    print "Build best estimator..."
+    #    best_estimator = clone(pyxit)
+    #    pyxit.n_jobs = params.pyxit_n_jobs
+    #    pyxit.base_estimator.n_jobs = params.pyxit_n_jobs
+    #    best_estimator.set_params(**best_params)
+    #    best_estimator.fit(X, y)
 
     # refit with the best parameters
     print "Best parameters : {}".format(best_params)
