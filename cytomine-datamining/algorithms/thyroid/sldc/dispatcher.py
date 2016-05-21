@@ -1,45 +1,12 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 from abc import ABCMeta, abstractmethod
+from util import emplace, take
 
 from logging import Loggable, SilentLogger
 
 __author__ = "Romain Mormont <romainmormont@hotmail.com>"
 __version__ = "0.1"
-
-
-def emplace(src, dest, mapping):
-    """Place the values of src into dest at the indexes indicated by the mapping
-
-    Parameters
-    ----------
-    src: iterable (size: n)
-        Elements to emplace into the dest list
-    dest: list (size: m)
-        The list in which the elements of src must be placed
-    mapping: iterable (subtype: int, size: n)
-        The indexes of dest where the elements of src must be placed
-    """
-    for index, value in zip(mapping, src):
-        dest[index] = value
-
-
-def take(src, idx):
-    """Generate a list containing the elements of src of which the index is contained in idx
-
-    Parameters
-    ----------
-    src: list (size: n)
-        Source iterable from which elements must be taken
-    idx: iterable (subtype: int, range: [0, n[, size: m)
-        Indexes iterable
-
-    Returns
-    -------
-    list: list
-        The list of taken elements
-    """
-    return [src[i] for i in idx]
 
 
 class DispatchingRule(Loggable):

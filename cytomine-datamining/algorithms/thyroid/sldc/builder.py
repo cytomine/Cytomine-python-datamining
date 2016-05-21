@@ -210,6 +210,10 @@ class WorkflowBuilder(object):
         """
         return self.add_classifier(CatchAllRule(), classifier, dispatching_label=dispatching_label)
 
+    @property
+    def pool(self):
+        return self._pool
+
     def get(self):
         """Build the workflow with the set parameters
         Returns

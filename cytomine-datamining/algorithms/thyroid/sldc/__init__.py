@@ -14,6 +14,7 @@ from .merger import Merger
 from .segmenter import Segmenter
 from .timing import WorkflowTiming
 from .workflow import SLDCWorkflow
+from .util import batch_split
 
 
 __author__ = "Romain Mormont <r.mormont@student.ulg.ac.be>"
@@ -24,4 +25,4 @@ __all__ = ["Locator", "Segmenter", "DispatcherClassifier", "DispatchingRule", "S
            "PostProcessor", "WorkflowInformation", "ChainInformation", "WorkflowInformationCollection",
            "FullImageWorkflowExecutor", "PolygonTranslatorWorkflowExecutor", "Logger", "StandardOutputLogger",
            "FileLogger", "SilentLogger", "WorkflowTiming", "Loggable", "WorkflowBuilder", "DefaultTileBuilder",
-           "Merger", "WorkflowChainBuilder"]
+           "Merger", "WorkflowChainBuilder", "batch_split"]

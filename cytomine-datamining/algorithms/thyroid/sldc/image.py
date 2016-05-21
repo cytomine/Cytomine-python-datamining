@@ -2,7 +2,7 @@
 
 import math
 from abc import ABCMeta, abstractmethod, abstractproperty
-
+from util import batch_split
 from errors import TileExtractionException
 
 __author__ = "Romain Mormont <romainmormont@hotmail.com>"
@@ -781,20 +781,7 @@ class TileTopology(object):
         batches: iterable (subtype: iterable (subtype: Tile), size: min(n_batches, N))
             The batches of tiles
         """
-        if n_batches >= self.tile_count:
-            return [[tile] for tile in self]
-        batches = [[] for _ in range(0, n_batches)]
-        current_batch = 0
-        bigger_batch_count = self.tile_count % n_batches
-        smaller_batch_size = (self.tile_count / n_batches)
-        bigger_batch_size = (self.tile_count / n_batches) + 1
-        for tile in self:
-            batches[current_batch].append(tile)
-            if (current_batch < bigger_batch_count and len(batches[current_batch]) >= bigger_batch_size) \
-                    or (current_batch >= bigger_batch_count and len(batches[current_batch]) >= smaller_batch_size):
-                # check whether the current batch is full and should be changed
-                current_batch += 1
-        return batches
+        return batch_split(n_batches, self)
 
     def iterator(self, silent_fail=True):
         """Return a tile topology iterator for running through the tile topology
@@ -814,3 +801,7 @@ class TileTopology(object):
         """TileTopology is iterable"""
         for tile in self.iterator():
             yield tile
+
+    def __len__(self):
+        """Number of tiles"""
+        return self.tile_count
