@@ -74,11 +74,15 @@ class PyxitClassifierAdapter(PyxitClassifier):
         return self
 
     def equivalent_pyxit(self):
-        return PyxitClassifier(self.base_estimator, n_subwindows=self.n_subwindows, min_size=self.min_size,
-                               max_size=self.max_size, target_width=self.target_width, target_height=self.target_height,
-                               n_jobs=self.n_jobs, interpolation=self.interpolation, transpose=self.transpose,
-                               colorspace=self.colorspace, fixed_size=self.fixed_size, random_state=self.random_state,
-                               verbose=self.verbose, get_output=self.get_output)
+        pyxit = PyxitClassifier(self.base_estimator, n_subwindows=self.n_subwindows, min_size=self.min_size,
+                                max_size=self.max_size, target_width=self.target_width, target_height=self.target_height,
+                                n_jobs=self.n_jobs, interpolation=self.interpolation, transpose=self.transpose,
+                                colorspace=self.colorspace, fixed_size=self.fixed_size, random_state=self.random_state,
+                                verbose=self.verbose, get_output=self.get_output)
+        pyxit.n_classes_ = self.n_classes_
+        pyxit.classes_ = self.classes_
+        pyxit.maxs = self.maxs
+        return pyxit
 
 
 class SVMPyxitClassifierAdapter(PyxitClassifierAdapter):

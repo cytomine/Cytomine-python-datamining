@@ -16,8 +16,7 @@
         --cytomine_excluded_terms 30559888 \
         --cytomine_excluded_terms 15054705 \
         --cytomine_excluded_terms 15054765 \
-    --cytomine_positive_terms 676446 \
-        --cytomine_positive_terms 676390 \
+    --cytomine_positive_terms 676390 \
         --cytomine_positive_terms 676210 \
         --cytomine_positive_terms 676434 \
         --cytomine_positive_terms 676176 \
@@ -31,6 +30,7 @@
         --cytomine_negative_terms 933004 \
         --cytomine_negative_terms 8844862 \
         --cytomine_negative_terms 8844845 \
+    --cytomine_other_terms 676446 \
     --cytomine_excluded_annotations 30675573 \
         --cytomine_excluded_annotations 18107252 \
         --cytomine_excluded_annotations 9321884 \

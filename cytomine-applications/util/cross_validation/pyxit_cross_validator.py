@@ -12,7 +12,7 @@ from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, r
 from sklearn.model_selection import GridSearchCV
 from sklearn.utils import check_random_state
 
-from util import str2bool, mk_window_size_tuples, accuracy_scoring, print_cm
+from util import str2bool, mk_window_size_tuples, accuracy_scoring, print_cm, recall_scoring
 from mapper import BinaryMapper, TernaryMapper
 from adapters import AnnotationCollectionAdapter, PyxitClassifierAdapter, SVMPyxitClassifierAdapter
 from options import MultipleOption
@@ -306,7 +306,8 @@ def main(argv):
     pyxit.n_jobs = 1
     pyxit.base_estimator.n_jobs = 1
     grid = GridSearchCV(pyxit, cv_params, scoring=accuracy_scoring, cv=LeavePLabelOut(params.cv_images_out),
-                        verbose=10, n_jobs=params.pyxit_n_jobs, refit=is_test_set_provided or params.save_to is not None)
+                        verbose=10, n_jobs=params.pyxit_n_jobs,
+                        refit=is_test_set_provided or params.save_to is not None)
 
     grid.fit(X, y, labels)
 
