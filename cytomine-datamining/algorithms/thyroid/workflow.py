@@ -2,16 +2,17 @@
 import optparse
 
 from cytomine import Cytomine
+from joblib import Parallel, delayed
 from sklearn.utils import check_random_state
 
 from sldc import PostProcessor, FullImageWorkflowExecutor, Logger, StandardOutputLogger, SilentLogger, Loggable, \
-    WorkflowBuilder, WorkflowChainBuilder
+    WorkflowBuilder, WorkflowChainBuilder, batch_split
 
 from helpers.datamining.colordeconvoluter import ColorDeconvoluter
 from helpers.utilities.datatype.polygon import affine_transform
 
 from segmenters import AggregateSegmenter, SlideSegmenter, get_standard_kernel, get_standard_struct_elem
-from dispatching_rules import CellRule, AggregateRule
+from dispatching_rules import CellRule, AggregateRule, CellGeometricRule
 from image_providers import SlideProvider, AggregateWorkflowExecutor
 from image_adapter import CytomineTileBuilder, TileCache, CytomineMaskedTileBuilder
 from ontology import ThyroidOntology
@@ -24,12 +25,30 @@ __author__ = "Mormont Romain <romain.mormont@gmail.com>"
 __version__ = "0.1"
 
 
+def _first_submit(image, post_processor, results_batch):
+    """Submit polygons from the first pass"""
+    for polygon, dispatch, cls, proba in results_batch:
+        upload_fn = post_processor._upload_fn(image, polygon)
+        if dispatch == "cell":  # cell
+            upload_fn(ThyroidOntology.CELL_INCL if cls == 1 else ThyroidOntology.CELL_NORM, proba)
+        elif dispatch == "aggregate":  # pattern
+            upload_fn(ThyroidOntology.PATTERN_PROLIF if cls == 1 else ThyroidOntology.PATTERN_NORM, proba)
+
+
+def _second_submit(image, post_processor, results_batch):
+    """Submit polygons from the second pass"""
+    for polygon, dispatch, cls, proba in results_batch:
+        upload_fn = post_processor._upload_fn(image, polygon)
+        if dispatch == "cell":
+            upload_fn(ThyroidOntology.CELL_INCL if cls == 1 else ThyroidOntology.CELL_NORM, proba)
+
+
 class ThyroidPostProcessor(PostProcessor):
     """
     This post processor publish the annotation and classes with the predicted class
     """
 
-    def __init__(self, cytomine, logger=SilentLogger()):
+    def __init__(self, cytomine, logger=SilentLogger(), n_jobs=1):
         """Build a cytomine post processor
         Parameters
         ----------
@@ -37,9 +56,12 @@ class ThyroidPostProcessor(PostProcessor):
             Cytomine client
         logger: Logger (optional, default: a SilentLogger object)
             A logger object
+        n_jobs: int (optional, default: 1)
+            The number of available processes for sending the results to the server
         """
         PostProcessor.__init__(self, logger=logger)
         self._cytomine = cytomine
+        self._pool = Parallel(n_jobs=n_jobs)
 
     def post_process(self, image, workflow_info_collection):
         # if len(workflow_info_collection) != 2:
@@ -47,21 +69,15 @@ class ThyroidPostProcessor(PostProcessor):
 
         # extract polygons from first run
         slide_processing = workflow_info_collection[0]
-        for polygon, dispatch, cls, proba in slide_processing.results():
-            upload_fn = self._upload_fn(image, polygon)
-            if dispatch == "cell":  # cell
-                upload_fn(ThyroidOntology.CELL_INCL if cls == 1 else ThyroidOntology.CELL_NORM, proba)
-            elif dispatch == "aggregate":  # pattern
-                upload_fn(ThyroidOntology.PATTERN_PROLIF if cls == 1 else ThyroidOntology.PATTERN_NORM, proba)
+        slide_processing_batches = batch_split(self._pool.n_jobs, slide_processing)
+        self._pool(delayed(_first_submit)(image, self, batch) for batch in slide_processing_batches)
         self.logger.info("ThyroidPostProcessor: first pass")
         slide_processing.timing.report(self.logger)
 
         # extract polygons from second run
         # aggre_processing = workflow_info_collection[1]
-        # for polygon, dispatch, cls, proba in aggre_processing.results():
-        #     upload_fn = self._upload_fn(image, polygon)
-        #     if dispatch == "cell":
-        #         upload_fn(ThyroidOntology.CELL_INCL if cls == 1 else ThyroidOntology.CELL_NORM, proba)
+        # aggre_processing_batches = batch_split(self._pool.n_jobs, aggre_processing)
+        # self._pool(delayed(_first_submit)(image, self, batch) for batch in aggre_processing_batches)
         # self.logger.info("ThyroidPostProcessor: first pass")
         # aggre_processing.timing.report(self.logger)
 
@@ -80,6 +96,10 @@ class ThyroidPostProcessor(PostProcessor):
         if label is not None and annotation is not None:
             self._cytomine.add_annotation_term(annotation.id, label, label, proba,
                                                annotation_term_model=AlgoAnnotationTerm)
+
+    def __getstate__(self):
+        self._cytomine._Cytomine__conn = None  # delete socket to make the tile serializable
+        return self.__dict__
 
 
 class ThyroidJob(CytomineJob, Loggable):
@@ -137,6 +157,9 @@ class ThyroidJob(CytomineJob, Loggable):
         tile_max_height: int
             The tiles max height
         """
+        from guppy import hpy
+        heapy = hpy()
+        start = heapy.heap()
         # Create Cytomine instance
         random_state = check_random_state(0)
         Loggable.__init__(self, logger=StandardOutputLogger(verbose))
@@ -177,7 +200,7 @@ class ThyroidJob(CytomineJob, Loggable):
 
         # Build workflow 2 (aggregate processing)
         workflow_builder.set_segmenter(AggregateSegmenter(color_deconvoluter, struct_elem=get_standard_struct_elem()))
-        workflow_builder.add_classifier(cell_rule, cell_classifier, dispatching_label="cell")
+        workflow_builder.add_classifier(CellGeometricRule(), cell_classifier, dispatching_label="cell")
         workflow_builder.set_tile_size(tile_max_width, tile_max_height)
         workflow_builder.set_logger(self.logger)
         workflow_builder.set_tile_builder(masked_tile_builder)
@@ -188,10 +211,13 @@ class ThyroidJob(CytomineJob, Loggable):
         chain_builder = WorkflowChainBuilder()
         chain_builder.set_image_provider(SlideProvider(cytomine, slide_ids))
         chain_builder.add_executor(FullImageWorkflowExecutor(slide_workflow, logger=self.logger))
-        # chain_builder.add_executor(AggregateWorkflowExecutor(cytomine, aggregate_workflow, logger=self.logger))
-        chain_builder.set_post_processor(ThyroidPostProcessor(cytomine, logger=self.logger))
+        chain_builder.add_executor(AggregateWorkflowExecutor(cytomine, aggregate_workflow, logger=self.logger))
+        chain_builder.set_post_processor(ThyroidPostProcessor(cytomine, logger=self.logger, n_jobs=min(10, n_jobs)))
 
         self._chain = chain_builder.get()
+        end = heapy.heap()
+        print "Construction:"
+        print end - start
 
     def run(self):
         try:
