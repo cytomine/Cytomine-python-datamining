@@ -27,7 +27,8 @@ def check_area(resolution, polygons, min_area):
     is_greater: ndarray
         Array of boolean
     """
-    return (resolution * np.array([polygon.area for polygon in polygons])) > min_area
+    resolution = resolution if resolution is not None else 1
+    return (resolution * resolution * np.array([polygon.area for polygon in polygons])) > min_area
 
 
 class ClassifierRule(DispatchingRule):
@@ -109,7 +110,8 @@ class CellGeometricRule(DispatchingRule):
         self._min_circularity = min_circularity
 
     def evaluate_batch(self, image, polygons):
-        areas = np.array([polygon.area for polygon in polygons]) * image.image_instance.resolution
-        perim = np.array([polygon.length for polygon in polygons])
+        resolution = image.image_instance.resolution if image.image_instance.resolution is not None else 1
+        areas = np.array([polygon.area for polygon in polygons]) * resolution * resolution
+        perim = np.array([polygon.length for polygon in polygons]) * resolution
         circ = 4 * np.pi * areas / (perim * perim)
         return np.logical_and(areas > self._min_area, circ > self._min_circularity)

@@ -25,22 +25,33 @@ __author__ = "Mormont Romain <romain.mormont@gmail.com>"
 __version__ = "0.1"
 
 
-def _first_submit(image, post_processor, results_batch):
+def _upload_annotation(cytomine, img_inst, polygon, label=None, proba=1.0):
+    image_id = img_inst.id
+    # Transform in cartesian coordinates
+    polygon = affine_transform(xx_coef=1, xy_coef=0, yx_coef=0, yy_coef=-1, delta_y=img_inst.height)(polygon)
+
+    annotation = cytomine.add_annotation(polygon.wkt, image_id)
+    if label is not None and annotation is not None:
+        cytomine.add_annotation_term(annotation.id, label, label, proba, annotation_term_model=AlgoAnnotationTerm)
+
+
+def _first_submit(image, cytomine, results_batch):
     """Submit polygons from the first pass"""
     for polygon, dispatch, cls, proba in results_batch:
-        upload_fn = post_processor._upload_fn(image, polygon)
         if dispatch == "cell":  # cell
-            upload_fn(ThyroidOntology.CELL_INCL if cls == 1 else ThyroidOntology.CELL_NORM, proba)
+            _upload_annotation(cytomine, image.image_instance, polygon,
+                               ThyroidOntology.CELL_INCL if cls == 1 else ThyroidOntology.CELL_NORM, proba)
         elif dispatch == "aggregate":  # pattern
-            upload_fn(ThyroidOntology.PATTERN_PROLIF if cls == 1 else ThyroidOntology.PATTERN_NORM, proba)
+            _upload_annotation(cytomine, image.image_instance, polygon,
+                               ThyroidOntology.PATTERN_PROLIF if cls == 1 else ThyroidOntology.PATTERN_NORM, proba)
 
 
-def _second_submit(image, post_processor, results_batch):
+def _second_submit(image, cytomine, results_batch):
     """Submit polygons from the second pass"""
     for polygon, dispatch, cls, proba in results_batch:
-        upload_fn = post_processor._upload_fn(image, polygon)
         if dispatch == "cell":
-            upload_fn(ThyroidOntology.CELL_INCL if cls == 1 else ThyroidOntology.CELL_NORM, proba)
+            _upload_annotation(cytomine, image.image_instance, polygon,
+                               ThyroidOntology.CELL_INCL if cls == 1 else ThyroidOntology.CELL_NORM, proba)
 
 
 class ThyroidPostProcessor(PostProcessor):
@@ -70,36 +81,19 @@ class ThyroidPostProcessor(PostProcessor):
         # extract polygons from first run
         slide_processing = workflow_info_collection[0]
         slide_processing_batches = batch_split(self._pool.n_jobs, slide_processing)
-        self._pool(delayed(_first_submit)(image, self, batch) for batch in slide_processing_batches)
+        self._cytomine._Cytomine__conn = None
+        self._pool(delayed(_first_submit)(image, self._cytomine, batch) for batch in slide_processing_batches)
         self.logger.info("ThyroidPostProcessor: first pass")
         slide_processing.timing.report(self.logger)
 
         # extract polygons from second run
-        # aggre_processing = workflow_info_collection[1]
-        # aggre_processing_batches = batch_split(self._pool.n_jobs, aggre_processing)
-        # self._pool(delayed(_first_submit)(image, self, batch) for batch in aggre_processing_batches)
-        # self.logger.info("ThyroidPostProcessor: first pass")
-        # aggre_processing.timing.report(self.logger)
+        aggre_processing = workflow_info_collection[1]
+        aggre_processing_batches = batch_split(self._pool.n_jobs, aggre_processing)
+        self._cytomine._Cytomine__conn = None
+        self._pool(delayed(_first_submit)(image, self._cytomine, batch) for batch in aggre_processing_batches)
+        self.logger.info("ThyroidPostProcessor: second pass")
+        aggre_processing.timing.report(self.logger)
 
-    def _upload_fn(self, image, polygon):
-        """Return a callable taking one parameter. This callable uploads the polygon as annotation for the given image.
-        The callable parameter is the label to associate to the annotation
-        """
-        return lambda cls, proba: self._upload_annotation(image.image_instance, polygon, label=cls, proba=proba)
-
-    def _upload_annotation(self, img_inst, polygon, label=None, proba=1.0):
-        image_id = img_inst.id
-        # Transform in cartesian coordinates
-        polygon = affine_transform(xx_coef=1, xy_coef=0, yx_coef=0, yy_coef=-1, delta_y=img_inst.height)(polygon)
-
-        annotation = self._cytomine.add_annotation(polygon.wkt, image_id)
-        if label is not None and annotation is not None:
-            self._cytomine.add_annotation_term(annotation.id, label, label, proba,
-                                               annotation_term_model=AlgoAnnotationTerm)
-
-    def __getstate__(self):
-        self._cytomine._Cytomine__conn = None  # delete socket to make the tile serializable
-        return self.__dict__
 
 
 class ThyroidJob(CytomineJob, Loggable):
@@ -220,13 +214,13 @@ class ThyroidJob(CytomineJob, Loggable):
         print end - start
 
     def run(self):
-        try:
+        # try:
             self.logger.info("ThyroidJob : start thyroid workflow.")
             self._chain.execute()
             self.logger.info("ThyroidJob : end thyroid workflow.")
-        except Exception as e:
-            self.logger.error("ThyroidJob : error while executing workflow \n" +
-                              "ThyroidJob : \"{}\".".format(e.message))
+        # except Exception as e:
+        #     self.logger.error("ThyroidJob : error while executing workflow \n" +
+        #                       "ThyroidJob : \"{}\".".format(e.message))
 
 
 def arr2str(arr):

@@ -77,14 +77,15 @@ class PyxitClassifierAdapter(PolygonClassifier, Loggable):
     def predict_batch(self, image, polygons):
         # Pyxit classifier takes images from the filesystem
         # So store the crops into files before passing the paths to the classifier
-        hp_before_load = self._heapy.heap()
+        # hp_before_load = self._heapy.heap()
         start_load = time.time()
         poly_batches = batch_split(self._pool.n_jobs, polygons)
         fetched = self._pool(delayed(_parallel_extract)(image, batch, self._tile_cache) for batch in poly_batches)
         end_load = time.time()
-        hp_end_load = self._heapy.heap()
-        print "Fetching tiles from server ({} sec):".format(end_load - start_load)
-        print hp_end_load - hp_before_load
+        self.logger.i("PyxitClassifierAdapter: fetching in {} sec".format(end_load - start_load))
+        # hp_end_load = self._heapy.heap()
+        # print "Fetching tiles from server ({} sec):".format(end_load - start_load)
+        # print hp_end_load - hp_before_load
 
         count_missing = 0
         paths = list()
@@ -100,16 +101,18 @@ class PyxitClassifierAdapter(PolygonClassifier, Loggable):
                 self.logger.e("PyxitClassifierAdapter: skip polygon because tile cannot be extracted.\n" +
                               "PyxitClassifierAdapter: error : {}".format(error))
 
-        self.logger.w("PyxitClassifierAdapter: {} crop(s) missed".format(count_missing))
+        if count_missing > 0:
+            self.logger.w("PyxitClassifierAdapter: {} crop(s) missed".format(count_missing))
 
         # merge predictions with missed tiles
-        hp_before_predict = self._heapy.heap()
+        # hp_before_predict = self._heapy.heap()
         start_predict = time.time()
         predictions, probas = self._predict(np.array(paths))
         end_predict = time.time()
-        hp_after_predict = self._heapy.heap()
-        print "Predictiting ({}):".format(end_predict - start_predict)
-        print hp_after_predict - hp_before_predict
+        self.logger.i("PyxitClassifierAdapter: predict in {} sec".format(end_predict - start_predict))
+        # hp_after_predict = self._heapy.heap()
+        # print "Predictiting ({}):".format(end_predict - start_predict)
+        # print hp_after_predict - hp_before_predict
 
         ret_classes = [None] * len(polygons)
         ret_probas = [0.0] * len(polygons)
@@ -141,7 +144,7 @@ class PyxitClassifierAdapter(PolygonClassifier, Loggable):
         else:
             self.logger.i("PyxitClassifierAdapter: predict with svm.")
             Xt = self._pyxit_classifier.transform(X)
-            self.logger.i("PyxitClassifierAdapter: predict with svm, features generated.")
+            self.logger.i("PyxitClassifierAdapter: ExtraTrees features generated.")
             if hasattr(self._svm, "predict_proba"):
                 probas = self._svm.predict_proba(Xt)
                 best_index = np.argmax(probas, axis=1)

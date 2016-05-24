@@ -123,7 +123,7 @@ class CytomineTile(Tile):
     def np_image(self):
         try:
             # build crop box
-            tbox = (self.offset_x, self.offset_y, self.width, self.height)
+            tbox = (self.abs_offset_x, self.abs_offset_y, self.width, self.height)
             # fetch image
             np_array = np.asarray(_get_crop(self._cytomine, self.base_image.image_instance, tbox))
             if np_array.shape[1] != tbox[2] or np_array.shape[0] != tbox[3] or np_array.shape[2] < self.channels:
@@ -366,6 +366,10 @@ class CytomineMaskedWindow(ImageWindow):
     @property
     def polygon_mask(self):
         return self._polygon
+
+    @property
+    def image_instance(self):
+        return self.base_image.image_instance
 
     @property
     def np_image(self):
