@@ -158,8 +158,12 @@ class WorkflowInformation(object):
     def timing(self):
         return self._timing
 
+    def __len__(self):
+        return len(self.polygons)
+
     def __iter__(self):
-        self.results()
+        for polygon, dispatch, cls, proba in self.results():
+            yield polygon, dispatch, cls, proba
 
     def results(self, filter_dispatch=None, filter_classes=None):
         """Yields an iterator that goes through the list of polygons of the workflow information
@@ -178,7 +182,6 @@ class WorkflowInformation(object):
             if (filter_dispatch is None or dispatch not in filter_dispatch) and \
                     (filter_classes is None or cls not in filter_classes):
                 yield polygon, dispatch, cls, proba
-        return
 
     def merge(self, other):
         """Merge the other workflow information object into the current one. The id and metadata of the first are kept

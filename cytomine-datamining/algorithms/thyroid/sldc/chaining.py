@@ -97,7 +97,8 @@ class WorkflowExecutor(Loggable):
         images = self.get_windows(image, workflow_info_collection)
         self.logger.info("WorkflowExecutor : {} image(s) to process.".format(len(images)))
         previous_verbosity = self._workflow.logger.level
-        for sub_image in images:
+        for i, sub_image in enumerate(images):
+            self.logger.info("WorkflowExecutor : process image {}/{}.".format(i + 1, len(images)))
             if self._mute_workflow:
                 self._workflow.logger.level = Logger.ERROR
             returned_info = self._workflow.process(sub_image)

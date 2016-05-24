@@ -151,12 +151,15 @@ class DispatcherClassifier(Loggable):
         """
         match_dict = dict()  # maps rule indexes with matching polygons
         poly_ind_dict = dict()  # maps rule indexes with index of the polygons in the passed array
-        indexes = np.arange(len(polygons))
+        poly_count = len(polygons)
+        indexes = np.arange(poly_count)
         # check which rule matched the polygons
-        for i, rule in enumerate(self._rules):
+        for i, (rule, label) in enumerate(zip(self._rules, self._dispatching_labels)):
             if indexes.shape[0] == 0:  # if there are no more elements to evaluate
                 break
             match, no_match = self._split_by_rule(image, rule, polygons, indexes, timing)
+            self.logger.i("DispatcherClassifier: {}/{} polygons dispatched by rule '{}'.".format(len(match), poly_count,
+                                                                                                 label))
             if len(match) > 0:  # skip if there are no match
                 match_dict[i] = match_dict.get(i, []) + take(polygons, match)
                 poly_ind_dict[i] = poly_ind_dict.get(i, []) + list(match)
@@ -175,7 +178,7 @@ class DispatcherClassifier(Loggable):
         # compute the prediction
         predict_list = [None] * len(polygons)
         probabilities_list = [0.0] * len(polygons)
-        dispatch_list = [None] * len(polygons)
+        dispatch_list = [-1] * len(polygons)
         for index in match_dict.keys():
             if index == -1:
                 # set a 0 probability for each poly as they were not dispatched
@@ -185,11 +188,11 @@ class DispatcherClassifier(Loggable):
                 timing.start_classify()
                 predictions, probabilities = self._classifiers[index].predict_batch(image, match_dict[index])
                 timing.end_classify()
-            # Emplace prediction in prediction list, probabilities in probabilities
-            # list and dispatch id in dispatch list
+                # Emplace dispatch id
+                emplace([self._dispatching_labels[index]] * len(predictions), dispatch_list, poly_ind_dict[index])
+            # Emplace prediction in prediction list, probabilities in probabilities list
             emplace(predictions, predict_list, poly_ind_dict[index])
             emplace(probabilities, probabilities_list, poly_ind_dict[index])
-            emplace([self._dispatching_labels[index]] * len(predictions), dispatch_list, poly_ind_dict[index])
 
         self.logger.info("DispatcherClassifier : end classification.")
         return predict_list, probabilities_list, dispatch_list
