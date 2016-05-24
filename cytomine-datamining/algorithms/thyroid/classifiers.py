@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import pickle
 import numpy as np
+import time
+from guppy import hpy
 from joblib import Parallel, delayed
 from sklearn.utils import check_random_state
 
@@ -70,13 +72,21 @@ class PyxitClassifierAdapter(PolygonClassifier, Loggable):
         self._classes = classes
         self._svm = svm
         self._pool = Parallel(n_jobs=n_jobs)
+        self._heapy = hpy()
 
     def predict_batch(self, image, polygons):
         # Pyxit classifier takes images from the filesystem
         # So store the crops into files before passing the paths to the classifier
+        hp_before_load = self._heapy.heap()
+        start_load = time.time()
         poly_batches = batch_split(self._pool.n_jobs, polygons)
         fetched = self._pool(delayed(_parallel_extract)(image, batch, self._tile_cache) for batch in poly_batches)
+        end_load = time.time()
+        hp_end_load = self._heapy.heap()
+        print "Fetching tiles from server ({} sec):".format(end_load - start_load)
+        print hp_end_load - hp_before_load
 
+        count_missing = 0
         paths = list()
         extracted = list()
         current_batch_size = 0
@@ -84,13 +94,23 @@ class PyxitClassifierAdapter(PolygonClassifier, Loggable):
             paths += b_paths
             extracted += (np.array(b_extracted) + current_batch_size).tolist()
             current_batch_size += len(poly_batches[i])
+            count_missing += len(b_errors)
             # print errors
             for error in b_errors:
-                self.logger.w("PyxitClassifierAdapter: skip polygon because tile cannot be extracted.\n" +
+                self.logger.e("PyxitClassifierAdapter: skip polygon because tile cannot be extracted.\n" +
                               "PyxitClassifierAdapter: error : {}".format(error))
 
+        self.logger.w("PyxitClassifierAdapter: {} crop(s) missed".format(count_missing))
+
         # merge predictions with missed tiles
+        hp_before_predict = self._heapy.heap()
+        start_predict = time.time()
         predictions, probas = self._predict(np.array(paths))
+        end_predict = time.time()
+        hp_after_predict = self._heapy.heap()
+        print "Predictiting ({}):".format(end_predict - start_predict)
+        print hp_after_predict - hp_before_predict
+
         ret_classes = [None] * len(polygons)
         ret_probas = [0.0] * len(polygons)
         for prediction, proba, i in zip(predictions, probas, extracted):
@@ -114,11 +134,14 @@ class PyxitClassifierAdapter(PolygonClassifier, Loggable):
             The probabilities
         """
         if self._svm is None:
+            self.logger.i("PyxitClassifierAdapter: predict without svm.")
             probas = self._pyxit_classifier.predict_proba(X)
             best_index = np.argmax(probas, axis=1)
             return self._classes.take(best_index, axis=0).astype('int'), probas
         else:
+            self.logger.i("PyxitClassifierAdapter: predict with svm.")
             Xt = self._pyxit_classifier.transform(X)
+            self.logger.i("PyxitClassifierAdapter: predict with svm, features generated.")
             if hasattr(self._svm, "predict_proba"):
                 probas = self._svm.predict_proba(Xt)
                 best_index = np.argmax(probas, axis=1)
@@ -165,4 +188,4 @@ class PyxitClassifierAdapter(PolygonClassifier, Loggable):
             classifier.interpolation = 1  # nearest interpolation
             classifier.random_state = random_state
             svm = pickle.load(model_file) if type == "svm" else None
-        return PyxitClassifierAdapter(classifier, tile_builder, classes, svm=svm, logger=logger, n_jobs=n_jobs)
+        return PyxitClassifierAdapter(classifier, tile_builder, classes, svm=svm, logger=logger, n_jobs=min(10, n_jobs))
