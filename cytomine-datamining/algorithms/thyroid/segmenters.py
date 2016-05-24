@@ -154,7 +154,7 @@ class AggregateSegmenter(Segmenter):
         contour_idx = [i for i, h in enumerate(hierarchy[0]) if h[3] >= 0]
 
         for i in contour_idx:
-            contour = contours2[i] # fetch the contour to evaluate
+            contour = contours2[i]  # fetch the contour to evaluate
 
             # Filter contour to make sure it should be filled, get convex hull of the contour to avoid artifact
             convex_hull = cv2.convexHull(contour)
