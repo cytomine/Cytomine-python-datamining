@@ -48,10 +48,15 @@ class WorkflowBuilder(object):
         self._dispatching_labels = []
         self._tile_max_width = 1024
         self._tile_max_height = 1024
-        self._overlap = 5
-        self._distance_tolerance = 7
+        self._overlap = 7
+        self._distance_tolerance = 1
         self._parallel = self._pool.n_jobs > 1
         self._logger = SilentLogger()
+
+    @property
+    def pool(self):
+        """Return the builder's parallel pool"""
+        return self._pool
 
     def set_parallel(self, in_parallel=True):
         """Enable/Disable parallelism parallel processing for the workflow
@@ -209,10 +214,6 @@ class WorkflowBuilder(object):
             The dispatching label
         """
         return self.add_classifier(CatchAllRule(), classifier, dispatching_label=dispatching_label)
-
-    @property
-    def pool(self):
-        return self._pool
 
     def get(self):
         """Build the workflow with the set parameters

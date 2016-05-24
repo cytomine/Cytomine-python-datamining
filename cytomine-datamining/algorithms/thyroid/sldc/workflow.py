@@ -80,8 +80,8 @@ class SLDCWorkflow(Loggable):
     """
 
     def __init__(self, segmenter, dispatcher_classifier, tile_builder,
-                 tile_max_width=1024, tile_max_height=1024, tile_overlap=5,
-                 dist_tolerance=7, logger=SilentLogger(), worker_pool=None):
+                 tile_max_width=1024, tile_max_height=1024, tile_overlap=7,
+                 dist_tolerance=1, logger=SilentLogger(), worker_pool=None):
         """Constructor for SLDCWorkflow objects
 
         Parameters
