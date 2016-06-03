@@ -1,6 +1,6 @@
 #!/bin/bash
 
-/home/mass/GRD/r.mormont/miniconda/bin/python /home/mass/GRD/r.mormont/sftp/cytomine-applications/util/cross_validation/pyxit_cross_validator.py \
+/home/mass/GRD/r.mormont/miniconda/bin/python  /home/mass/GRD/r.mormont/sftp/cytomine-applications/util/cross_validation/pyxit_cross_validator.py \
     --cytomine_host "beta.cytomine.be" \
     --cytomine_public_key "ad014190-2fba-45de-a09f-8665f803ee0b" \
     --cytomine_private_key "767512dd-e66f-4d3c-bb46-306fa413a5eb" \
@@ -9,6 +9,8 @@
     --cytomine_id_software 152714969 \
     --cytomine_id_project 186829908 \
     --cytomine_selected_users 179077547 \
+    --cytomine_reviewed_users 14 \
+    --cytomine_reviewed_images 186836213 \
     --cytomine_binary "True" \
     --cytomine_excluded_terms 9444456 \
         --cytomine_excluded_terms 22042230 \
@@ -63,3 +65,14 @@
     --forest_max_features 16 \
     --svm 0 \
     --svm_c 1.0
+
+
+cd /home/mass/GRD/r.mormont/nobackup/716528/sldc
+
+echo "Center:"
+find . -regex '.*_1024_1024\.png' -print0 | du --files0-from=- -c | tail -1
+echo "Bottom:"
+find . -regex '.*_[0-9]+_1024\.png' -print0 | du --files0-from=- -c | tail -1
+echo "Right"
+find . -regex '.*_1024[0-9]+\.png' -print0 | du --files0-from=- -c | tail -1
+

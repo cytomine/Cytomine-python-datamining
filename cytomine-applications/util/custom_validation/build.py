@@ -5,7 +5,7 @@ import os
 from util import CropTypeEnum, copy_content, create_dir, str2bool, str2list
 from cytomine import cytomine
 from pyxit import pyxitstandalone
-
+from adapters import AnnotationCollectionAdapter
 from mapper import BinaryMapper, DefaultMapper
 from cytominejob import CytomineJob
 
@@ -15,7 +15,7 @@ __version__ = "0.1"
 class ModelBuilderJob(CytomineJob):
 
     def __init__(self, cytomine_client, software_id, project_id, output_mapper, dir_ls, pyxit_parameters, working_path,
-                 zoom_level=1, reviewed_only=False, excluded_terms=None, users_only=None,
+                 zoom_level=1, reviewed_only=False, excluded_terms=None, users_only=None, excluded_images=None,
                  crop_type=CropTypeEnum.ALPHA_CROP):
         CytomineJob.__init__(self, cytomine_client, software_id, project_id)
         self._cytomine = cytomine_client
@@ -28,6 +28,7 @@ class ModelBuilderJob(CytomineJob):
         self._zoom_level = zoom_level
         self._dir_ls = dir_ls
         self._pyxit_parameters = pyxit_parameters
+        self._excluded_images = excluded_images
 
     def execute(self):
         annotations, dump_path = self._dump_annotations()
@@ -60,8 +61,15 @@ class ModelBuilderJob(CytomineJob):
         print "Get annotations..."
         annotations = self._cytomine.get_annotations(id_project=self.project_id, reviewed_only=self._reviewed_only,
                                                      showMeta=True, id_user=self._users_only)
+        excluded_terms = set(self._excluded_terms)
+        excluded_images = set(self._excluded_images)
+        filtered = [a for a in annotations.data()
+                    if len(a.term) > 0
+                    and set(a.term).isdisjoint(excluded_terms)
+                    and a.image not in excluded_images]
+        annotations = AnnotationCollectionAdapter(filtered)
         self.set_progress(25, "Dump annotations...")
-        print "Dump annotations..."
+        print "Dump annotations (total:{})...".format(annotations)
         dump_path = os.path.join(self._working_path, "alpha_crops")
         create_dir(dump_path)
         annotations = self._cytomine.dump_annotations(annotations=annotations, excluded_terms=self._excluded_terms,
@@ -104,6 +112,8 @@ def main(argv):
                  help="working zoom level")
     p.add_option('--cytomine_excluded_terms', type='string', dest='cytomine_excluded_terms',
                  help="term ids of excluded terms")
+    p.add_option('--cytomine_excluded_images', type='string', dest='cytomine_excluded_images',
+                 help="image excluded from the learning set")
     p.add_option('--cytomine_selected_users', type='string', dest='cytomine_selected_users',
                  help="user from who the annotations should be taken")
     p.add_option('--cytomine_reviewed', type='string', default="False", dest="cytomine_reviewed",
@@ -172,6 +182,7 @@ def main(argv):
         'cytomine_excluded_terms': str2list(options.cytomine_excluded_terms),  # see below
         'cytomine_positive': str2list(options.cytomine_positive_terms),
         'cytomine_negative': str2list(options.cytomine_negative_terms),
+        'cytomine_excluded_images': str2list(options.cytomine_excluded_images)
     }
     # [676446,676390,676210,676434,676176,676407,15109451,15109483,15109489,15109495],  # cells
     # [675999, 676026, 933004],  # patterns
@@ -216,7 +227,8 @@ def main(argv):
                          mapper, pyxit_parameters["dir_ls"], pyxit_parameters, parameters["cytomine_working_path"],
                          zoom_level=parameters["cytomine_zoom_level"], reviewed_only=parameters["cytomine_reviewed"],
                          excluded_terms=parameters["cytomine_excluded_terms"],
-                         users_only=parameters["cytomine_users"]) as job:
+                         users_only=parameters["cytomine_users"],
+                         excluded_images=parameters["cytomine_excluded_images"]) as job:
         job.execute()
 
 

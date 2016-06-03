@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+import os
+
+import shutil
+
+from cytomine.models import Annotation
 
 __author__ = "Mormont Romain <romain.mormont@gmail.com>"
 __version__ = "0.1"

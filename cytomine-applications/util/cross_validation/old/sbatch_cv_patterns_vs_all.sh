@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=cv_patterns_vs_all
 #SBATCH --output=/home/mass/GRD/r.mormont/out/validation/cv_patterns_vs_all.res
-#SBATCH --ntasks=30
+#SBATCH --ntasks=120
 #SBATCH --cpus-per-task=1
 #SBATCH --time=96:00:00
 #SBATCH --mem=200G
@@ -44,7 +44,7 @@
         --cytomine_excluded_annotations 9313842 \
     --cytomine_verbose 0 \
     --cv_images_out 1 \
-    --pyxit_n_jobs 30 \
+    --pyxit_n_jobs 120 \
     --pyxit_dir_ls "/home/mass/GRD/r.mormont/nobackup/cv/ls" \
     --forest_n_estimators 100 \
     --pyxit_colorspace 2 \

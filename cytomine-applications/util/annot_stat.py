@@ -148,4 +148,7 @@ if __name__ == "__main__":
                                        id_image=params['slides'], showWKT=True, showMeta=True)
 
     make_db(annotations)
-
+image = conn.get_project_image_instances(716498)
+conn = cytomine.Cytomine("beta.cytomine.be", "ad014190-2fba-45de-a09f-8665f803ee0b", "767512dd-e66f-4d3c-bb46-306fa413a5eb", base_path='/api/')
+conn.get_annotations(id_project=716498, id_user=196824342)
+conn.get_algo_annotations(id_project=716498, id_user=196)

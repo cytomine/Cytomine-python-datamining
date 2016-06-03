@@ -7,14 +7,14 @@ import numpy as np
 import sys
 
 from sklearn.base import clone
-from sklearn.grid_search import ParameterGrid
+from sklearn.model_selection import ParameterGrid
 from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score
 from sklearn.model_selection import GridSearchCV
 from sklearn.utils import check_random_state
 
 from util import str2bool, mk_window_size_tuples, accuracy_scoring, print_cm, recall_scoring
 from mapper import BinaryMapper, TernaryMapper
-from adapters import AnnotationCollectionAdapter, PyxitClassifierAdapter, SVMPyxitClassifierAdapter
+from adapters import AnnotationCollectionAdapter, PyxitClassifierAdapter, SVMPyxitClassifierAdapter, CytomineAdapter
 from options import MultipleOption
 from cytomine import Cytomine
 from cytomine.models import Annotation
@@ -63,34 +63,46 @@ def mk_pyxit(params, random_state=0):
 
 
 def mk_dataset(params):
-    cytomine = Cytomine(params.cytomine_host, params.cytomine_public_key, params.cytomine_private_key,
-                        base_path=params.cytomine_base_path, working_path=params.cytomine_working_path,
-                        verbose=params.cytomine_verbose)
+    cytomine = CytomineAdapter(params.cytomine_host, params.cytomine_public_key, params.cytomine_private_key,
+                               base_path=params.cytomine_base_path, working_path=params.cytomine_working_path,
+                               verbose=params.cytomine_verbose)
 
     # fetch annotation and filter them
-    annotations = cytomine.get_annotations(id_project=params.cytomine_id_project,
-                                           reviewed_only=params.cytomine_reviewed,
-                                           showMeta=True, id_user=params.cytomine_selected_users)
+    annotations = cytomine.get_annotations(id_project=params.cytomine_id_project, showMeta=True, id_user=params.cytomine_selected_users)
+    all_annotations = AnnotationCollectionAdapter(annotations)
+
+    # add reviewed if requested
+    if len(params.cytomine_reviewed_users) > 0:
+        if len(params.cytomine_reviewed_images) > 0:
+            all_annotations += cytomine.get_annotations(id_project=params.cytomine_id_project, showMeta=True, id_user=params.cytomine_reviewed_users, reviewed_only=True, id_image=params.cytomine_reviewed_images)
+        else:
+            all_annotations += cytomine.get_annotations(id_project=params.cytomine_id_project, showMeta=True,
+                                                        id_user=params.cytomine_reviewed_users, reviewed_only=True)
+
+    print "{} fetched annoations (pre-filter)...".format(len(all_annotations))
+    # Filter annotations frm user criterion
     excluded_set = set(params.cytomine_excluded_annotations)
     excluded_terms = set(params.cytomine_excluded_terms)
     excluded_images = set(params.cytomine_excluded_images)
-    filtered = [a for a in annotations.data()
+    filtered = [a for a in all_annotations
                 if len(a.term) > 0
                     and a.id not in excluded_set
                     and set(a.term).isdisjoint(excluded_terms)
                     and a.image not in excluded_images]
-    annotations = AnnotationCollectionAdapter(filtered)
-    # dump annotations
-    annotations = cytomine.dump_annotations(annotations=annotations, dest_path=params.pyxit_dir_ls,
-                                            get_image_url_func=Annotation.get_annotation_alpha_crop_url,
-                                            desired_zoom=params.cytomine_zoom_level)
 
+    # dump annotations
+    filtered = AnnotationCollectionAdapter(filtered)
+    filtered = cytomine.dump_annotations(annotations=filtered, dest_path=params.pyxit_dir_ls,
+                                         get_image_url_func=Annotation.get_annotation_alpha_crop_url,
+                                         desired_zoom=params.cytomine_zoom_level)
+
+    print "{} annotations dumped...".format(len(filtered))
     # make file names
-    for annot in annotations:
+    for annot in filtered:
         if not hasattr(annot, 'filename'):
             annot.filename = os.path.join(params.pyxit_dir_ls, annot.term[0], "{}_{}.png".format(annot.image, annot.id))
 
-    return zip(*[(annot.filename, annot.term[0], annot.image) for annot in annotations])
+    return zip(*[(annot.filename, annot.term[0], annot.image) for annot in filtered])
 
 
 def train_test_split(X, y, labels, test_set_labels):
@@ -151,8 +163,10 @@ def main(argv):
                  help="The Cytomine project identifier")
     p.add_option('-z', '--cytomine_zoom_level', default=0, type='int', dest='cytomine_zoom_level',
                  help="Zoom level for image extraction (0 for no zoom)")
-    p.add_option('--cytomine_reviewed', type='string', default="False", dest="cytomine_reviewed",
-                 help="Get reviewed annotations only")
+    p.add_option('--cytomine_reviewed_users', action="extend", type='int', default=[], dest="cytomine_reviewed_users",
+                 help="Get also user reviewed annotations")
+    p.add_option('--cytomine_reviewed_images', action="extend", type='int', default=[], dest="cytomine_reviewed_images",
+                 help="Image on which the reviews must be taken")
     p.add_option('--cytomine_excluded_terms', action="extend", type='int', dest='cytomine_excluded_terms',
                  help="The identifiers of some terms to exclude. Those terms shouldn't be used in one of the three class parameters.")
     p.add_option('--cytomine_excluded_annotations', action="extend", type='int', dest='cytomine_excluded_annotations',
@@ -220,7 +234,6 @@ def main(argv):
     params.cytomine_verbose = str2bool(params.cytomine_verbose)
     params.pyxit_fixed_size = str2bool(params.pyxit_fixed_size)
     params.pyxit_transpose = str2bool(params.pyxit_transpose)
-    params.cytomine_reviewed = str2bool(params.cytomine_reviewed)
 
     print "Parameters : {}".format(params)
 
@@ -254,6 +267,7 @@ def main(argv):
     if is_test_set_provided:
         print "Test images provided. Perform train/test split..."
         X, y, labels, X_test, y_test, labels_test = train_test_split(X, y, labels, params.cytomine_test_images)
+        print "Annotations in test set : {}".format(X_test.shape[0])
 
     print "Parameters to tune : "
     print "- Pyxit min size : {}".format(params.pyxit_min_size)

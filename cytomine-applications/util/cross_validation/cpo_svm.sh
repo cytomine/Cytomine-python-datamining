@@ -1,10 +1,10 @@
 #!/bin/bash
-#SBATCH --job-name=cv_cells_reduced_vs_all
-#SBATCH --output=/home/mass/GRD/r.mormont/out/validation/cv_cells_reduced_vs_all.res
+#SBATCH --job-name=cpo_svm
+#SBATCH --output=/home/mass/GRD/r.mormont/out/validation/final/cpo_svm.res
 #SBATCH --ntasks=120
 #SBATCH --cpus-per-task=1
-#SBATCH --time=96:00:00
-#SBATCH --mem=200G
+#SBATCH --time=192:00:00
+#SBATCH --mem=2000G
 #SBATCH --partition=Cytomine
 /home/mass/GRD/r.mormont/miniconda/bin/python /home/mass/GRD/r.mormont/sftp/cytomine-applications/util/cross_validation/pyxit_cross_validator.py \
     --cytomine_host "beta.cytomine.be" \
@@ -28,41 +28,50 @@
         --cytomine_positive_terms 676434 \
         --cytomine_positive_terms 676176 \
         --cytomine_positive_terms 676407 \
+        --cytomine_positive_terms 15109483 \
     --cytomine_negative_terms 675999 \
         --cytomine_negative_terms 676026 \
         --cytomine_negative_terms 933004 \
-        --cytomine_negative_terms 8844862 \
-        --cytomine_negative_terms 8844845 \
-        --cytomine_negative_terms 15109451 \
-        --cytomine_negative_terms 15109483 \
-        --cytomine_negative_terms 15109489 \
-        --cytomine_negative_terms 15109495 \
+    --cytomine_other_terms 8844862 \
+        --cytomine_other_terms 8844845 \
+        --cytomine_other_terms 15109451 \
+        --cytomine_other_terms 15109489 \
+        --cytomine_other_terms 15109495 \
     --cytomine_excluded_annotations 30675573 \
         --cytomine_excluded_annotations 18107252 \
         --cytomine_excluded_annotations 9321884 \
         --cytomine_excluded_annotations 7994253 \
         --cytomine_excluded_annotations 9313842 \
+    --cytomine_test_images 8124112 \
+        --cytomine_test_images 8123867 \
+        --cytomine_test_images 8122868 \
+        --cytomine_test_images 8122830 \
+        --cytomine_test_images 8120497 \
+        --cytomine_test_images 8120408 \
+        --cytomine_test_images 8120321 \
+        --cytomine_test_images 728799 \
+        --cytomine_test_images 728744 \
+        --cytomine_test_images 728725 \
+        --cytomine_test_images 728709 \
+        --cytomine_test_images 728689 \
+        --cytomine_test_images 728675 \
+        --cytomine_test_images 728391 \
+        --cytomine_test_images 724858 \
+        --cytomine_test_images 719625 \
+        --cytomine_test_images 716534 \
+        --cytomine_test_images 716528 \
     --cytomine_verbose 0 \
-    --cv_images_out 1 \
     --pyxit_n_jobs 120 \
+    --pyxit_save_to "/home/mass/GRD/r.mormont/models/validated/final/cpo_svm.pkl" \
     --pyxit_dir_ls "/home/mass/GRD/r.mormont/nobackup/cv/ls" \
-    --forest_n_estimators 100 \
+    --cv_images_out 1 \
+    --pyxit_interpolation 1 \
+    --forest_n_estimators 10 \
+    --pyxit_n_subwindows 50 \
+    --svm 1 \
     --pyxit_colorspace 2 \
-    --pyxit_min_size 0.1 \
-        --pyxit_min_size 0.3 \
-        --pyxit_min_size 0.5 \
-        --pyxit_min_size 0.7 \
-        --pyxit_min_size 0.9 \
-    --pyxit_max_size 1.0 \
-        --pyxit_max_size 0.8 \
-        --pyxit_max_size 0.6 \
-        --pyxit_max_size 0.4\
-        --pyxit_max_size 0.2 \
-    --forest_min_samples_split 1 \
-        --forest_min_samples_split 5 \
-        --forest_min_samples_split 10 \
-        --forest_min_samples_split 20 \
-    --forest_max_features 4 \
-        --forest_max_features 8 \
-        --forest_max_features 16 \
-        --forest_max_features 24 \
+    --pyxit_min_size 0.3 \
+    --pyxit_max_size 0.8 \
+    --forest_min_samples_split 91 \
+    --forest_max_features 1 \
+    --svm_c 1.0
