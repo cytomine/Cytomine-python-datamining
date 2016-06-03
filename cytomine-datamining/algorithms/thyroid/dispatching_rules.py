@@ -50,7 +50,7 @@ class ClassifierRule(DispatchingRule):
 
 
 class AggregateRule(ClassifierRule):
-    def __init__(self, pyxit_classifier_adapter, logger=SilentLogger(), min_area=35.0):
+    def __init__(self, pyxit_classifier_adapter, logger=SilentLogger(), min_area=15.0):
         """Constructor for AggregateRule object
 
         Parameters
@@ -59,20 +59,22 @@ class AggregateRule(ClassifierRule):
             A pyxit binary classifier predicting 1 for aggregate and 0 for
         logger: Logger (optional, default: a SilentLogger instance)
             A logger object
-        min_area: float (optional, default: 35.0)
+        min_area: float (optional, default: 15.0)
             The minimum area of an accepted object (in µm²)
         """
         ClassifierRule.__init__(self, pyxit_classifier_adapter, logger=logger)
         self._min_area = min_area
 
     def evaluate_batch(self, image, polygons):
-        classes, proba = self._classifier.predict_batch(image, polygons)
         min_area_checked = check_area(image.image_instance.resolution, polygons, self._min_area)
-        return np.logical_and(classes < 0.5, min_area_checked)
+        classes, proba = self._classifier.predict_batch(image, np.array(polygons)[min_area_checked])
+        all_classes = np.full((len(polygons),), 1, dtype="int")
+        all_classes[min_area_checked] = np.array(classes)
+        return all_classes < 0.5
 
 
 class CellRule(ClassifierRule):
-    def __init__(self, pyxit_classifier_adapter, logger=SilentLogger(), min_area=35.0):
+    def __init__(self, pyxit_classifier_adapter, logger=SilentLogger(), min_area=15.0):
         """Constructor for CellRule object
 
         Parameters
@@ -81,26 +83,28 @@ class CellRule(ClassifierRule):
             A pyxit binary classifier predicting 1 for cells and 0 for others
         logger: Logger (optional, default: a SilentLogger instance)
             A logger object
-        min_area: float (optional, default: 35.0)
+        min_area: float (optional, default: 15.0)
             The minimum area of an accepted object (in µm²)
         """
         ClassifierRule.__init__(self, pyxit_classifier_adapter, logger=logger)
         self._min_area = min_area
 
     def evaluate_batch(self, image, polygons):
-        classes, proba = self._classifier.predict_batch(image, polygons)
         min_area_checked = check_area(image.image_instance.resolution, polygons, self._min_area)
-        return np.logical_and(np.logical_and(classes > 0.5, classes < 1.5), min_area_checked)
+        classes, proba = self._classifier.predict_batch(image, np.array(polygons)[min_area_checked])
+        all_classes = np.zeros((len(polygons),), dtype="int")
+        all_classes[min_area_checked] = np.array(classes)
+        return np.logical_and(all_classes > 0.5, all_classes < 1.5)
 
 
 class CellGeometricRule(DispatchingRule):
     """Cell """
-    def __init__(self, min_area=35.0, min_circularity=0.6):
+    def __init__(self, min_area=15.0, min_circularity=0.6):
         """Constructor
 
         Parameters
         ----------
-        min_area: float (optional, default: 35)
+        min_area: float (optional, default: 15.0)
             Minimum area for a cell (in µm²)
         min_circularity: float (optional, default: 0.6)
             Minimum circularity for a cell

@@ -145,6 +145,12 @@ class PyxitClassifierAdapter(PolygonClassifier, Loggable):
             self.logger.i("PyxitClassifierAdapter: predict with svm.")
             Xt = self._pyxit_classifier.transform(X)
             self.logger.i("PyxitClassifierAdapter: ExtraTrees features generated.")
+
+            if Xt.shape[0] > Xt.shape[1]:
+                self.logger.i("PyxitClassifierAdapter: ")
+            else:
+                self.logger.i("PyxitClassifierAdapter: ")
+
             if hasattr(self._svm, "predict_proba"):
                 probas = self._svm.predict_proba(Xt)
                 best_index = np.argmax(probas, axis=1)

@@ -59,7 +59,7 @@ class CytomineSlide(Image):
             The id of the image instance
         """
         self._cytomine = cytomine
-        self._img_instance = self._cytomine.get_image_instance(id_img_instance)
+        self._img_instance = self._cytomine.get_image_instance(id_img_instance, include_server_urls=True)
 
     @property
     def image_instance(self):
@@ -85,6 +85,10 @@ class CytomineSlide(Image):
     def channels(self):
         return 3
 
+    def __getstate__(self):
+        self._cytomine.__conn = None
+        return self.__dict__
+
     def __str__(self):
         return "CytomineSlide (#{}) ({} x {})".format(self._img_instance.id, self.width, self.height)
 
@@ -93,7 +97,7 @@ class CytomineTile(Tile):
     """
     A tile from a cytomine slide
     """
-    def __init__(self, cytomine, parent, offset, width, height, tile_identifier=None):
+    def __init__(self, cytomine, working_path, parent, offset, width, height, tile_identifier=None):
         """Constructor for CytomineTile objects
 
         Parameters
@@ -118,14 +122,24 @@ class CytomineTile(Tile):
         """
         Tile.__init__(self, parent, offset, width, height, tile_identifier=tile_identifier)
         self._cytomine = cytomine
+        self._working_path = working_path
 
     @property
     def np_image(self):
         try:
+            image_instance = self.base_image.image_instance
+            x, y, width, height = self.abs_offset_x, self.abs_offset_y, self.width, self.height
+
+            # check if the tile was cached
+            cache_file = "{}_{}_{}_{}_{}.png".format(image_instance.id, x, y, width, height)
+            cache_path = os.path.join(self._working_path, cache_file)
+            if os.path.exists(cache_path):
+                return np.asarray(PIL.Image.open(cache_path))
+
             # build crop box
-            tbox = (self.abs_offset_x, self.abs_offset_y, self.width, self.height)
+            tbox = (x, y, width, height)
             # fetch image
-            np_array = np.asarray(_get_crop(self._cytomine, self.base_image.image_instance, tbox))
+            np_array = np.asarray(_get_crop(self._cytomine, image_instance, tbox))
             if np_array.shape[1] != tbox[2] or np_array.shape[0] != tbox[3] or np_array.shape[2] < self.channels:
                 msg = "Fetched image has invalid size : {} instead of {}".format(np_array.shape, (tbox[3], tbox[1], self.channels))
                 raise TileExtractionException(msg)
@@ -154,7 +168,7 @@ class CytomineTileBuilder(TileBuilder):
     A builder for CytomineTile objects
     """
 
-    def __init__(self, cytomine):
+    def __init__(self, cytomine, working_path):
         """Construct CytomineTileBuilder objects
 
         Parameters
@@ -163,9 +177,10 @@ class CytomineTileBuilder(TileBuilder):
             The initialized cytomine client
         """
         self._cytomine = cytomine
+        self._working_path = working_path
 
     def build(self, image, offset, width, height):
-        return CytomineTile(self._cytomine, image, offset, width, height)
+        return CytomineTile(self._cytomine, self._working_path, image, offset, width, height)
 
 
 class TileCache(object):
@@ -303,7 +318,7 @@ class CytomineMaskedTile(CytomineTile):
     """
     A tile from a cytomine slide on which is applied a mask represented by a polygon
     """
-    def __init__(self, cytomine, parent, offset, width, height, polygon, tile_identifier=None):
+    def __init__(self, cytomine, working_path, parent, offset, width, height, polygon, tile_identifier=None):
         """Constructor for CytomineTile objects
 
         Parameters
@@ -329,7 +344,7 @@ class CytomineMaskedTile(CytomineTile):
         -----
         The coordinates origin is the leftmost pixel at the top of the slide
         """
-        CytomineTile.__init__(self, cytomine, parent, offset, width, height, tile_identifier=tile_identifier)
+        CytomineTile.__init__(self, cytomine, working_path, parent, offset, width, height, tile_identifier=tile_identifier)
         self._polygon = polygon
 
     @property
@@ -401,7 +416,7 @@ class CytomineMaskedWindow(ImageWindow):
 
 
 class CytomineMaskedTileBuilder(TileBuilder):
-    def __init__(self, cytomine):
+    def __init__(self, cytomine, working_path):
         """Construct CytomineMaskedTileBuilder objects
 
         Parameters
@@ -410,6 +425,7 @@ class CytomineMaskedTileBuilder(TileBuilder):
             The initialized cytomine client
         """
         self._cytomine = cytomine
+        self._working_path = working_path
 
     def build(self, image, offset, width, height):
         """ Build method
@@ -424,4 +440,4 @@ class CytomineMaskedTileBuilder(TileBuilder):
         height: int
             Height of the tile
         """
-        return CytomineMaskedTile(self._cytomine, image, offset, width, height, image.polygon_mask)
+        return CytomineMaskedTile(self._cytomine, self._working_path, image, offset, width, height, image.polygon_mask)
