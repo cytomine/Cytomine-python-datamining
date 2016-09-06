@@ -12,7 +12,7 @@ from .logging import Logger, StandardOutputLogger, FileLogger, SilentLogger, Log
 from .merger import Merger
 from .segmenter import Segmenter
 from .timing import WorkflowTiming
-from .util import batch_split
+from .util import batch_split, alpha_rasterize, has_alpha_channel
 from .workflow import SLDCWorkflow
 
 __author__ = "Romain Mormont <r.mormont@student.ulg.ac.be>"
@@ -22,4 +22,4 @@ __all__ = ["Locator", "Segmenter", "DispatcherClassifier", "DispatchingRule", "S
            "TileExtractionException", "ImageWindow", "WorkflowExecutor", "WorkflowChain", "WorkflowInformation",
            "ChainInformation", "Logger", "StandardOutputLogger", "FileLogger", "SilentLogger", "WorkflowTiming",
            "Loggable", "WorkflowBuilder", "DefaultTileBuilder", "Merger", "WorkflowChainBuilder", "batch_split",
-           "PolygonFilter", "DefaultFilter"]
+           "PolygonFilter", "DefaultFilter", "alpha_rasterize", "has_alpha_channel"]
