@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import Image
+from PIL import Image
 import ImageDraw
 import numpy as np
 from shapely.geometry.base import BaseMultipartGeometry
