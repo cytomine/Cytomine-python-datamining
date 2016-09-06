@@ -4,7 +4,7 @@ import math
 from abc import ABCMeta, abstractmethod, abstractproperty
 
 from .errors import TileExtractionException
-from .util import batch_split
+from .util import batch_split, alpha_rasterize
 
 __author__ = "Romain Mormont <romainmormont@hotmail.com>"
 __version__ = "0.1"
@@ -73,7 +73,7 @@ class Image(object):
         """
         pass
 
-    def window(self, offset, max_width, max_height):
+    def window(self, offset, max_width, max_height, polygon_mask=None):
         """Build an image object representing a window of the image
 
         Parameters
@@ -84,6 +84,8 @@ class Image(object):
             The maximum width of the window
         max_height: int
             The maximum height of the window
+        polygon_mask: Polygon (optional, default: None)
+            The polygon representing the alpha mask to apply to the image window
 
         Returns
         -------
@@ -93,9 +95,9 @@ class Image(object):
         # width are bound to the current window size, not the parent one
         width = min(max_width, self.width - offset[0])
         height = min(max_height, self.height - offset[1])
-        return ImageWindow(self, offset, width, height)
+        return ImageWindow(self, offset, width, height, polygon_mask=polygon_mask)
 
-    def window_from_polygon(self, polygon):
+    def window_from_polygon(self, polygon, mask=False):
         """Build and return a window being the minimum bounding box around the passed polygon.
         At least a part of the polygon should fit the image
 
@@ -103,6 +105,8 @@ class Image(object):
         ----------
         polygon: shapely.geometry.Polygon
             The polygon of which the minimum bounding window should be returned
+        mask: boolean (optional, default: False)
+            True for applying a mask to the image
 
         Returns
         -------
@@ -116,9 +120,9 @@ class Image(object):
         offset, width, height = Image.polygon_box(polygon)
         if not self._check_tile_offset(offset):
             raise IndexError("Offset {} is out of the image.".format(offset))
-        return self.window(offset, width, height)
+        return self.window(offset, width, height, polygon_mask=polygon if mask else None)
 
-    def tile(self, tile_builder, offset, max_width, max_height):
+    def tile(self, tile_builder, offset, max_width, max_height, polygon_mask=None):
         """Extract a tile from the image
 
         Parameters
@@ -131,6 +135,8 @@ class Image(object):
             The maximum width of the tile
         max_height: int
             The maximum height of the tile
+        polygon_mask: Polygon (optional, default: None)
+            The polygon representing the alpha mask to apply to the image window
 
         Returns
         -------
@@ -146,9 +152,9 @@ class Image(object):
             raise IndexError("Offset {} is out of the image.".format(offset))
         width = min(max_width, self.width - offset[0])
         height = min(max_height, self.height - offset[1])
-        return tile_builder.build(self, offset, width, height)
+        return tile_builder.build(self, offset, width, height, polygon_mask=polygon_mask)
 
-    def tile_from_polygon(self, tile_builder, polygon):
+    def tile_from_polygon(self, tile_builder, polygon, mask=False):
         """Build a tile being the minimum bounding box around the passed polygon
 
         Parameters
@@ -157,6 +163,8 @@ class Image(object):
             The builder for effectively building the tile
         polygon: shapely.geometry.Polygon
             The polygon of which the bounding tile should be returned
+        mask: boolean (optional, default: False)
+            True for applying the polygon as an alpha mask to the tile
 
         Returns
         -------
@@ -169,7 +177,7 @@ class Image(object):
         TileExtractionException: if the tile cannot be extracted
         """
         offset, width, height = Image.polygon_box(polygon)
-        return self.tile(tile_builder, offset, width, height)
+        return self.tile(tile_builder, offset, width, height, polygon_mask=polygon if mask else None)
 
     def tile_iterator(self, builder, max_width=1024, max_height=1024, overlap=0):
         """Build and return a tile iterator that iterates over the image
@@ -260,7 +268,7 @@ class Image(object):
 class ImageWindow(Image):
     """An image window represents a window in another image
     """
-    def __init__(self, parent, offset, width, height):
+    def __init__(self, parent, offset, width, height, polygon_mask=None):
         """Constructor for ImageWindow objects
 
         Parameters
@@ -274,6 +282,9 @@ class ImageWindow(Image):
             The width of the image
         height: int
             The height of the image
+        polygon_mask: Polygon (optional, default: None)
+            A polygon referenced to the top-left corner of the image representing a mask to be applied.
+            If defined, this mask replaces any mask already existing on the image.
 
         Notes
         -----
@@ -283,6 +294,11 @@ class ImageWindow(Image):
         self._offset = offset
         self._width = width
         self._height = height
+        self._polygon_mask = polygon_mask
+
+    @property
+    def polygon_mask(self):
+        return self._polygon_mask
 
     @property
     def offset_x(self):
@@ -347,7 +363,11 @@ class ImageWindow(Image):
 
     @property
     def channels(self):
-        return self._parent.channels
+        chan = self._parent.channels
+        if self.polygon_mask is not None and (chan == 1 or chan == 3):
+            return chan + 1  # add alpha mask
+        else:
+            return chan
 
     @property
     def height(self):
@@ -393,7 +413,11 @@ class ImageWindow(Image):
         miny = self.offset_y
         maxx = self.offset_x + self.width
         maxy = self.offset_y + self.height
-        return self._parent.np_image[miny:maxy, minx:maxx]
+        image = self._parent.np_image[miny:maxy, minx:maxx]
+        if self._polygon_mask:
+            return alpha_rasterize(image, self._polygon_mask)
+        else:
+            return image
 
 
 class Tile(ImageWindow):
@@ -407,7 +431,7 @@ class Tile(ImageWindow):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, parent, offset, width, height, tile_identifier=None):
+    def __init__(self, parent, offset, width, height, tile_identifier=None, polygon_mask=None):
         """Constructor for Tile objects
 
         Parameters
@@ -423,12 +447,15 @@ class Tile(ImageWindow):
             The height of the tile
         tile_identifier: int (optional, default: None)
             A integer identifier that identifies uniquely the tile among a set of tiles
+        polygon_mask: Polygon (optional, default: None)
+            A polygon referenced to the top-left corner of the image representing a mask to be applied.
+            If defined, this mask replaces any mask already existing on the image.
 
         Notes
         -----
         The coordinates origin is the leftmost pixel at the top of the slide
         """
-        ImageWindow.__init__(self, parent, offset, width, height)
+        ImageWindow.__init__(self, parent, offset, width, height, polygon_mask=polygon_mask)
         self._identifier = tile_identifier
 
     @property
@@ -472,7 +499,7 @@ class TileBuilder(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def build(self, image, offset, width, height):
+    def build(self, image, offset, width, height, polygon_mask=None):
         """Build and return a tile object
 
         Parameters
@@ -487,6 +514,8 @@ class TileBuilder(object):
         height: int
             The exact height of the tile
             /!\ The resulting tile must not overflow the image
+        polygon_mask: Polygon (optional, default: None)
+            The polygon representing the alpha mask to apply to the tile window
 
         Returns
         -------
@@ -504,7 +533,7 @@ class TileBuilder(object):
         """
         pass
 
-    def build_from_polygon(self, image, polygon):
+    def build_from_polygon(self, image, polygon, mask=False):
         """Build a tile boxing the given polygon in the image
 
         Parameters
@@ -513,6 +542,8 @@ class TileBuilder(object):
             The image from which the tile should be extracted
         polygon: Polygon
             The polygon of which the bounding tile should be returned
+        mask: boolean (optional, default: False)
+            True for applying the polygon as an alpha mask on the tile window
 
         Returns
         -------
@@ -524,13 +555,13 @@ class TileBuilder(object):
         TypeError: when the reference image is not set
         TileExtractionImage: when the tile cannot be extracted
         """
-        return image.tile_from_polygon(self, polygon)
+        return image.tile_from_polygon(self, polygon, mask=mask)
 
 
 class DefaultTileBuilder(TileBuilder):
     """A tile builder which builds Tile objects"""
-    def build(self, image, offset, width, height):
-        return Tile(image, offset, width, height)
+    def build(self, image, offset, width, height, polygon_mask=None):
+        return Tile(image, offset, width, height, polygon_mask=polygon_mask)
 
 
 class TileTopologyIterator(object):

@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+import Image
+import ImageDraw
+import numpy as np
+from shapely.geometry.base import BaseMultipartGeometry
 
 __author__ = "Mormont Romain <romain.mormont@gmail.com>"
 __version__ = "0.1"
@@ -69,3 +73,77 @@ def batch_split(n_batches, items):
             # check whether the current batch is full and should be changed
             current_batch += 1
     return batches
+
+
+def has_alpha_channel(image):
+    """Check whether the image has an alpha channel
+
+    Parameters
+    ----------
+    image: ndarray
+        The numpy representation of the image
+
+    Returns
+    -------
+    has_alpha: boolean
+        True if the image has an alpha channel, false otherwise
+    """
+    chan = image.shape
+    return len(chan) == 3 and (chan[2] == 2 or chan[2] == 4)
+
+
+def alpha_rasterize(image, polygon):
+    """
+    Rasterize the given polygon as an alpha mask of the given image. The
+    polygon is assumed to be referenced to the top left pixel of the image.
+    If the image has already an alpha mask it is replaced by the polygon mask
+
+    Parameters
+    ----------
+    image: ndarray
+        The numpy representation of the image
+    polygon : Polygon
+        The polygon to rasterize
+
+    Return
+    ------
+    rasterized : ndarray
+        The image (in numpy format) of the rasterization of the polygon.
+        The image should have the same dimension as the bounding box of
+        the polygon.
+    """
+    # destination image
+    source = np.asarray(image)
+
+    # extract width, height and number of channels
+    chan = source.shape
+    if len(chan) == 3:
+        height, width, depth = source.shape
+    else:
+        height, width = source.shape
+        depth = 1
+        source = source.reshape((height, width, depth))
+
+    # if there is already an alpha mask, replace it
+    if has_alpha_channel(image):
+        source = source[:, :, 0:depth-1]
+    else:
+        depth += 1
+
+    # create rasterization mask
+    alpha = Image.new("L", (width, height), 0)
+    draw = ImageDraw.Draw(alpha)
+    boundary = polygon.boundary
+    if isinstance(boundary, BaseMultipartGeometry):  # handle multi-part geometries
+        for sub_boundary in boundary.geoms:
+            seq_pts = sub_boundary.coords
+            draw.polygon(seq_pts, outline=0, fill=255)
+    else:
+        seq_pts = polygon.boundary.coords
+        draw.polygon(seq_pts, outline=0, fill=255)
+
+    # merge mask with images
+    rasterized = np.zeros((height, width, depth), dtype=source.dtype)
+    rasterized[:, :, 0:depth-1] = source
+    rasterized[:, :, depth-1] = alpha
+    return rasterized
