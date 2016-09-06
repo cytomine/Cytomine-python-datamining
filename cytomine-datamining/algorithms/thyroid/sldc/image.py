@@ -3,6 +3,8 @@
 import math
 from abc import ABCMeta, abstractmethod, abstractproperty
 
+from shapely.affinity import translate
+
 from .errors import TileExtractionException
 from .util import batch_split, alpha_rasterize
 
@@ -85,7 +87,8 @@ class Image(object):
         max_height: int
             The maximum height of the window
         polygon_mask: Polygon (optional, default: None)
-            The polygon representing the alpha mask to apply to the image window
+            The polygon representing the alpha mask to apply to the image window. The polygon must be referenced
+            to the full image top-left pixel.
 
         Returns
         -------
@@ -95,7 +98,8 @@ class Image(object):
         # width are bound to the current window size, not the parent one
         width = min(max_width, self.width - offset[0])
         height = min(max_height, self.height - offset[1])
-        return ImageWindow(self, offset, width, height, polygon_mask=polygon_mask)
+        translated_polygon = translate(polygon_mask, -offset[0], -offset[1]) if polygon_mask is not None else None
+        return ImageWindow(self, offset, width, height, polygon_mask=translated_polygon)
 
     def window_from_polygon(self, polygon, mask=False):
         """Build and return a window being the minimum bounding box around the passed polygon.
@@ -136,7 +140,8 @@ class Image(object):
         max_height: int
             The maximum height of the tile
         polygon_mask: Polygon (optional, default: None)
-            The polygon representing the alpha mask to apply to the image window
+            The polygon representing the alpha mask to apply to the image window. The polygon must be referenced
+            to the full image top-left pixel.
 
         Returns
         -------
@@ -152,7 +157,8 @@ class Image(object):
             raise IndexError("Offset {} is out of the image.".format(offset))
         width = min(max_width, self.width - offset[0])
         height = min(max_height, self.height - offset[1])
-        return tile_builder.build(self, offset, width, height, polygon_mask=polygon_mask)
+        translated_polygon = translate(polygon_mask, -offset[0], -offset[1]) if polygon_mask is not None else None
+        return tile_builder.build(self, offset, width, height, polygon_mask=translated_polygon)
 
     def tile_from_polygon(self, tile_builder, polygon, mask=False):
         """Build a tile being the minimum bounding box around the passed polygon
