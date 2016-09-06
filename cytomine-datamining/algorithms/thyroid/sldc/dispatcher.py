@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-import numpy as np
 from abc import ABCMeta, abstractmethod
-from util import emplace, take
 
-from logging import Loggable, SilentLogger
+import numpy as np
+
+from .logging import Loggable, SilentLogger
+from .util import emplace, take
 
 __author__ = "Romain Mormont <romainmormont@hotmail.com>"
 __version__ = "0.1"
@@ -65,6 +66,11 @@ class CatchAllRule(DispatchingRule):
         return [True] * len(polygons)
 
 
+def default_fail_callback(polygon):
+    """The default fail callback which associates None to assessed polygon"""
+    return None
+
+
 class DispatcherClassifier(Loggable):
     """A dispatcher classifier is an object that evaluates a set of dispatching rules on polygons extracted from an
     image and that passes these polygons to their associated polygon classifiers according to rule that matched
@@ -92,7 +98,7 @@ class DispatcherClassifier(Loggable):
         self._rules = rules
         self._classifiers = classifiers
         self._dispatching_labels = list(range(len(rules))) if dispatching_labels is None else dispatching_labels
-        self._fail_callback = fail_callback if fail_callback is not None else (lambda x: None)
+        self._fail_callback = fail_callback if fail_callback is not None else default_fail_callback
 
     def dispatch_classify(self, image, polygon, timing):
         """Dispatch a single polygon to its corresponding classifier according to the dispatching rules,

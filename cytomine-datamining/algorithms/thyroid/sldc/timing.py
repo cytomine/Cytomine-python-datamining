@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import timeit
+
 import numpy as np
 
 __author__ = "Romain Mormont <romainmormont@hotmail.com>"
@@ -30,6 +31,7 @@ class WorkflowTiming(object):
     DISPATCH = "dispatch"
     CLASSIFY = "classify"
     LSL = "load_segment_locate"
+    DC = "dispatch_classify"
 
     def __init__(self):
         """Construct a WorkflowTiming object
@@ -41,7 +43,8 @@ class WorkflowTiming(object):
             WorkflowTiming.LOCATION: [],
             WorkflowTiming.DISPATCH: [],
             WorkflowTiming.CLASSIFY: [],
-            WorkflowTiming.LSL: []
+            WorkflowTiming.LSL: [],
+            WorkflowTiming.DC: []
         }
         self._start_dict = dict()
 
@@ -115,6 +118,16 @@ class WorkflowTiming(object):
         """
         self._record_end(WorkflowTiming.LSL)
 
+    def start_dc(self):
+        """Record the start for the 'dispatch_classify' phase
+        """
+        self._record_start(WorkflowTiming.DC)
+
+    def end_dc(self):
+        """Record the end for the 'dispatch_classify' phase
+        """
+        self._record_end(WorkflowTiming.DC)
+
     def statistics(self):
         """Compute time statistics tuples for each phase of the algorithm
         Returns
@@ -161,7 +174,7 @@ class WorkflowTiming(object):
         time: float
             The execution time in second
         """
-        return self.total_duration_of([WorkflowTiming.DISPATCH, WorkflowTiming.CLASSIFY])
+        return self.total_duration_of([WorkflowTiming.DC])
 
     def duration_of(self, phase):
         """Return the total duration of the given phase

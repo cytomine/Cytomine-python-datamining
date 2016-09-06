@@ -94,8 +94,8 @@ class Merger(object):
 
         Parameters
         ----------
-        polygons_tiles: iterable (subtype: (Tile, iterable of shapely.geometry.Polygon))
-            An iterable of tuples. Each tuple contains a tile and its polygons in another iterable.
+        polygons_tiles: iterable (subtype: (int, iterable of shapely.geometry.Polygon))
+            An iterable of tuples. Each tuple contains a tile identifier and its polygons in another iterable.
         tile_topology: TileTopology
             The tile topology that was used to generate the tiles passed in polygons_tiles
 
@@ -178,8 +178,8 @@ class Merger(object):
 
         Parameters
         ----------
-        polygons_tiles: iterable (subtype: (Tile, iterable of shapely.geometry.Polygon))
-            An iterable of tuples. Each tuple contains a tile and its polygons in another iterable.
+        polygons_tiles: iterable (subtype: (int, iterable of shapely.geometry.Polygon))
+            An iterable of tuples. Each tuple contains a tile identifier and its polygons in another iterable.
 
         Returns
         -------
@@ -192,7 +192,7 @@ class Merger(object):
         tiles_dict = dict()
         polygons_dict = dict()
         polygon_cnt = 1
-        for tile, polygons in polygons_tiles:
+        for tile_id, polygons in polygons_tiles:
             polygons_ids = []
 
             for polygon in polygons:
@@ -200,6 +200,6 @@ class Merger(object):
                 polygons_ids.append(polygon_cnt)
                 polygon_cnt += 1
 
-            tiles_dict[tile.identifier] = polygons_ids
+            tiles_dict[tile_id] = polygons_ids
 
         return tiles_dict, polygons_dict

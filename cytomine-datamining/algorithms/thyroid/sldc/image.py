@@ -2,8 +2,9 @@
 
 import math
 from abc import ABCMeta, abstractmethod, abstractproperty
-from util import batch_split
-from errors import TileExtractionException
+
+from .errors import TileExtractionException
+from .util import batch_split
 
 __author__ = "Romain Mormont <romainmormont@hotmail.com>"
 __version__ = "0.1"
@@ -560,7 +561,7 @@ class TileTopologyIterator(object):
         for tile_identifier in range(1, self._topology.tile_count + 1):
             try:
                 yield self._topology.tile(tile_identifier)
-            except TileExtractionException, e:
+            except TileExtractionException as e:
                 if not self._silent_fail:
                     raise e
 
@@ -782,6 +783,21 @@ class TileTopology(object):
             The batches of tiles
         """
         return batch_split(n_batches, self)
+
+    def partition_identifiers(self, n_batches):
+        """Partition the tile identifiers into a given number of batches of similar sizes
+
+        Parameters
+        ----------
+        n_batches: int
+            The number of batches
+
+        Returns
+        -------
+        batches: iterable (subtype: iterable (subtype: int), size: min(n_batches, N))
+            The batches of tiles
+        """
+        return batch_split(n_batches, range(1, self.tile_count + 1))
 
     def iterator(self, silent_fail=True):
         """Return a tile topology iterator for running through the tile topology

@@ -206,11 +206,13 @@ class ThyroidJob(CytomineJob, Loggable):
         aggregate_rule = AggregateRule(dispatch_classifier, logger=self.logger)
 
         # Build workflows
-        workflow_builder = WorkflowBuilder(n_jobs=n_jobs)
+        workflow_builder = WorkflowBuilder()
         color_deconvoluter = ColorDeconvoluter()
         color_deconvoluter.set_kernel(get_standard_kernel())
 
         # Builder workflow 1 (slide processing)
+        workflow_builder.set_n_jobs(n_jobs)
+        workflow_builder.set_parallel_dc(True)
         workflow_builder.set_segmenter(SlideSegmenter(color_deconvoluter))
         workflow_builder.add_classifier(cell_rule, cell_classifier, dispatching_label="cell")
         workflow_builder.add_classifier(aggregate_rule, aggr_classifier, dispatching_label="aggregate")
@@ -222,6 +224,7 @@ class ThyroidJob(CytomineJob, Loggable):
         slide_workflow = workflow_builder.get()
 
         # Build workflow 2 (aggregate processing)
+        workflow_builder.set_n_jobs(1)
         workflow_builder.set_segmenter(AggregateSegmenter(color_deconvoluter, struct_elem=get_standard_struct_elem()))
         workflow_builder.add_classifier(CellGeometricRule(), cell_classifier, dispatching_label="cell")
         workflow_builder.set_tile_size(tile_max_width, tile_max_height)
@@ -233,10 +236,9 @@ class ThyroidJob(CytomineJob, Loggable):
 
         # Build workflow chain
         chain_builder = WorkflowChainBuilder()
-        chain_builder.set_image_provider(SlideProvider(cytomine, slide_ids))
-        chain_builder.add_executor(FullImageWorkflowExecutor(slide_workflow, logger=self.logger))
-        chain_builder.add_executor(AggregateWorkflowExecutor(cytomine, aggregate_workflow, logger=self.logger))
-        chain_builder.set_post_processor(ThyroidPostProcessor(cytomine, logger=self.logger, n_jobs=min(5, n_jobs)))
+        chain_builder.set_first_workflow(slide_workflow, label="slide_processing")
+        chain_builder.add_executor(aggregate_workflow, label="aggregate_processing", logger=self.logger, n_jobs=n_jobs)
+        chain_builder.set_logger(self.logger)
 
         self._chain = chain_builder.get()
         end = heapy.heap()

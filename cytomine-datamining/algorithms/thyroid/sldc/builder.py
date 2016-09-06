@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 from joblib import Parallel
 
-from chaining import WorkflowChain
-from dispatcher import DispatcherClassifier, CatchAllRule
-from workflow import SLDCWorkflow
-from logging import SilentLogger
-from errors import MissingComponentException
-from image import DefaultTileBuilder
+from .chaining import WorkflowChain, WorkflowExecutor, DefaultFilter
+from .dispatcher import DispatcherClassifier, CatchAllRule
+from .errors import MissingComponentException
+from .image import DefaultTileBuilder
+from .logging import SilentLogger
+from .workflow import SLDCWorkflow
 
 __author__ = "Mormont Romain <romainmormont@hotmail.com>"
 __version__ = "0.1"
@@ -16,15 +16,13 @@ class WorkflowBuilder(object):
     """A class for building SLDC Workflow objects. When several instances of SLDCWorkflow should be built, they should
     be with the same Builder object, especially if the workflows should work in parallel.
     """
-    def __init__(self, n_jobs=1):
+    def __init__(self):
         """Constructor for WorkflowBuilderObjects
         Parameters
         ----------
         n_jobs: int
             Number of jobs to use for executing the workflow
         """
-        # Pool is preserved for building several instances of the workflow
-        self._pool = Parallel(n_jobs=n_jobs)
         # Fields below are reset after each get()
         self._segmenter = None
         self._rules = None
@@ -36,7 +34,8 @@ class WorkflowBuilder(object):
         self._distance_tolerance = None
         self._logger = None
         self._tile_builder = None
-        self._parallel = None
+        self._parallel_dc = None
+        self._n_jobs = None
         self._reset()
 
     def _reset(self):
@@ -50,29 +49,38 @@ class WorkflowBuilder(object):
         self._tile_max_height = 1024
         self._overlap = 7
         self._distance_tolerance = 1
-        self._parallel = self._pool.n_jobs > 1
+        self._parallel_dc = False
+        self._n_jobs = 1
         self._logger = SilentLogger()
 
-    @property
-    def pool(self):
-        """Return the builder's parallel pool"""
-        return self._pool
-
-    def set_parallel(self, in_parallel=True):
-        """Enable/Disable parallelism parallel processing for the workflow
-        By default, parallelism is enabled if the number of jobs passed in the constructor is more than 0.
-
+    def set_n_jobs(self, n_jobs):
+        """Set the number of available jobs (optional)
         Parameters
         ----------
-        in_parallel: bool (optional, default: True)
-            True for executing the workflow in parallel, False to execute it sequentially
+        n_jobs: int
+            The number of jobs available to execute the workflow
 
         Returns
         -------
         builder: WorkflowBuilder
             The builder
         """
-        self._parallel = in_parallel
+        self._n_jobs = n_jobs
+        return self
+
+    def set_parallel_dc(self, parallel_dc):
+        """Specify whether the dispatching and classification will be parallelized at the workflow level (optional)
+        Parameters
+        ----------
+        parallel_dc: boolean
+            True for enabling parallelization of dispatching and classification at the workflow level
+
+        Returns
+        -------
+        builder: WorkflowBuilder
+            The builder
+        """
+        self._parallel_dc = parallel_dc
         return self
 
     def set_segmenter(self, segmenter):
@@ -239,8 +247,8 @@ class WorkflowBuilder(object):
         workflow = SLDCWorkflow(self._segmenter, dispatcher_classifier, self._tile_builder,
                                 dist_tolerance=self._distance_tolerance,
                                 tile_max_height=self._tile_max_height, tile_max_width=self._tile_max_width,
-                                tile_overlap=self._overlap, logger=self._logger,
-                                worker_pool=self._pool if self._parallel else None)
+                                tile_overlap=self._overlap, logger=self._logger, n_jobs=self._n_jobs,
+                                parallel_dc=self._parallel_dc)
         self._reset()
         return workflow
 
@@ -249,66 +257,70 @@ class WorkflowChainBuilder(object):
     """A class for building workflow chains objects
     """
     def __init__(self):
+        self._first_workflow = None
         self._executors = None
-        self._provider = None
-        self._post_processor = None
+        self._filters = None
+        self._labels = None
         self._logger = None
         self._reset()
 
     def _reset(self):
         """Resets the builder so that it can build a new workflow chain
         """
+        self._first_workflow = None
         self._executors = []
-        self._provider = None
-        self._post_processor = None
+        self._filters = []
+        self._labels = []
         self._logger = SilentLogger()
 
-    def add_executor(self, workflow_executor):
+    def set_first_workflow(self, workflow, label=None):
+        """Set the workflow that will process the full image
+        Parameters
+        ----------
+        workflow: SLDCWorkflow
+            The workflow
+        label: hashable (optional)
+            The label identifying the workflow. If not set, this label is set to 0.
+
+        Returns
+        -------
+        builder: WorkflowChainBuilder
+            The builder
+        """
+        actual_label = 0 if label is None else label
+        if self._first_workflow is None:
+            self._labels.insert(0, actual_label)
+        else:
+            self._labels[0] = actual_label
+        self._first_workflow = workflow
+        return self
+
+    def add_executor(self, workflow, filter=DefaultFilter(), label=None, logger=SilentLogger(), n_jobs=1):
         """Adds a workflow executor to be executed by the workflow chain.
-        The executors added through this method are submitted to the built WorkflowChain in the same order.
 
         Parameters
         ----------
-        workflow_executor: WorkflowExecutor
-            The workflow executor
+        workflow: SLDCWorkflow
+            The workflow object
+        filter: PolygonFilter (optional, default: DefaultFilter)
+            The polygon filter implementing the filtering of polygons of which the windows will be processed to
+            the workflow.
+        label: hashable (optional)
+            The label identifying the executor. If not set, the number of the executor is used instead (starting at 1)
+        logger: Logger (optional, default: SilentLogger)
+            The logger to be used by the executor object
+        n_jobs: int (optional, default: 1)
+            The number of jobs for executing the workflow on the images
 
         Returns
         -------
         builder: WorkflowChainBuilder
             The builder
         """
-        self._executors.append(workflow_executor)
-        return self
-
-    def set_post_processor(self, post_processor):
-        """Set the post processor of the workflow chain
-
-        Parameters
-        ----------
-        post_processor: PostProcessor
-            The post processor
-
-        Returns
-        -------
-        builder: WorkflowChainBuilder
-            The builder
-        """
-        self._post_processor = post_processor
-        return self
-
-    def set_image_provider(self, image_provider):
-        """Set the image provider of the workflow chain
-
-        Parameters
-        ----------
-        image_provider: ImageProvider
-
-        Returns
-        -------
-        builder: WorkflowChainBuilder
-            The builder
-        """
-        self._provider = image_provider
+        self._executors.append(WorkflowExecutor(workflow, logger=logger, n_jobs=n_jobs))
+        self._filters.append(filter)
+        actual_label = len(self._executors) if label is None else label
+        self._labels.append(actual_label)
         return self
 
     def set_logger(self, logger):
@@ -339,13 +351,15 @@ class WorkflowChainBuilder(object):
         MissingComponentException:
             If some mandatory elements were not provided to the builder
         """
-        if self._provider is None:
-            raise MissingComponentException("Missing image provider.")
-        if self._post_processor is None:
-            raise MissingComponentException("Missing post processor")
-        if len(self._executors) <= 0:
-            raise MissingComponentException("At least one workflow executor should be provided.")
+        if self._first_workflow is None:
+            raise MissingComponentException("Missing first workflow.")
+        if len(self._labels) != len(self._executors) + 1:
+            raise MissingComponentException("The number of labels ({}) should be the".format(len(self._labels)) +
+                                            " same as the number of workflows ({}).".format(len(self._executors) + 1))
+        if len(self._filters) != len(self._executors):
+            raise MissingComponentException("The number of filters ({}) should be the".format(len(self._filters)) +
+                                            " same as the number of executors ({}).".format(len(self._executors)))
 
-        chain = WorkflowChain(self._provider, self._executors, self._post_processor, logger=self._logger)
+        chain = WorkflowChain(self._first_workflow, self._executors, self._filters, self._labels, logger=self._logger)
         self._reset()
         return chain

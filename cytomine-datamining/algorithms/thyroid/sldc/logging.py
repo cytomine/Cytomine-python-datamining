@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-import os
 import multiprocessing
+import os
 import threading
 from abc import abstractmethod, ABCMeta
+from copy import copy
 
 __author__ = "Romain Mormont <romainmormont@hotmail.com>"
 __version__ = "0.1"
@@ -18,16 +19,20 @@ class Logger(object):
     INFO = 3
     DEBUG = 4
 
-    def __init__(self, level, prefix=True):
+    def __init__(self, level, prefix=True, pid=True):
         """Build a logger object with the given level of verbosity
         Parameters
         ----------
         level: int
             Verbosity level
+        prefix: boolean:
+            True for displaying the prefix, false otherwise
+        pid: boolean
+            True for displaying the pid in the prefix, false for the tid
         """
         self._level = level
         self._prefix = prefix
-        self._lock = multiprocessing.Lock()
+        self._pid = pid
 
     @property
     def level(self):
@@ -120,20 +125,22 @@ class Logger(object):
         """
         if self._level >= level:
             formatted = self._format_msg(level, msg)
-            self._lock.acquire()
             self._print(formatted)
-            self._lock.release()
 
     @abstractmethod
     def _print(self, formatted_msg):
         pass
 
-    @classmethod
-    def prefix(cls, level):
+    def prefix(self, level):
         from datetime import datetime
         now = datetime.now().isoformat()
-        tid = "{}".format(threading.current_thread().ident).zfill(6)
-        return "[tid:{}][{}][{}]".format(tid, now, cls.level2str(level))
+        if self._pid:
+            pid = "{}".format(os.getpid()).zfill(6)
+            fid = "pid:{}".format(pid)
+        else:
+            tid = "{}".format(threading.current_thread().ident).zfill(6)
+            fid = "tid:{}".format(tid)
+        return "[{}][{}][{}]".format(fid, now, self.level2str(level))
 
     @classmethod
     def level2str(cls, level):
@@ -158,7 +165,7 @@ class StandardOutputLogger(Logger):
     """A logger printing the messages on the standard output
     """
     def _print(self, formatted_msg):
-        print formatted_msg
+        print (formatted_msg)
 
 
 class FileLogger(Logger):

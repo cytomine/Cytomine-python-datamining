@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
+from functools import partial
+
 import cv2
 import numpy as np
-import scipy
-from shapely.validation import explain_validity
-from shapely.geometry import Polygon
-from shapely.affinity import affine_transform as aff_transfo
-from functools import partial
 from scipy.ndimage.morphology import binary_hit_or_miss
+from shapely.affinity import affine_transform as aff_transfo
+from shapely.geometry import Polygon
+from shapely.validation import explain_validity
 
 __author__ = "Begon Jean-Michel <jm.begon@gmail.com>"
 __contributors__ = ["Romain Mormont <r.mormont@student.ulg.ac.be>"]
@@ -161,7 +161,7 @@ class Locator(object):
                     if polygon.is_valid:  # some polygons might be invalid
                         components.append(polygon)
                     else:
-                        print explain_validity(polygon)
+                        print (explain_validity(polygon))
 
                 # check if there is another top contour
                 if hierarchy[0][top_index][0] != -1:
