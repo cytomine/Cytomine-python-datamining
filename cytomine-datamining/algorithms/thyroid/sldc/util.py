@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from PIL import Image, ImageDraw
 import numpy as np
+from shapely.geometry import GeometryCollection
 from shapely.geometry.base import BaseMultipartGeometry
 
 __author__ = "Mormont Romain <romain.mormont@gmail.com>"
@@ -130,16 +131,29 @@ def alpha_rasterize(image, polygon):
         depth += 1
 
     # create rasterization mask
-    alpha = Image.new("L", (width, height), 0)
-    draw = ImageDraw.Draw(alpha)
-    boundary = polygon.boundary
-    if isinstance(boundary, BaseMultipartGeometry):  # handle multi-part geometries
-        for sub_boundary in boundary.geoms:
-            seq_pts = sub_boundary.coords
-            draw.polygon(seq_pts, outline=0, fill=255)
+    if polygon.is_empty: # handle case when polygon is empty
+        alpha = np.zeros((height, width), dtype=np.uint8)
     else:
-        seq_pts = polygon.boundary.coords
-        draw.polygon(seq_pts, outline=0, fill=255)
+        alpha = Image.new("L", (width, height), 0)
+        draw = ImageDraw.Draw(alpha)
+        if isinstance(polygon, BaseMultipartGeometry):  # geometry collection
+            for geometry in polygon.geoms:
+                try:
+                    # if the geometry has not boundary (for MultiPoint for instance), a value error is raised.
+                    # In this case, just skip the drawing of the geometry
+                    seq_pts = geometry.boundary.coords
+                    draw.polygon(seq_pts, outline=0, fill=255)
+                except NotImplementedError:
+                    pass
+        else:
+            boundary = polygon.boundary
+            if isinstance(boundary, BaseMultipartGeometry):
+                for sub_boundary in boundary.geoms:
+                    seq_pts = sub_boundary.coords
+                    draw.polygon(seq_pts, outline=0, fill=255)
+            else:
+                seq_pts = boundary.coords
+                draw.polygon(seq_pts, outline=0, fill=255)
 
     # merge mask with images
     rasterized = np.zeros((height, width, depth), dtype=source.dtype)

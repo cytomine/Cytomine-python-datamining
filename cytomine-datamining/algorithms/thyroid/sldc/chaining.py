@@ -6,6 +6,7 @@ from copy import copy
 from joblib import Parallel, delayed
 from shapely.affinity import translate
 
+from .image import Image
 from .util import batch_split
 from .information import ChainInformation, WorkflowInformation
 from .logging import Loggable, SilentLogger
@@ -198,7 +199,7 @@ class PolygonFilter(object):
             The generated windows
         """
         polygons = self.filter(chain_information)
-        return [image.window_from_polygon(polygon) for polygon in polygons]
+        return [image.window_from_polygon(polygon, mask=True) for polygon in polygons]
 
 
 class DefaultFilter(PolygonFilter):
