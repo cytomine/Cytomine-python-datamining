@@ -47,5 +47,5 @@ if __name__ == "__main__":
     args.append("--verbose")
     args.append("{}".format(Logger.INFO))
     args.append("--n_jobs")
-    args.append("2")
+    args.append("1")
     workflow.main(args)
