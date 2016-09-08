@@ -90,7 +90,7 @@ class CellRule(ClassifierRule):
         self._min_area = min_area
 
     def evaluate_batch(self, image, polygons):
-        min_area_checked = check_area(image.image_instance.resolution, polygons, self._min_area)
+        min_area_checked = check_area(image.base_image.image_instance.resolution, polygons, self._min_area)
         classes, proba = self._classifier.predict_batch(image, np.array(polygons)[min_area_checked])
         all_classes = np.zeros((len(polygons),), dtype="int")
         all_classes[min_area_checked] = np.array(classes)
@@ -114,7 +114,7 @@ class CellGeometricRule(DispatchingRule):
         self._min_circularity = min_circularity
 
     def evaluate_batch(self, image, polygons):
-        resolution = image.image_instance.resolution if image.image_instance.resolution is not None else 1
+        resolution = image.base_image.image_instance.resolution if image.base_image.image_instance.resolution is not None else 1
         areas = np.array([polygon.area for polygon in polygons]) * resolution * resolution
         perim = np.array([polygon.length for polygon in polygons]) * resolution
         circ = 4 * np.pi * areas / (perim * perim)
