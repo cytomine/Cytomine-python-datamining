@@ -11,16 +11,15 @@ from cytomine_utilities.wholeslide import WholeSlide
 from joblib import Parallel, delayed
 from sklearn.utils import check_random_state
 
-from sldc import PostProcessor, FullImageWorkflowExecutor, Logger, StandardOutputLogger, SilentLogger, Loggable, \
-    WorkflowBuilder, WorkflowChainBuilder, batch_split, TileTopology, DefaultTileBuilder
+from sldc import Logger, StandardOutputLogger, SilentLogger, Loggable, WorkflowBuilder, WorkflowChainBuilder, \
+    batch_split, TileTopology, DefaultTileBuilder
 
 from helpers.datamining.colordeconvoluter import ColorDeconvoluter
 from helpers.utilities.datatype.polygon import affine_transform
 
 from segmenters import AggregateSegmenter, SlideSegmenter, get_standard_kernel, get_standard_struct_elem
 from dispatching_rules import CellRule, AggregateRule, CellGeometricRule
-from image_providers import SlideProvider, AggregateWorkflowExecutor
-from image_adapter import CytomineTileBuilder, TileCache, CytomineMaskedTileBuilder, CytomineSlide
+from image_adapter import CytomineTileBuilder, TileCache, CytomineSlide
 from ontology import ThyroidOntology
 from classifiers import PyxitClassifierAdapter
 from cytomine.models import AlgoAnnotationTerm
@@ -60,7 +59,7 @@ def _second_submit(image, cytomine, results_batch):
                                ThyroidOntology.CELL_INCL if cls == 1 else ThyroidOntology.CELL_NORM, proba)
 
 
-class ThyroidPostProcessor(PostProcessor):
+class ThyroidPostProcessor(Loggable):
     """
     This post processor publish the annotation and classes with the predicted class
     """
@@ -76,16 +75,23 @@ class ThyroidPostProcessor(PostProcessor):
         n_jobs: int (optional, default: 1)
             The number of available processes for sending the results to the server
         """
-        PostProcessor.__init__(self, logger=logger)
+        Loggable.__init__(self, logger=logger)
         self._cytomine = cytomine
         self._pool = Parallel(n_jobs=n_jobs)
 
-    def post_process(self, image, workflow_info_collection):
+    def post_process(self, image, chain_info):
+        """
+        Parameters
+        ----------
+        image: CytomineSlide
+        workflow_info: WorkflowInformation
+
+        """
         # if len(workflow_info_collection) != 2:
         #     raise RuntimeError("Two executions expected, got {}.".format(len(workflow_info_collection)))
 
         # extract polygons from first run
-        slide_processing = workflow_info_collection[0]
+        slide_processing = chain_info.information("slide_processing")
         slide_processing_batches = batch_split(self._pool.n_jobs, slide_processing)
         self._cytomine._Cytomine__conn = None
         self.logger.info("ThyroidPostProcessor: submit results for first pass")
@@ -94,7 +100,7 @@ class ThyroidPostProcessor(PostProcessor):
         slide_processing.timing.report(self.logger)
 
         # extract polygons from second run
-        aggre_processing = workflow_info_collection[1]
+        aggre_processing = chain_info.information("aggregate_processing")
         aggre_processing_batches = batch_split(self._pool.n_jobs, aggre_processing)
         self._cytomine._Cytomine__conn = None
         self.logger.info("ThyroidPostProcessor: submit results for second pass")
@@ -172,36 +178,27 @@ class ThyroidJob(CytomineJob, Loggable):
         overlap: int
             Overlap between tiles
         """
-        from guppy import hpy
-        heapy = hpy()
-        start = heapy.heap()
         # Create Cytomine instance
         random_state = check_random_state(0)
         Loggable.__init__(self, logger=StandardOutputLogger(verbose))
-        cytomine = Cytomine(host, public_key, private_key, working_path, protocol,
-                            base_path, verbose >= Logger.DEBUG, timeout)
+        cytomine = Cytomine(host, public_key, private_key, working_path, protocol, base_path, verbose >= Logger.DEBUG, timeout)
         CytomineJob.__init__(self, cytomine, software_id, project_id)
 
         # Build tile builders
         tile_builder = CytomineTileBuilder(cytomine, working_path)
-        masked_tile_builder = CytomineMaskedTileBuilder(cytomine, working_path)
         tile_cache = TileCache(tile_builder, working_path)
 
         self.logger.i("ThyroidJob: start caching tiles.")
         cache_start = time.time()
-        self.cache_tiles(cytomine, slide_ids, tile_max_width=tile_max_width, tile_max_height=tile_max_height,
-                         working_path=working_path, overlap=overlap, n_jobs=n_jobs)
+        self.cache_tiles(cytomine, slide_ids, tile_max_width=tile_max_width, tile_max_height=tile_max_height,  working_path=working_path, overlap=overlap, n_jobs=n_jobs)
         cache_end = time.time()
         self.logger.i("ThyroidJob: end caching tiles in {} s.".format(cache_end - cache_start))
 
         # Build useful classifiers and rules
         adapter_builder_func = PyxitClassifierAdapter.build_from_pickle
-        aggr_classifier = adapter_builder_func(aggr_classif, tile_cache, self.logger,
-                                               random_state=random_state, n_jobs=n_jobs)
-        cell_classifier = adapter_builder_func(cell_classif, tile_cache, self.logger,
-                                               random_state=random_state, n_jobs=n_jobs)
-        dispatch_classifier = adapter_builder_func(dispatch_classif, tile_cache, self.logger,
-                                                   random_state=random_state, n_jobs=n_jobs)
+        aggr_classifier = adapter_builder_func(aggr_classif, tile_cache, self.logger, random_state=random_state, n_jobs=n_jobs)
+        cell_classifier = adapter_builder_func(cell_classif, tile_cache, self.logger, random_state=random_state, n_jobs=n_jobs)
+        dispatch_classifier = adapter_builder_func(dispatch_classif, tile_cache, self.logger, random_state=random_state, n_jobs=n_jobs)
         cell_rule = CellRule(dispatch_classifier, logger=self.logger)
         aggregate_rule = AggregateRule(dispatch_classifier, logger=self.logger)
 
@@ -230,7 +227,7 @@ class ThyroidJob(CytomineJob, Loggable):
         workflow_builder.set_tile_size(tile_max_width, tile_max_height)
         workflow_builder.set_overlap(overlap)
         workflow_builder.set_logger(self.logger)
-        workflow_builder.set_tile_builder(masked_tile_builder)
+        workflow_builder.set_tile_builder(tile_builder)
 
         aggregate_workflow = workflow_builder.get()
 
@@ -241,9 +238,8 @@ class ThyroidJob(CytomineJob, Loggable):
         chain_builder.set_logger(self.logger)
 
         self._chain = chain_builder.get()
-        end = heapy.heap()
-        print "Construction:"
-        print end - start
+        self._slides = [CytomineSlide(cytomine, slide_id) for slide_id in slide_ids]
+        self._post_processor = ThyroidPostProcessor(cytomine, logger=self.logger, n_jobs=n_jobs)
 
     def cache_tiles(self, cytomine, slides, tile_max_width=1024, tile_max_height=1024, overlap=7,
                     working_path="/tmp/sldc/", n_jobs=1):
@@ -263,9 +259,11 @@ class ThyroidJob(CytomineJob, Loggable):
 
     def run(self):
         # try:
-            self.logger.info("ThyroidJob : start thyroid workflow.")
-            self._chain.execute()
-            self.logger.info("ThyroidJob : end thyroid workflow.")
+        self.logger.info("ThyroidJob : start thyroid workflow.")
+        for slide in self._slides:
+            results = self._chain.process(slide)
+            self._post_processor.post_process(slide, results)
+        self.logger.info("ThyroidJob : end thyroid workflow.")
         # except Exception as e:
         #     self.logger.error("ThyroidJob : error while executing workflow \n" +
         #                       "ThyroidJob : \"{}\".".format(e.message))
