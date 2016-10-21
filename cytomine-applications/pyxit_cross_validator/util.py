@@ -74,22 +74,28 @@ class CropTypeEnum(object):
 
 
 def accuracy_scoring(pyxit, X, y):
+    """A scikit-learn compatible accuracy scoring function"""
     return accuracy_score(y, pyxit.predict(X))
 
 
 def recall_scoring(pyxit, X, y):
+    """A scikit-learn compatible recall scoring function"""
     return recall_score(y, pyxit.predict(X))
 
 
 def precision_scoring(pyxit, X, y):
+    """A scikit-learn compatible precision scoring function"""
     return precision_score(y, pyxit.predict(X))
 
 
 def get_greater(value, lst):
+    """Get all the value from the list that are greater than the given value"""
     return [v for v in lst if value < v]
 
 
 def mk_window_size_tuples(min_sizes, max_sizes):
+    """Generate a list of all possible pairs (min_window_size, max_window_size) from the list of
+    minimum and maximum windows sizes"""
     min_sizes = sorted(min_sizes)
     max_sizes = sorted(max_sizes)
     tuples = list()
