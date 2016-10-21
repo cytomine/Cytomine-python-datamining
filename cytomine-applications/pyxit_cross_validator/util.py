@@ -104,3 +104,13 @@ def mk_window_size_tuples(min_sizes, max_sizes):
         if len(valid_sizes) > 0:
             tuples += [(min_size, max_size) for max_size in valid_sizes]
     return tuples
+
+
+class Logger(object):
+    """A class for logging based on verbosity"""
+    def __init__(self, verbose):
+        self._verbose = verbose
+
+    def log(self, content):
+        if self._verbose:
+            print(content)

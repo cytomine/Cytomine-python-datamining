@@ -34,27 +34,17 @@ class AnnotationCollectionAdapter(object):
 
 
 class PyxitClassifierAdapter(PyxitClassifier):
-
-    def __init__(self, base_estimator,
-                 n_subwindows=10,
-                 min_size=0.5,
-                 max_size=1.0,
-                 target_width=16,
-                 target_height=16,
-                 n_jobs=1,
-                 interpolation=2,
-                 transpose=False,
-                 colorspace=2,
-                 fixed_size=False,
-                 random_state=None,
-                 verbose=0,
-                 get_output=_get_output_from_directory,
-                 window_sizes=None, **other_params):
-        PyxitClassifier.__init__(self, base_estimator, n_subwindows=n_subwindows, min_size=min_size, max_size=max_size,
-                                 target_width=target_width, target_height=target_height, n_jobs=n_jobs,
-                                 interpolation=interpolation, transpose=transpose, colorspace=colorspace,
-                                 fixed_size=fixed_size, random_state=random_state, verbose=verbose,
-                                 get_output=get_output, **other_params)
+    """An adapter enabling usef of PyxitClassifier in a sklearn-like validation grid (ET-DIC)"""
+    def __init__(self, base_estimator, n_subwindows=10, min_size=0.5, max_size=1.0, target_width=16, target_height=16,
+                 n_jobs=1, interpolation=2, transpose=False, colorspace=2, fixed_size=False, random_state=None,
+                 verbose=0, get_output=_get_output_from_directory, window_sizes=None, **other_params):
+        PyxitClassifier.__init__(
+            self, base_estimator, n_subwindows=n_subwindows, min_size=min_size, max_size=max_size,
+            target_width=target_width, target_height=target_height, n_jobs=n_jobs,
+            interpolation=interpolation, transpose=transpose, colorspace=colorspace,
+            fixed_size=fixed_size, random_state=random_state, verbose=verbose,
+            get_output=get_output, **other_params
+        )
         if window_sizes is not None:
             self.min_size = window_sizes[0]
             self.max_size = window_sizes[1]
@@ -84,6 +74,10 @@ class PyxitClassifierAdapter(PyxitClassifier):
         return self
 
     def equivalent_pyxit(self):
+        """
+        Return a standalone PyxitClassifier object having the same
+        properties as the current PyxitClassifierAdapter object
+        """
         pyxit = PyxitClassifier(self.base_estimator, n_subwindows=self.n_subwindows, min_size=self.min_size,
                                 max_size=self.max_size, target_width=self.target_width, target_height=self.target_height,
                                 n_jobs=self.n_jobs, interpolation=self.interpolation, transpose=self.transpose,
@@ -94,33 +88,28 @@ class PyxitClassifierAdapter(PyxitClassifier):
         pyxit.maxs = self.maxs
         return pyxit
 
+    @property
+    def number_jobs(self):
+        return self._n_jobs
+
+    @number_jobs.setter
+    def number_jobs(self, value):
+        self.n_jobs = value
+        self.base_estimator.n_jobs = value
+
 
 class SVMPyxitClassifierAdapter(PyxitClassifierAdapter):
-    def __init__(self, base_estimator,
-                 C=1.0,
-                 n_subwindows=10,
-                 min_size=0.5,
-                 max_size=1.0,
-                 target_width=16,
-                 target_height=16,
-                 n_jobs=1,
-                 interpolation=2,
-                 transpose=False,
-                 colorspace=2,
-                 fixed_size=False,
-                 random_state=None,
-                 verbose=0,
-                 get_output=_get_output_from_directory,
-                 window_sizes=None,
-                 **other_params):
-        PyxitClassifierAdapter.__init__(self, base_estimator, n_subwindows=n_subwindows, min_size=min_size,
-                                        max_size=max_size, target_width=target_width, target_height=target_height,
-                                        n_jobs=n_jobs, interpolation=interpolation, transpose=transpose,
-                                        colorspace=colorspace, fixed_size=fixed_size, random_state=random_state,
-                                        verbose=verbose, get_output=get_output, **other_params)
-        if window_sizes is not None:
-            self.min_size = window_sizes[0]
-            self.max_size = window_sizes[1]
+    """Implements the ET-FL variant of pyxit"""
+    def __init__(self, base_estimator, C=1.0, n_subwindows=10, min_size=0.5, max_size=1.0, target_width=16,
+                 target_height=16, n_jobs=1, interpolation=2, transpose=False, colorspace=2, fixed_size=False,
+                 random_state=None, verbose=0, get_output=_get_output_from_directory, window_sizes=None, **other_params):
+        PyxitClassifierAdapter.__init__(
+            self, base_estimator, n_subwindows=n_subwindows, min_size=min_size,
+            max_size=max_size, target_width=target_width, target_height=target_height,
+            n_jobs=n_jobs, interpolation=interpolation, transpose=transpose,
+            colorspace=colorspace, fixed_size=fixed_size, random_state=random_state,
+            verbose=verbose, get_output=get_output, **other_params
+        )
         self._svm = LinearSVC(C=C)
 
     def fit(self, X, y, _X=None, _y=None):
@@ -151,50 +140,3 @@ class SVMPyxitClassifierAdapter(PyxitClassifierAdapter):
     @property
     def svm(self):
         return self._svm
-
-
-class CytomineAdapter(Cytomine):
-    def get_annotations(self, id_project=None, id_user=None, id_image=None, id_term=None, showGIS=None,
-                        showWKT=None, showMeta=None, bbox=None, id_bbox= None, reviewed_only=False):
-        if not reviewed_only:
-            return super(CytomineAdapter, self).get_annotations(id_project=id_project, id_user=id_user,
-                                                                id_image=id_image, id_term=id_term, showGIS=showGIS,
-                                                                showWKT=showWKT, showMeta=showMeta, bbox=bbox,
-                                                                id_bbox=id_bbox, reviewed_only=False)
-        annotations = AnnotationCollection()
-        query = ""
-        if id_project:
-            query += "&project=" + str(id_project)
-        if id_term:
-            query += "&terms=" + str(id_term)  # terms for multiple, term instead
-        if id_user:
-            query = "{}&{}={}".format(query, "reviewUsers" if reviewed_only else "users",
-                                      str(id_user).strip('[]').replace(' ', ''))
-        if id_image:
-            query += "&images=%s" % str(id_image).strip('[]').replace(' ', '')
-        if bbox:
-            query += "&bbox=%s" % urllib.quote_plus(bbox)  # %str(bbox).strip('[]').replace(' ','%20')
-        if id_bbox:
-            query += "&bboxAnnotation=%s" % str(id_bbox)
-        if showGIS:
-            query += "&showGIS=true"
-        if showWKT:
-            query += "&showWKT=true"
-        if showMeta:
-            query += "&showMeta=true"
-        if showMeta or showGIS or showWKT:
-            query += "&showTerm=true"
-        if reviewed_only:
-            query += "&reviewed=true"
-
-        # print query
-        annotations = self.fetch(annotations, query=query)
-        return annotations
-
-if __name__ == "__main__":
-    conn = CytomineAdapter("beta.cytomine.be", "ad014190-2fba-45de-a09f-8665f803ee0b",
-                           "767512dd-e66f-4d3c-bb46-306fa413a5eb", base_path='/api/')
-    data = conn.get_annotations(id_project=716498, id_user=14, reviewed_only=True, id_image=[8120444])
-    print data.data()
-    print len(data.data())
-    print data.data()
