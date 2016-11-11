@@ -40,7 +40,11 @@ def str2bool(v):
 
 
 def str2list(l, conv=int):
-    return [conv(v) for v in l.split(",")]
+    return [conv(v) for v in l.split(",")] if len(l) > 0 else []
+
+
+def default(str, default):
+    return str if len(str) > 0 else default
 
 
 def create_dir(path, clean=False):
