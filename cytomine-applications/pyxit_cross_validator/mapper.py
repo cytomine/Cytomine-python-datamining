@@ -68,7 +68,7 @@ class GroupMapper(LabelMapper):
             The list of labels to which must be mapped each group. By default, output labels
             are integers from 0 to len(groups) - 1.
         """
-        self._groups = groups
+        self._groups = [set(g) for g in groups]
         self._output_labels = range(0, len(groups)) if output_labels is None else output_labels
 
     def map(self, label):
@@ -81,7 +81,7 @@ class GroupMapper(LabelMapper):
 class BinaryMapper(GroupMapper):
     """A binary mapper"""
     def __init__(self, positive_classes, negative_classes, positive_label=1, negative_label=0):
-        super(BinaryMapper, self).__init__([positive_classes, negative_label], [positive_label, negative_label])
+        super(BinaryMapper, self).__init__([positive_classes, negative_classes], [positive_label, negative_label])
 
 
 class TernaryMapper(BinaryMapper):
