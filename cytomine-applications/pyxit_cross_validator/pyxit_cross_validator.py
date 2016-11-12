@@ -137,7 +137,7 @@ def mk_dataset(params, logger):
     )
 
     # add reviewed if requested
-    if len(params.cytomine_reviewed_users) > 0:
+    if params.cytomine_include_reviewed:
         if len(params.cytomine_reviewed_images) > 0:
             annotations += cytomine.get_annotations(
                 id_project=params.cytomine_id_project,
@@ -312,12 +312,13 @@ def main(argv):
     p.add_option("--forest_max_features", type="string", default="16", dest="forest_max_features", help="The maximum number of attribute in which to look for a split when expending a node (can be tuned).")
 
     # Pyxit
+    p.add_option("--pyxit_tune_by_cv", type="string", default="False", dest="pyxit_tune_by_cv", help="True for tuning the hyperparameters of pyxit.")
     p.add_option("--pyxit_target_width", type="int", default=16, dest="pyxit_target_width", help="Target width for the pyxit algorithm extracted windows.")
     p.add_option("--pyxit_target_height", type="int", default=16, dest="pyxit_target_height", help="Target height for the pyxit algorithm extracted windows.")
     p.add_option("--pyxit_fixed_size", type="string", default="False", dest="pyxit_fixed_size", help="True for extracting windows having a fixed size, False for randomly picked size.")
     p.add_option("--pyxit_n_subwindows", type="int", default=10, dest="pyxit_n_subwindows", help="Number of subwindows to extract per image.")
     p.add_option("--pyxit_transpose", type="string", default="False", dest="pyxit_transpose", help="True for applying rotation to the windows, False otherwise.")
-    p.add_option("--pyxit_interpolation", type="string", default="2", dest="pyxit_interpolation", help="Interpolation to use (1 for nearest, 2 for bilinear, 3 for cubic and 4 for anti-alias) (can be tuned).")
+    p.add_option("--pyxit_interpolation", type="int", default=2, dest="pyxit_interpolation", help="Interpolation to use (1 for nearest, 2 for bilinear, 3 for cubic and 4 for anti-alias) (can be tuned).")
     p.add_option("--pyxit_colorspace", type="string", default="2", dest="pyxit_colorspace", help="Color space the windows are converted into (0 for RGB, 1 for TRGB, 2 for HSV, 3 for GRAY) (can be tuned).")
     p.add_option("--pyxit_max_size", type="string", default="0.1", dest="pyxit_max_size", help="Maximum size proportion of the windows to extract (relative to the full image size) (can be tuned).")
     p.add_option("--pyxit_min_size", type="string", default="0.9", dest="pyxit_min_size", help="Minimum size proportion of the windows to extract (relative to the full image size) (can be tuned).")
@@ -338,6 +339,7 @@ def main(argv):
     params.cytomine_binary = str2bool(params.cytomine_binary)
     params.cytomine_ternary = str2bool(params.cytomine_ternary)
     params.verbose = str2bool(params.verbose)
+    params.pyxit_tune_by_cv = str2bool(params.pyxit_tune_by_cv)
     params.pyxit_fixed_size = str2bool(params.pyxit_fixed_size)
     params.pyxit_transpose = str2bool(params.pyxit_transpose)
     params.svm = str2bool(params.svm)
@@ -353,10 +355,9 @@ def main(argv):
     params.cytomine_group1 = str2list(params.cytomine_group1)
     params.cytomine_group2 = str2list(params.cytomine_group2)
     params.cytomine_group3 = str2list(params.cytomine_group3)
-    params.cytomine_test_images = str2list(params.cytomine_excluded_images)
+    params.cytomine_test_images = str2list(params.cytomine_test_images)
     params.forest_min_samples_split = str2list(params.forest_min_samples_split)
     params.forest_max_features = str2list(params.forest_max_features)
-    params.pyxit_interpolation = str2list(params.pyxit_interpolation)
     params.pyxit_colorspace = str2list(params.pyxit_colorspace)
     params.pyxit_max_size = str2list(params.pyxit_max_size, conv=float)
     params.pyxit_min_size = str2list(params.pyxit_min_size, conv=float)
@@ -377,8 +378,6 @@ def main(argv):
 
     logger.log(os.linesep + "Create dataset...")
     X, y, labels = mk_dataset(params, logger)
-    print("over")
-    exit()
 
     logger.log(os.linesep + "Compute window sizes...")
     windows_sizes = mk_window_size_tuples(params.pyxit_min_size, params.pyxit_max_size)
@@ -387,28 +386,18 @@ def main(argv):
     is_test_set_provided = len(params.cytomine_test_images) > 0
     X_test, y_test, labels_test = [], [], []
     if is_test_set_provided:
-        logger.log("Test images provided. Perform train/test split...")
+        logger.log(os.linesep + "Test images provided. Perform train/test split...")
         X, y, labels, X_test, y_test, labels_test = train_test_split(X, y, labels, params.cytomine_test_images)
         logger.log("Annotations in test set : {}".format(X_test.shape[0]))
 
-    logger.log("Parameters to tune : ")
-    logger.log("- Pyxit min size : {}".format(params.pyxit_min_size))
-    logger.log("- Pyxit max size : {}".format(params.pyxit_max_size))
-    logger.log("- Windows : {}".format(windows_sizes))
-    logger.log("- Forest max features : {}".format(params.forest_max_features))
-    logger.log("- Forest min sample split : {}".format(params.forest_min_samples_split))
-    logger.log("- SVM C : {}".format(params.svm_c))
-    logger.log("- Pyxit colorspace : {}".format(params.pyxit_colorspace))
-
-    cv_params = {
-        "window_sizes": windows_sizes,
-        "max_features": params.forest_max_features,
-        "min_samples_split": params.forest_min_samples_split,
-        "colorspace": params.pyxit_colorspace
-    }
-
-    if params.svm:
-        cv_params["C"] = params.svm_c
+    logger.log(os.linesep + "Dataset size {}".format("(considering the test set)" if is_test_set_provided else ""))
+    logger.log("- X     : {}".format(X.shape))
+    logger.log("- y     : {}".format(y.shape))
+    logger.log("- labels: {}".format(labels.shape))
+    if is_test_set_provided:
+        logger.log("- X_test      : {}".format(X_test.shape))
+        logger.log("- y_test      : {}".format(y_test.shape))
+        logger.log("- labels_test : {}".format(labels_test.shape))
 
     X, y, labels = np.array(X), np.array(y), np.array(labels)
 
@@ -417,55 +406,101 @@ def main(argv):
     mapping_dict = dict()
     if is_mapped:
         if params.cytomine_binary:
-            logger.log("Transform into a binary problem")
+            logger.log(os.linesep + "Transform into a binary problem")
             mapper = BinaryMapper(params.cytomine_positive_terms, params.cytomine_negative_terms)
         else:
-            logger.log("Transform into a ternary problem")
+            logger.log(os.linesep + "Transform into a ternary problem")
             mapper = TernaryMapper(params.cytomine_group1, params.cytomine_group2, params.cytomine_group3)
 
-        mapping_dict = mapper.map_dict(np.hstack((y, y_test)))
+        merged_labels = np.hstack((y, y_test)).astype(np.int64)
+        mapping_dict = mapper.map_dict(merged_labels)
         y = np.array([mapper.map(to_map) for to_map in y])
         y_test = np.array([mapper.map(to_map) for to_map in y_test])
 
-    # prepare the cross validation grid
-    logger.log("Prepare cross validation grid...")
-    pyxit.number_jobs = 1
-    grid = GridSearchCV(
-        pyxit, cv_params,
-        scoring=accuracy_scoring,
-        cv=LeavePGroupsOut(params.cv_images_out),
-        verbose=10,
-        n_jobs=params.n_jobs,
-        refit=is_test_set_provided or params.save_to is not None
-    )
+    # Print parameters
+    logger.log(os.linesep + "Parameters: ")
+    logger.log("- pyxit_interpolation: {}".format(params.pyxit_interpolation))
+    logger.log("- pyxit_min_size : {}".format(
+        params.pyxit_min_size if params.pyxit_tune_by_cv else params.pyxit_min_size[0]
+    ))
+    logger.log("- pyxit_max_size : {}".format(
+        params.pyxit_max_size if params.pyxit_tune_by_cv else params.pyxit_max_size[0]
+    ))
+    logger.log("- window_size : {}".format(
+        windows_sizes if params.pyxit_tune_by_cv else windows_sizes[0]
+    ))
+    logger.log("- forest_max_features : {}".format(
+        params.forest_max_features if params.pyxit_tune_by_cv else params.forest_max_features[0]
+    ))
+    logger.log("- forest_min_sample_split : {}".format(
+        params.forest_min_samples_split if params.pyxit_tune_by_cv else params.forest_min_samples_split[0]
+    ))
+    logger.log("- pyxit_colorspace : {}".format(
+        params.pyxit_colorspace if params.pyxit_tune_by_cv else params.pyxit_colorspace[0]
+    ))
+    if params.svm:
+        logger.log("- svm_c : {}".format(
+            params.svm_c if params.pyxit_tune_by_cv else params.svm_c[0]
+        ))
 
-    grid.fit(X, y, labels)
+    # simply train or tune by cb ?
+    if params.pyxit_tune_by_cv:
+        # prepare the cross validation grid
+        logger.log(os.linesep + "Prepare cross validation grid...")
 
-    # Extract best parameters
-    best_params = grid.best_params_
-    best_score = grid.best_score_
-    best_estimator = grid.best_estimator_
+        cv_params = {
+            "window_sizes": windows_sizes,
+            "max_features": params.forest_max_features,
+            "min_samples_split": params.forest_min_samples_split,
+            "colorspace": params.pyxit_colorspace
+        }
 
-    # refit with the best parameters
-    logger.log("Best parameters : {}".format(best_params))
-    logger.log("Best score      : {}".format(best_score))
+        if params.svm:
+            cv_params["C"] = params.svm_c
+
+        grid = GridSearchCV(
+            pyxit, cv_params,
+            scoring=accuracy_scoring,
+            cv=LeavePGroupsOut(params.cv_images_out),
+            verbose=10,
+            n_jobs=1
+        )
+
+        grid.fit(X, y, labels)
+
+        # Extract best parameters
+        best_params = grid.best_params_
+        best_score = grid.best_score_
+        pyxit = grid.best_estimator_  # so that pyxit has the best parameters for training the last model
+
+        logger.log(os.linesep + "Best parameters : {}".format(best_params))
+        logger.log("Best score      : {}".format(best_score))
+        logger.log(os.linesep + "Re-train pyxit with best parameters...")
+    else:
+        logger.log(os.linesep + "Train pyxit...")
+
+    # train the final estimator
+    final_estimator = pyxit.fit(X, y)
 
     # save model if requested
-    if params.save_to is not None:
-        logger.log("Save model at {}...".format(params.save_to))
-        path = params.save_to
+    if params.pyxit_save_to is not None:
+        logger.log(os.linesep + "Save model at {}...".format(params.pyxit_save_to))
+        path = params.pyxit_save_to
         # create directory if it doesn"t exist
         dirname = os.path.dirname(path)
         if not os.path.exists(dirname):
             os.makedirs(dirname)
         # pickle the model
         with open(path, "w+") as file:
-            pickle_pyxit_adapter(best_estimator, file)
+            pickle_pyxit_adapter(final_estimator, file)
 
     if is_test_set_provided:
+        logger.log(os.linesep + "Evaluate performances on test set...")
+        logger.log("Extract subwindows on test set...")
+        _X_test, _y_test = final_estimator.extract_subwindows(X_test, y_test)
         logger.log("Apply best model on test set...")
-        y_pred = best_estimator.predict(X_test)
-        probas = best_estimator.predict_proba(X_test)
+        y_pred = final_estimator.predict(X_test, _X=_X_test)
+        probas = final_estimator.predict_proba(X_test, _X=_X_test)
         cm = confusion_matrix(y_test, y_pred)
 
         # display class correspondance
@@ -481,10 +516,54 @@ def main(argv):
         if classes.shape[0] == 2:
             logger.log(" - Precision : {}".format(precision_score(y_test, y_pred)))
             logger.log(" - Recall    : {}".format(recall_score(y_test, y_pred)))
-            logger.log(" - ROC AUC   : {}".format(roc_auc_score(probas, y_pred)))
+            logger.log(" - ROC AUC   : {}".format(roc_auc_score(y_test, probas[:, 1])))
 
         logger.log("Confusion matrix: ")
         print_cm(cm, classes)
 
 if __name__ == "__main__":
-    main(sys.argv)
+    argv = [sys.argv[0],
+             "--cytomine_host", "beta.cytomine.be",
+             "--cytomine_public_key", "ad014190-2fba-45de-a09f-8665f803ee0b",
+             "--cytomine_private_key", "767512dd-e66f-4d3c-bb46-306fa413a5eb",
+             "--cytomine_base_path", "/api/",
+             "--cytomine_working_path", "~/data/thyroid/wpath",
+             "--cytomine_zoom_level", "0",
+             "--cytomine_id_project", "716498",
+             "--cytomine_id_software", "179703916",
+             "--cytomine_users", "671279",
+             "--cytomine_excluded_terms", "675999,676026,933004,8844862,8844845,9444456,15054705,15054765,15109451,15109495,22042230,28792193,30559888",
+             "--cytomine_excluded_annotations", "30675573,18107252,9321884,7994253,9313842",
+             "--cytomine_excluded_images", "",
+             "--cytomine_include_reviewed", "False",
+             "--cytomine_reviewed_users", "14",
+             "--cytomine_reviewed_images", "8120444",
+             "--cytomine_binary", "True",
+             "--cytomine_positive_terms", "676390",
+             "--cytomine_negative_terms", "676446,676210,676434,676176,676407,15109483,15109489",
+             "--cytomine_ternary", "False",
+             "--cytomine_group1", "",
+             "--cytomine_group2", "",
+             "--cytomine_group3", "",
+             "--cytomine_test_images", "8124112,8123867,8122868,8122830,8120497,8120408,8120321,728799,728744,728725,728709,728689,728675,728391,724858,719625,716534,716528",
+             "--forest_n_estimators", "10",
+             "--forest_min_samples_split", "156",
+             "--forest_max_features", "1,28,384,768",
+             "--pyxit_tune_by_cv", "True",
+             "--pyxit_target_width", "16",
+             "--pyxit_target_height", "16",
+             "--pyxit_fixed_size", "True",
+             "--pyxit_n_subwindows", "1",
+             "--pyxit_transpose", "False",
+             "--pyxit_interpolation", "2",
+             "--pyxit_colorspace", "2",
+             "--pyxit_min_size", "0.1",
+             "--pyxit_max_size", "0.9",
+             "--svm", "False",
+             "--svm_c", "1.0",
+             "--cv_images_out", "1",
+             "--pyxit_dir_ls", "",
+             "--n_jobs", "2",
+             "--pyxit_save_to", "",
+             "--verbose", "True"]
+    main(argv)
