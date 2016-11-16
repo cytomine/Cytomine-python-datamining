@@ -31,7 +31,7 @@ try:
 except:
     from PIL import Image
 
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, vstack
 from scipy.stats.mstats import mode
 
 from sklearn.base import BaseEstimator, ClassifierMixin
@@ -316,6 +316,13 @@ def _parallel_make_subwindows(X, y, dtype, n_subwindows, min_size, max_size, tar
     return _X, _y
 
 
+# Generate the transform matrix for given windows and forest
+def _parallel_transform(estimator_, _X, n_samples, n_subwindows):
+    row, col, data, node_count = leaf_transform(estimator_, _X, n_samples, n_subwindows)
+    __X = csr_matrix((data, (row, col)), shape=(n_samples, node_count), dtype=np.float32)
+    return __X
+
+
 class PyxitClassifier(BaseEstimator, ClassifierMixin):
     def __init__(self, base_estimator,
                        n_subwindows=10,
@@ -461,10 +468,21 @@ class PyxitClassifier(BaseEstimator, ClassifierMixin):
         if _X is None:
             y = np.zeros(X.shape[0])
             _X, _y = self.extract_subwindows(X, y)
+            n_subwindows = self.n_subwindows
+        else:
+            n_subwindows = _X.shape[0] // X.shape[0]
 
-        # Leaf transform
-        row, col, data, node_count = leaf_transform(self.base_estimator.estimators_, _X, X.shape[0], self.n_subwindows)
-        __X = csr_matrix((data, (row, col)), shape=(X.shape[0], node_count), dtype=np.float32)
+        n_jobs, _, starts = _partition_images(self.n_jobs, len(X))
+
+        all_data = Parallel(n_jobs=n_jobs)(
+            delayed(_parallel_transform)(
+                self.base_estimator.estimators_,
+                _X[(starts[i] * n_subwindows):(starts[i + 1] * n_subwindows)],
+                X[starts[i]:starts[i + 1]].shape[0],
+                n_subwindows)
+            for i in xrange(n_jobs))
+
+        __X = vstack(all_data)
 
         # Scale features from [0, max] to [0, 1]
         if reset:
