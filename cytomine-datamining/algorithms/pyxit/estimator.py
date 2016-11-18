@@ -337,7 +337,8 @@ class PyxitClassifier(BaseEstimator, ClassifierMixin):
                        fixed_size=False,
                        random_state=None,
                        verbose=0,
-                       get_output = _get_output_from_directory):
+                       get_output = _get_output_from_directory,
+                       parallel_leaf_transform=False):
         self.base_estimator = base_estimator
         self.n_subwindows = n_subwindows
         self.min_size = min_size
@@ -352,6 +353,7 @@ class PyxitClassifier(BaseEstimator, ClassifierMixin):
         self.random_state = check_random_state(random_state)
         self.verbose = verbose
         self.get_output = get_output
+        self.parallel_leaf_transform = parallel_leaf_transform
 
         self.maxs = None
 
@@ -471,9 +473,9 @@ class PyxitClassifier(BaseEstimator, ClassifierMixin):
         else:
             n_subwindows = _X.shape[0] // X.shape[0]
 
-        n_jobs, _, starts = _partition_images(self.n_jobs, len(X))
+        n_jobs, _, starts = _partition_images(self.n_jobs if self.parallel_leaf_transform else 1, len(X))
 
-        all_data = Parallel(n_jobs=n_jobs, verbose=100)(
+        all_data = Parallel(n_jobs=n_jobs)(
             delayed(_parallel_transform)(
                 self.base_estimator.estimators_,
                 _X[(starts[i] * n_subwindows):(starts[i + 1] * n_subwindows)],
