@@ -416,8 +416,7 @@ class PyxitClassifier(BaseEstimator, ClassifierMixin):
         # Fit base estimator
         if self.verbose > 0:
             print "[estimator.PyxitClassifier.fit] Building base estimator"
-
-        print _X.shape
+            print _X.shape
 
         self.base_estimator.fit(_X, _y)
 
@@ -474,7 +473,7 @@ class PyxitClassifier(BaseEstimator, ClassifierMixin):
 
         n_jobs, _, starts = _partition_images(self.n_jobs, len(X))
 
-        all_data = Parallel(n_jobs=n_jobs)(
+        all_data = Parallel(n_jobs=n_jobs, verbose=100)(
             delayed(_parallel_transform)(
                 self.base_estimator.estimators_,
                 _X[(starts[i] * n_subwindows):(starts[i + 1] * n_subwindows)],
