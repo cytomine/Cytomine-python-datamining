@@ -8,7 +8,7 @@ if __name__ == "__main__":
     cytomine_host = "demo.cytomine.be"
     cytomine_public_key = "XXX"  # to complete
     cytomine_private_key = "XXX"  # to complete
-    id_project = 0x0  # to complete
+    id_project = -1  # to complete
 
     # Connection to Cytomine Core
     conn = cytomine.Cytomine(
@@ -21,7 +21,7 @@ if __name__ == "__main__":
     )
 
     # define software parameter template
-    software = conn.add_software("HALIO_Red_Segmentation", "pyxitSuggestedTermJobService", "ValidateAnnotation")
+    software = conn.add_software("Demo_SLDC_Workflow_With_Pyxit", "pyxitSuggestedTermJobService", "ValidateAnnotation")
     conn.add_software_parameter("cytomine_id_software", software.id, "Number", 0, True, 1, True)
     conn.add_software_parameter("cytomine_id_project", software.id, "Number", 0, True, 100, True)
     conn.add_software_parameter("cytomine_id_image", software.id, "Number", 0, True, 200, True)
