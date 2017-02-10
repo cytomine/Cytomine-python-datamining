@@ -140,7 +140,7 @@ class DemoJob(CytomineJob, Loggable):
 
 
 def main(argv):
-    parser = ArgumentParser(prog="Demo_SLDC_Workflow", description="Demo software for SLDC Workflow on Cytomine")
+    parser = ArgumentParser(prog="Demo_SLDC_Workflow_With_Pyxit", description="Demo software for SLDC Workflow on Cytomine")
     parser.add_argument('--cytomine_host', dest="cytomine_host", default='demo.cytomine.be')
     parser.add_argument('--cytomine_public_key', dest="cytomine_public_key")
     parser.add_argument('--cytomine_private_key', dest="cytomine_private_key")
