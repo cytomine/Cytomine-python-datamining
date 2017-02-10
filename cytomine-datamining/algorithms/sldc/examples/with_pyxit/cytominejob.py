@@ -136,7 +136,7 @@ class CytomineJob(object):
         # add software parameters
         if self.__parameters is not None:
             software = self.__cytomine.get_software(self.__software_id)
-            self.__cytomine.add_job_parameters(self.__job, software, self.__parameters)
+            self.__cytomine.add_job_parameters(self.__job.id, software, self.__parameters)
 
     def close(self):
         """
