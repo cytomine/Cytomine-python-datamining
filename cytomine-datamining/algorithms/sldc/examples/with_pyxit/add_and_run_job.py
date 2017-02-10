@@ -125,7 +125,7 @@ class DemoJob(CytomineJob, Loggable):
 
         # Upload results
         for polygon, dispatch, cls, proba in results:
-            if cls == 1:  # area large enough
+            if cls is not None:
                 # if image is a window, the polygon must be translated
                 if isinstance(slide, ImageWindow):
                     polygon = translate(polygon, slide.abs_offset_x, slide.abs_offset_y)
@@ -133,7 +133,9 @@ class DemoJob(CytomineJob, Loggable):
                 _upload_annotation(
                     self._cytomine,
                     slide.image_instance,
-                    polygon
+                    polygon,
+                    label=cls,
+                    proba=proba
                 )
 
         return results
@@ -150,10 +152,10 @@ def main(argv):
     parser.add_argument('--cytomine_id_software', dest="cytomine_id_software", type=int)
     parser.add_argument("--cytomine_id_project", dest="cytomine_id_project", type=int)
     parser.add_argument("--cytomine_id_image", dest="cytomine_id_image", type=int)
-    parser.add_argument("--sldc_tile_overlap", dest="tile_overlap", type=int, default=10)
-    parser.add_argument("--sldc_tile_width", dest="tile_width", type=int, default=768)
-    parser.add_argument("--sldc_tile_height", dest="tile_height", type=int, default=768)
-    parser.add_argument("--pyxit_model_path", dest="model_path")
+    parser.add_argument("--sldc_tile_overlap", dest="sldc_tile_overlap", type=int, default=10)
+    parser.add_argument("--sldc_tile_width", dest="sldc_tile_width", type=int, default=768)
+    parser.add_argument("--sldc_tile_height", dest="sldc_tile_height", type=int, default=768)
+    parser.add_argument("--pyxit_model_path", dest="pyxit_model_path")
     parser.add_argument("--n_jobs", dest="n_jobs", type=int, default=1)
     parser.add_argument("--min_area", dest="min_area", type=int, default=500)
     parser.add_argument("--threshold", dest="threshold", type=int, default=215)
@@ -172,9 +174,14 @@ def main(argv):
         base_path=params.cytomine_base_path
     )
 
+    if not os.path.exists(params.working_path):
+        os.makedirs(params.working_path)
+    if not os.path.exists(params.cytomine_working_path):
+        os.makedirs(params.cytomine_working_path)
+
     with DemoJob(cytomine, params.cytomine_id_software, params.cytomine_id_project, params.__dict__,
-                 params.tile_overlap, params.tile_width, params.tile_height, params.n_jobs, params.threshold,
-                 params.min_area, params.model_path, params.rseed, params.working_path) as job:
+                 params.sldc_tile_overlap, params.sldc_tile_width, params.sldc_tile_height, params.n_jobs,
+                 params.threshold, params.min_area, params.pyxit_model_path, params.rseed, params.working_path) as job:
         slide = CytomineSlide(cytomine, params.cytomine_id_image)
         job.run(slide)
 
