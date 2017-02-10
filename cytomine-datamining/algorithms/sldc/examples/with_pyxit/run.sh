@@ -1,6 +1,11 @@
 #!/bin/bash
 
 python add_and_run_job.py \
+    --cytomine_host "demo.cytomine.be" \
+    --cytomine_public_key "XXX" \
+    --cytomine_private_key "XXX" \
+    --cytomine_base_path "/api/" \
+    --cytomine_working_path  "/tmp/cytomine" \
     --cytomine_id_software 19718236 \
     --cytomine_id_project 526946 \
     --cytomine_id_image 527252 \
