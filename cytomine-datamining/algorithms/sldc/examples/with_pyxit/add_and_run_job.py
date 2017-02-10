@@ -11,7 +11,7 @@ from shapely.affinity import affine_transform, translate
 from sklearn.utils import check_random_state
 from sldc import DispatchingRule, ImageWindow, Loggable, Logger, Segmenter, StandardOutputLogger, WorkflowBuilder
 
-from cytominejob import CytomineJob
+from cytomine_utilities import CytomineJob
 from pyxit_classifier import PyxitClassifierAdapter
 
 
