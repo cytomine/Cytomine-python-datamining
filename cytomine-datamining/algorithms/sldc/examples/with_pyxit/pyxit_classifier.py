@@ -98,7 +98,7 @@ class PyxitClassifierAdapter(PolygonClassifier, Loggable):
         """
         probas = self._pyxit_classifier.predict_proba(X)
         best_index = np.argmax(probas, axis=1)
-        return self._classes.take(best_index, axis=0).astype('int'), probas
+        return self._classes.take(best_index, axis=0).astype('int'), np.max(probas, axis=1)
 
     @staticmethod
     def build_from_pickle(model_path, tile_builder, logger, random_state=None, n_jobs=1, working_path=None):
@@ -135,4 +135,5 @@ class PyxitClassifierAdapter(PolygonClassifier, Loggable):
             classifier.base_estimator.n_jobs = n_jobs
             classifier.base_estimator.verbose = 10 if logger.level >= logger.DEBUG else 0
             classifier.random_state = random_state
+            classifier.classes_ = classes
         return PyxitClassifierAdapter(classifier, tile_builder, classes, logger=logger, working_path=working_path)
