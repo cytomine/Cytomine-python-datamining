@@ -6,17 +6,10 @@ import cv2
 import numpy as np
 from cytomine import Cytomine
 from cytomine.models import AlgoAnnotationTerm
-from cytomine_sldc import CytomineSlide
-from cytomine_sldc import CytomineTileBuilder
+from cytomine_sldc import CytomineSlide, CytomineTileBuilder
 from shapely.affinity import affine_transform, translate
 from sklearn.utils import check_random_state
-from sldc import DispatchingRule
-from sldc import ImageWindow
-from sldc import Loggable
-from sldc import Logger
-from sldc import Segmenter
-from sldc import StandardOutputLogger
-from sldc import WorkflowBuilder
+from sldc import DispatchingRule, ImageWindow, Loggable, Logger, Segmenter, StandardOutputLogger, WorkflowBuilder
 
 from cytominejob import CytomineJob
 from pyxit_classifier import PyxitClassifierAdapter
