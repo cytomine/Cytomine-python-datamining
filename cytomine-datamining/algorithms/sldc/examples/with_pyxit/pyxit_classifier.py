@@ -71,6 +71,9 @@ class PyxitClassifierAdapter(PolygonClassifier, Loggable):
         self._tile_cache = TileCache(tile_builder, self._working_path)
         self._classes = classes
 
+    def predict(self, image, polygon):
+        return self.predict(image, [polygon])[0]
+
     def predict_batch(self, image, polygons):
         # extract crops of images to classify
         # suppose that no error will occur during the transfer

@@ -46,8 +46,8 @@ class ValidAreaRule(DispatchingRule):
         super(ValidAreaRule, self).__init__()
         self._min_area = min_area
 
-    def evaluate_batch(self, image, polygons):
-        return [self._min_area < polygon.area for polygon in polygons]
+    def evaluate(self, image, polygon):
+        return self._min_area < polygon.area
 
 
 class DemoJob(CytomineJob, Loggable):
