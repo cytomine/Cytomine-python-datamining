@@ -3,13 +3,8 @@
 # cython: boundscheck=False
 # cython: wraparound=False
 
-cimport cython
-
 import numpy as np
 cimport numpy as np
-
-import os
-import cPickle
 
 
 def inplace_csr_column_scale_max(X, np.ndarray[np.float32_t, ndim=1] maxs=None):
