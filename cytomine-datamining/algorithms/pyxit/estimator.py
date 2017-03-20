@@ -37,6 +37,8 @@ from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.externals.joblib import Parallel, delayed, cpu_count
 from sklearn.utils import check_random_state
 
+from _estimator import inplace_csr_column_scale_max
+
 MAX_INT = np.iinfo(np.int32).max
 
 INTERPOLATION_NEAREST = 1
@@ -48,8 +50,6 @@ COLORSPACE_RGB = 0
 COLORSPACE_TRGB = 1
 COLORSPACE_HSV = 2
 COLORSPACE_GRAY = 3
-
-from _estimator import inplace_csr_column_scale_max
 
 
 def _raw_to_rgb(raw):
