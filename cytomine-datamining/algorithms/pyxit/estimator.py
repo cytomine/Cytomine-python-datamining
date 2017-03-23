@@ -17,10 +17,9 @@
 # * limitations under the License.
 # */
 
-__author__          = "Gilles Louppe"
-__contributors__    = ["Marée Raphaël <raphael.maree@ulg.ac.be>", "Stévens Benjamin <b.stevens@ulg.ac.be>"]
-__copyright__       = "Copyright 2010-2015 University of Liège, Belgium, http://www.cytomine.be/"
-
+__author__ = "Gilles Louppe"
+__contributors__ = ["Marée Raphaël <raphael.maree@ulg.ac.be>", "Stévens Benjamin <b.stevens@ulg.ac.be>", "Mormont Romain <r.mormont@ulg.ac.be>"]
+__copyright__ = "Copyright 2010-2015 University of Liège, Belgium, http://www.cytomine.be/"
 
 import numpy as np
 import math
@@ -38,7 +37,6 @@ from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.externals.joblib import Parallel, delayed, cpu_count
 from sklearn.utils import check_random_state
 
-from _estimator import leaf_transform
 from _estimator import inplace_csr_column_scale_max
 
 MAX_INT = np.iinfo(np.int32).max
@@ -54,7 +52,6 @@ COLORSPACE_HSV = 2
 COLORSPACE_GRAY = 3
 
 
-
 def _raw_to_rgb(raw):
     return raw.flatten()
 
@@ -68,7 +65,7 @@ def _raw_to_trgb(raw):
     trgb = np.zeros(raw.shape)
 
     for i, s in enumerate(std):
-        if np.abs(s) > 10E-9: # Do to divide by zero
+        if np.abs(s) > 10E-9:  # Do to divide by zero
             trgb[:, i] = (raw[:, i] - mean[i]) / s
 
     return trgb.flatten()
@@ -113,24 +110,25 @@ def _raw_to_hsv(raw):
 
 
 def _raw_to_gray(raw):
-    #print "raw shape: %d" %raw.shape[1]
+    # print "raw shape: %d" %raw.shape[1]
     return 1.0 * np.sum(raw, axis=1) / raw.shape[1]
 
 
-#Random subwindows extraction (Maree et al., 2014). It extracts subwindows of random sizes at random locations in images (fully contains in the image)
-def _random_window(image, min_size, max_size, target_width, target_height, interpolation, transpose, colorspace, fixed_target_window = False, random_state=None):
+# Random subwindows extraction (Maree et al., 2014). It extracts subwindows of random sizes at random locations in images (fully contains in the image)
+def _random_window(image, min_size, max_size, target_width, target_height, interpolation, transpose, colorspace,
+                   fixed_target_window=False, random_state=None):
     random_state = check_random_state(random_state)
 
     # Draw a random window
     width, height = image.size
 
-    if fixed_target_window: #if true, we don't select randomly the size of the randow window but we use target sizes instead
+    if fixed_target_window:  # if true, we don't select randomly the size of the randow window but we use target sizes instead
         crop_width = target_width
         crop_height = target_height
-        #if crop_width > width or crop_height > height:
+        # if crop_width > width or crop_height > height:
         #    print "Warning: crop larger than image"
 
-    #Rectangular subwindows
+    # Rectangular subwindows
     elif width < height:
         ratio = 1. * target_height / target_width
         min_width = min_size * width
@@ -145,7 +143,7 @@ def _random_window(image, min_size, max_size, target_width, target_height, inter
         crop_width = min_width + random_state.rand() * (max_width - min_width)
         crop_height = ratio * crop_width
 
-    #Square subwindows
+    # Square subwindows
     else:
         ratio = 1. * target_width / target_height
         min_height = min_size * height
@@ -185,12 +183,12 @@ def _random_window(image, min_size, max_size, target_width, target_height, inter
 
     if fixed_target_window:
         if crop_width > width or crop_height > height:
-            #subwindow larger than image, so we simply resize original image to target sizes
+            # subwindow larger than image, so we simply resize original image to target sizes
             sub_window = image.resize((target_width, target_height), pil_interpolation)
         else:
             sub_window = image.crop(box)
 
-    #Rescaling of random size subwindows to fixed-size (target) using interpolation method
+    # Rescaling of random size subwindows to fixed-size (target) using interpolation method
     else:
         sub_window = image.crop(box).resize((target_width, target_height), pil_interpolation)
 
@@ -198,20 +196,23 @@ def _random_window(image, min_size, max_size, target_width, target_height, inter
     # We choose randomly a right angle rotation
     if transpose:
         if np.random.rand() > 1.0 / 6:
-            sub_window.transpose((Image.FLIP_LEFT_RIGHT, Image.FLIP_TOP_BOTTOM, Image.ROTATE_90, Image.ROTATE_180, Image.ROTATE_270)[np.random.randint(5)])
+            sub_window.transpose(
+                (Image.FLIP_LEFT_RIGHT, Image.FLIP_TOP_BOTTOM, Image.ROTATE_90, Image.ROTATE_180, Image.ROTATE_270)[
+                    np.random.randint(5)])
 
     return sub_window, box
+
 
 def _get_image_data(sub_window, colorspace):
     # Convert colorpace
     raw = np.array(sub_window.getdata(), dtype=np.float32)
 
-    #print "raw ndim: %d" %raw.ndim
+    # print "raw ndim: %d" %raw.ndim
 
     if raw.ndim == 1:
         raw = raw[:, np.newaxis]
 
-    #print "raw ndmin after newaxis: %d" %raw.ndim
+    # print "raw ndmin after newaxis: %d" %raw.ndim
 
     if colorspace == COLORSPACE_RGB:
         data = _raw_to_rgb(raw)
@@ -223,6 +224,7 @@ def _get_image_data(sub_window, colorspace):
         data = _raw_to_gray(raw)
 
     return data
+
 
 # To work on images in parallel
 def _partition_images(n_jobs, n_images):
@@ -245,13 +247,14 @@ def _partition_images(n_jobs, n_images):
     return n_jobs, counts, starts
 
 
-#Output Class is the directory from which the image comes from (used in classification)
+# Output Class is the directory from which the image comes from (used in classification)
 def _get_output_from_directory(target, sub_window):
     return target, sub_window.convert('RGB')
 
-#Output class is the class of the central pixel (used in single output segmentation, see Dumont et al., 2009)
+
+# Output class is the class of the central pixel (used in single output segmentation, see Dumont et al., 2009)
 def _get_output_from_central_pixel(target, sub_window):
-    assert(sub_window.mode == "RGBA")
+    assert (sub_window.mode == "RGBA")
     width, height = sub_window.size
     pixel = sub_window.getpixel(width / 2, height / 2)
     alpha = pixel[3]
@@ -259,29 +262,31 @@ def _get_output_from_central_pixel(target, sub_window):
         target = 0
     return target, sub_window.convert('RGB')
 
-#Output classes are the classes of all output pixels (used in Segmentation, see Dumont et al., 2009)
+
+# Output classes are the classes of all output pixels (used in Segmentation, see Dumont et al., 2009)
 def _get_output_from_mask(target, sub_window):
-    assert(sub_window.mode == "RGBA")
+    assert (sub_window.mode == "RGBA")
     mask = np.array(sub_window.split()[3].getdata())
     y = np.zeros(mask.shape)
     y[mask == 255] = target
     return y, sub_window.convert('RGB')
 
-#Parallel extraction of subwindows
-def _parallel_make_subwindows(X, y, dtype, n_subwindows, min_size, max_size, target_width, target_height, interpolation, transpose, colorspace, fixed, seed, verbose, get_output):
+
+# Parallel extraction of subwindows
+def _parallel_make_subwindows(X, y, dtype, n_subwindows, min_size, max_size, target_width, target_height, interpolation,
+                              transpose, colorspace, fixed, seed, verbose, get_output):
     random_state = check_random_state(seed)
 
     if colorspace == COLORSPACE_GRAY:
         dim = 1
     else:
-        dim = 3 # default
+        dim = 3  # default
 
     _X = np.zeros((len(X) * n_subwindows, dim * target_width * target_height), dtype=dtype)
     if get_output == _get_output_from_mask:
-        _y = np.zeros((len(X) * n_subwindows, target_width * target_height), dtype=np.int32) #multiple output
-    else :
-        _y = np.zeros((len(X) * n_subwindows), dtype=np.int32) #single output
-
+        _y = np.zeros((len(X) * n_subwindows, target_width * target_height), dtype=np.int32)  # multiple output
+    else:
+        _y = np.zeros((len(X) * n_subwindows), dtype=np.int32)  # single output
 
     i = 0
 
@@ -297,7 +302,8 @@ def _parallel_make_subwindows(X, y, dtype, n_subwindows, min_size, max_size, tar
 
         for w in xrange(n_subwindows):
             try:
-                sub_window, box = _random_window(image, min_size, max_size, target_width, target_height, interpolation, transpose, colorspace, fixed, random_state=random_state)
+                sub_window, box = _random_window(image, min_size, max_size, target_width, target_height, interpolation,
+                                                 transpose, colorspace, fixed, random_state=random_state)
 
                 output, sub_window = get_output(target, sub_window)
                 data = _get_image_data(sub_window, colorspace)
@@ -316,29 +322,22 @@ def _parallel_make_subwindows(X, y, dtype, n_subwindows, min_size, max_size, tar
     return _X, _y
 
 
-# Generate the transform matrix for given windows and forest
-def _parallel_transform(estimator_, _X, n_samples, n_subwindows):
-    row, col, data, node_count = leaf_transform(estimator_, _X, n_samples, n_subwindows)
-    __X = csr_matrix((data, (row, col)), shape=(n_samples, node_count), dtype=np.float32)
-    return __X
-
-
 class PyxitClassifier(BaseEstimator, ClassifierMixin):
     def __init__(self, base_estimator,
-                       n_subwindows=10,
-                       min_size=0.5,
-                       max_size=1.0,
-                       target_width=16,
-                       target_height=16,
-                       n_jobs=1,
-                       interpolation=2,
-                       transpose=False,
-                       colorspace=2,
-                       fixed_size=False,
-                       random_state=None,
-                       verbose=0,
-                       get_output = _get_output_from_directory,
-                       parallel_leaf_transform=False):
+                 n_subwindows=10,
+                 min_size=0.5,
+                 max_size=1.0,
+                 target_width=16,
+                 target_height=16,
+                 n_jobs=1,
+                 interpolation=2,
+                 transpose=False,
+                 colorspace=2,
+                 fixed_size=False,
+                 random_state=None,
+                 verbose=0,
+                 get_output=_get_output_from_directory,
+                 parallel_leaf_transform=False):
         self.base_estimator = base_estimator
         self.n_subwindows = n_subwindows
         self.min_size = min_size
@@ -404,7 +403,7 @@ class PyxitClassifier(BaseEstimator, ClassifierMixin):
 
         return mask_t
 
-    #Build Pyxitclassifier by extracting subwindows then build of Extra-Trees (base_estimator)
+    # Build Pyxitclassifier by extracting subwindows then build of Extra-Trees (base_estimator)
     def fit(self, X, y, _X=None, _y=None):
         # Collect some data
         self.classes_ = np.unique(y)
@@ -426,9 +425,8 @@ class PyxitClassifier(BaseEstimator, ClassifierMixin):
 
     def predict(self, X, _X=None):
         return self.classes_.take(
-            np.argmax(self.predict_proba(X, _X), axis=1),  axis=0)
+            np.argmax(self.predict_proba(X, _X), axis=1), axis=0)
 
-    
     def predict_proba(self, X, _X=None):
         # Extract subwindows
         if _X is None:
@@ -457,33 +455,42 @@ class PyxitClassifier(BaseEstimator, ClassifierMixin):
 
         return y
 
-
-    #Propagates subwindows into the ERT model and compute subwindow frequencies in terminal nodes 
-    #ET-FL method see Maree et al., TR 2014
+    # Propagates subwindows into the ERT model and compute subwindow frequencies in terminal nodes
+    # ET-FL method see Maree et al., TR 2014
     def transform(self, X, _X=None, reset=False):
         # Predict proba
         if self.verbose > 0:
             print "[estimator.PyxitClassifier.transform] Transforming into leaf features"
 
         # Extract subwindows
+        n_samples = X.shape[0]
         if _X is None:
-            y = np.zeros(X.shape[0])
+            y = np.zeros(n_samples)
             _X, _y = self.extract_subwindows(X, y)
             n_subwindows = self.n_subwindows
         else:
-            n_subwindows = _X.shape[0] // X.shape[0]
+            n_subwindows = _X.shape[0] // n_samples
 
-        n_jobs, _, starts = _partition_images(self.n_jobs if self.parallel_leaf_transform else 1, len(X))
+        # Extract leaves indexes
+        leaves = self.base_estimator.apply(_X)
 
-        all_data = Parallel(n_jobs=n_jobs)(
-            delayed(_parallel_transform)(
-                self.base_estimator.estimators_,
-                _X[(starts[i] * n_subwindows):(starts[i + 1] * n_subwindows)],
-                X[starts[i]:starts[i + 1]].shape[0],
-                n_subwindows)
-            for i in xrange(n_jobs))
+        # Shift leaves indexes to have unique identifier for each leaf of the forest
+        trees = self.base_estimator.estimators_
+        node_counts = [tree.tree_.node_count for tree in trees]
+        node_count = np.sum(node_counts)
+        tree_count = len(trees)
+        offsets = np.cumsum([0] + node_counts[:-1]).reshape((1, len(node_counts)))
+        leaves += offsets
 
-        __X = vstack(all_data)
+        # Generate sample indexes
+        sample_indexes = np.arange(n_samples).repeat(n_subwindows * tree_count)
+
+        # Generate contribution
+        inc = np.full(sample_indexes.shape[0], 1.0 / n_subwindows)
+
+        # build sparse matrix
+        row, col = sample_indexes, leaves.flatten()
+        __X = csr_matrix((inc, (row, col)), shape=(n_samples, node_count), dtype=np.float32)
 
         # Scale features from [0, max] to [0, 1]
         if reset:
