@@ -1,0 +1,258 @@
+51048,51304d51047
+< 30-05-2017 14:04:15,559  INFO RequestFilters - restSoftware.softwareInfoForProject: user:5180
+< 30-05-2017 14:04:15,566  INFO RequestFilters - restSoftware.softwareInfoForProject Request took 8ms
+< 30-05-2017 14:04:15,568  INFO RequestFilters - restJob.list: user:5180
+< 30-05-2017 14:04:15,640  INFO RequestFilters - restJob.list Request took 72ms
+< 30-05-2017 14:04:20,109  INFO RequestFilters - restJob.list: user:5180
+< 30-05-2017 14:04:20,110  INFO RequestFilters - restSoftware.softwareInfoForProject: user:5180
+< 30-05-2017 14:04:20,123  INFO RequestFilters - restJob.list: user:5180
+< 30-05-2017 14:04:20,124  INFO RequestFilters - restSoftware.softwareInfoForProject Request took 14ms
+< 30-05-2017 14:04:20,129  INFO RequestFilters - restJob.list Request took 20ms
+< 30-05-2017 14:04:20,190  INFO RequestFilters - restJob.list Request took 67ms
+< 30-05-2017 14:04:22,447  INFO RequestFilters - restJobTemplate.list: user:5180
+< 30-05-2017 14:04:22,464  INFO RequestFilters - restJobTemplate.list Request took 17ms
+< 30-05-2017 14:04:45,616  INFO RequestFilters - restProject.show: user:5180
+< 101BAE729C58EA2481F6912035387F42
+< 30-05-2017 14:04:45,632  INFO RequestFilters - restProject.show Request took 16ms
+< 30-05-2017 14:04:45,637  INFO RequestFilters - restProject.show: user:5180
+< 30-05-2017 14:04:45,637  INFO RequestFilters - restTask.listCommentByProject: user:5180
+< 101BAE729C58EA2481F6912035387F42
+< 30-05-2017 14:04:45,638  INFO RequestFilters - restProject.listCommandHistory: user:5180
+< 30-05-2017 14:04:45,642  INFO RequestFilters - restJob.list: user:5180
+< 30-05-2017 14:04:45,650  INFO RequestFilters - restProject.show Request took 13ms
+< 30-05-2017 14:04:45,659  INFO RequestFilters - restTask.listCommentByProject Request took 22ms
+< 30-05-2017 14:04:45,663  INFO RequestFilters - restProject.listCommandHistory Request took 25ms
+< 30-05-2017 14:04:45,669  INFO RequestFilters - restDescription.showByDomain: user:5180
+< 30-05-2017 14:04:45,669  INFO RequestFilters - restProject.listCommandHistory: user:5180
+< 30-05-2017 14:04:45,672  INFO RequestFilters - restTask.listCommentByProject: user:5180
+< 30-05-2017 14:04:45,678  INFO RestController - responseNotFound Description with Project 5290 and className=be.cytomine.project.Project
+< 30-05-2017 14:04:45,678 ERROR RestController - Description with Project Id 5290 and className=be.cytomine.project.Project does not exist
+< 30-05-2017 14:04:45,680  INFO RequestFilters - restDescription.showByDomain Request took 11ms
+< 30-05-2017 14:04:45,688  INFO RequestFilters - restTask.listCommentByProject Request took 16ms
+< 30-05-2017 14:04:45,694  INFO RequestFilters - restProject.listCommandHistory Request took 25ms
+< 30-05-2017 14:04:45,697  INFO RequestFilters - stats.statAnnotationEvolution: user:5180
+< 30-05-2017 14:04:45,698  INFO RequestFilters - stats.statTerm: user:5180
+< 30-05-2017 14:04:45,702  INFO RequestFilters - stats.statTerm: user:5180
+< 30-05-2017 14:04:45,703  INFO RequestFilters - stats.statUser: user:5180
+< 30-05-2017 14:04:45,704  INFO RequestFilters - stats.statTermSlide: user:5180
+< 30-05-2017 14:04:45,722  INFO RequestFilters - stats.statTerm Request took 24ms
+< 30-05-2017 14:04:45,729  INFO RequestFilters - stats.statUserSlide: user:5180
+< 30-05-2017 14:04:45,729  INFO RequestFilters - restJob.list Request took 87ms
+< 30-05-2017 14:04:45,734  INFO RequestFilters - stats.statAnnotationEvolution: user:5180
+< 30-05-2017 14:04:45,736  INFO RequestFilters - stats.statAnnotationEvolution Request took 39ms
+< 30-05-2017 14:04:45,743  INFO RequestFilters - restDescription.showByDomain: user:5180
+< 30-05-2017 14:04:45,743  INFO RequestFilters - stats.statTerm Request took 41ms
+< 30-05-2017 14:04:45,748  INFO RequestFilters - restProject.listCommandHistory: user:5180
+< 30-05-2017 14:04:45,750  INFO RequestFilters - stats.statUser Request took 47ms
+< 30-05-2017 14:04:45,751  INFO RequestFilters - restTask.listCommentByProject: user:5180
+< 30-05-2017 14:04:45,752  INFO RestController - responseNotFound Description with Project 5290 and className=be.cytomine.project.Project
+< 30-05-2017 14:04:45,753 ERROR RestController - Description with Project Id 5290 and className=be.cytomine.project.Project does not exist
+< 30-05-2017 14:04:45,756  INFO RequestFilters - restDescription.showByDomain Request took 13ms
+< 30-05-2017 14:04:45,771  INFO RequestFilters - stats.statUserSlide Request took 43ms
+< 30-05-2017 14:04:45,771  INFO RequestFilters - restTask.listCommentByProject Request took 20ms
+< 30-05-2017 14:04:45,775  INFO RequestFilters - restProject.listCommandHistory Request took 27ms
+< 30-05-2017 14:04:45,779  INFO RequestFilters - stats.statAnnotationEvolution Request took 45ms
+< 30-05-2017 14:04:45,781  INFO RequestFilters - stats.statTermSlide Request took 77ms
+< 30-05-2017 14:04:49,721  INFO RequestFilters - restOntology.list: user:5180
+< 30-05-2017 14:04:49,732  INFO RequestFilters - restOntology.list Request took 11ms
+< 30-05-2017 14:04:49,742  INFO RequestFilters - restOntology.show: user:5180
+< 30-05-2017 14:04:49,797  INFO RequestFilters - restOntology.show Request took 56ms
+< 30-05-2017 14:04:49,817  INFO RequestFilters - restUser.showCreatorByOntology: user:5180
+< 30-05-2017 14:04:49,818  INFO RequestFilters - restUser.showUserByOntology: user:5180
+< 30-05-2017 14:04:49,825  INFO RequestFilters - restUser.showCreatorByOntology Request took 8ms
+< 30-05-2017 14:04:49,838  INFO RequestFilters - restUser.showUserByOntology Request took 20ms
+< 30-05-2017 14:04:49,862 ERROR ResourceMeta - Resource not found: /css/custom-theme/images/ui-icons_454545_256x240.png
+< 30-05-2017 14:04:49,863  WARN ResourceMetaStore - Cannot locate resource [/css/custom-theme/images/ui-icons_454545_256x240.png]
+< 30-05-2017 14:04:55,373  INFO RequestFilters - restProject.list: user:5180
+< 30-05-2017 14:04:55,390  INFO RequestFilters - restProject.list Request took 17ms
+< 30-05-2017 14:04:55,467  INFO RequestFilters - restProject.listLightByUser: user:5180
+< 30-05-2017 14:04:55,479  INFO RequestFilters - restProject.listLightByUser Request took 12ms
+< 30-05-2017 14:04:56,837  INFO RequestFilters - restProject.show: user:5180
+< 101BAE729C58EA2481F6912035387F42
+< 30-05-2017 14:04:56,848  INFO RequestFilters - restTask.listCommentByProject: user:5180
+< 30-05-2017 14:04:56,850  INFO RequestFilters - restProject.listCommandHistory: user:5180
+< 30-05-2017 14:04:56,853  INFO RequestFilters - restProject.show Request took 16ms
+< 30-05-2017 14:04:56,853  INFO RequestFilters - restJob.list: user:5180
+< 30-05-2017 14:04:56,858  INFO RequestFilters - restProject.show: user:5180
+< 101BAE729C58EA2481F6912035387F42
+< 30-05-2017 14:04:56,863  INFO RequestFilters - restTask.listCommentByProject Request took 15ms
+< 30-05-2017 14:04:56,874  INFO RequestFilters - restProject.show Request took 17ms
+< 30-05-2017 14:04:56,875  INFO RequestFilters - restProject.listCommandHistory Request took 26ms
+< 30-05-2017 14:04:56,904  INFO RequestFilters - restDescription.showByDomain: user:5180
+< 30-05-2017 14:04:56,906  INFO RequestFilters - restProject.listCommandHistory: user:5180
+< 30-05-2017 14:04:56,912  INFO RestController - responseNotFound Description with Project 5290 and className=be.cytomine.project.Project
+< 30-05-2017 14:04:56,912 ERROR RestController - Description with Project Id 5290 and className=be.cytomine.project.Project does not exist
+< 30-05-2017 14:04:56,914  INFO RequestFilters - restDescription.showByDomain Request took 10ms
+< 30-05-2017 14:04:56,916  INFO RequestFilters - restTask.listCommentByProject: user:5180
+< 30-05-2017 14:04:56,923  INFO RequestFilters - restProject.listCommandHistory Request took 17ms
+< 30-05-2017 14:04:56,927  INFO RequestFilters - restTask.listCommentByProject Request took 12ms
+< 30-05-2017 14:04:56,933  INFO RequestFilters - restDescription.showByDomain: user:5180
+< 30-05-2017 14:04:56,934  INFO RequestFilters - restProject.listCommandHistory: user:5180
+< 30-05-2017 14:04:56,936  INFO RequestFilters - restTask.listCommentByProject: user:5180
+< 30-05-2017 14:04:56,938  INFO RequestFilters - restJob.list Request took 85ms
+< 30-05-2017 14:04:56,942  INFO RestController - responseNotFound Description with Project 5290 and className=be.cytomine.project.Project
+< 30-05-2017 14:04:56,942 ERROR RestController - Description with Project Id 5290 and className=be.cytomine.project.Project does not exist
+< 30-05-2017 14:04:56,943  INFO RequestFilters - restDescription.showByDomain Request took 10ms
+< 30-05-2017 14:04:56,947  INFO RequestFilters - restTask.listCommentByProject Request took 11ms
+< 30-05-2017 14:04:56,947  INFO RequestFilters - restProject.listCommandHistory Request took 13ms
+< 30-05-2017 14:04:59,121  INFO RequestFilters - restSoftware.softwareInfoForProject: user:5180
+< 30-05-2017 14:04:59,124  INFO RequestFilters - restJob.list: user:5180
+< 30-05-2017 14:04:59,131  INFO RequestFilters - restSoftware.softwareInfoForProject Request took 10ms
+< 30-05-2017 14:04:59,200  INFO RequestFilters - restJob.list Request took 76ms
+< 30-05-2017 14:05:03,079  INFO RequestFilters - restSoftware.softwareInfoForProject: user:5180
+< 30-05-2017 14:05:03,079  INFO RequestFilters - restJob.list: user:5180
+< 30-05-2017 14:05:03,084  INFO RequestFilters - restSoftware.softwareInfoForProject Request took 6ms
+< 30-05-2017 14:05:03,147  INFO RequestFilters - restJob.list Request took 69ms
+< 30-05-2017 14:05:05,296  INFO RequestFilters - restJobTemplate.list: user:5180
+< 30-05-2017 14:05:05,314  INFO RequestFilters - restJobTemplate.list Request took 18ms
+< 30-05-2017 14:06:18,398  INFO RequestFilters - restJob.add: user:5180
+< 30-05-2017 14:06:18,414  INFO ModelService - Command class be.cytomine.command.AddCommand with flag false
+< 30-05-2017 14:06:18,439  INFO JobService - add param = [value:"10879", softwareParameter:42391]
+< 30-05-2017 14:06:18,440  INFO ModelService - Command class be.cytomine.command.AddCommand with flag false
+< 30-05-2017 14:06:18,455  INFO JobService - add param = [value:"all", softwareParameter:42397]
+< 30-05-2017 14:06:18,456  INFO ModelService - Command class be.cytomine.command.AddCommand with flag false
+< 30-05-2017 14:06:18,471  INFO JobService - add param = [value:"6", softwareParameter:42403]
+< 30-05-2017 14:06:18,472  INFO ModelService - Command class be.cytomine.command.AddCommand with flag false
+< 30-05-2017 14:06:18,487  INFO JobService - add param = [value:"4", softwareParameter:42409]
+< 30-05-2017 14:06:18,488  INFO ModelService - Command class be.cytomine.command.AddCommand with flag false
+< 30-05-2017 14:06:18,501  INFO JobService - add param = [value:"100", softwareParameter:42415]
+< 30-05-2017 14:06:18,502  INFO ModelService - Command class be.cytomine.command.AddCommand with flag false
+< 30-05-2017 14:06:18,516  INFO JobService - add param = [value:"1", softwareParameter:42421]
+< 30-05-2017 14:06:18,517  INFO ModelService - Command class be.cytomine.command.AddCommand with flag false
+< 30-05-2017 14:06:18,531  INFO JobService - add param = [value:"10000", softwareParameter:42427]
+< 30-05-2017 14:06:18,532  INFO ModelService - Command class be.cytomine.command.AddCommand with flag false
+< 30-05-2017 14:06:18,546  INFO JobService - add param = [value:"1", softwareParameter:42433]
+< 30-05-2017 14:06:18,547  INFO ModelService - Command class be.cytomine.command.AddCommand with flag false
+< 30-05-2017 14:06:18,560  INFO JobService - add param = [value:"0", softwareParameter:42439]
+< 30-05-2017 14:06:18,561  INFO ModelService - Command class be.cytomine.command.AddCommand with flag false
+< 30-05-2017 14:06:18,574  INFO JobService - add param = [value:"5", softwareParameter:42445]
+< 30-05-2017 14:06:18,575  INFO ModelService - Command class be.cytomine.command.AddCommand with flag false
+< 30-05-2017 14:06:18,590  INFO JobService - add param = [value:"8", softwareParameter:42451]
+< 30-05-2017 14:06:18,591  INFO ModelService - Command class be.cytomine.command.AddCommand with flag false
+< 30-05-2017 14:06:18,607  INFO JobService - add param = [value:"50", softwareParameter:42457]
+< 30-05-2017 14:06:18,608  INFO ModelService - Command class be.cytomine.command.AddCommand with flag false
+< 30-05-2017 14:06:18,622  INFO JobService - add param = [value:"2", softwareParameter:42463]
+< 30-05-2017 14:06:18,623  INFO ModelService - Command class be.cytomine.command.AddCommand with flag false
+< 30-05-2017 14:06:18,639  INFO JobService - add param = [value:"2", softwareParameter:42469]
+< 30-05-2017 14:06:18,639  INFO ModelService - Command class be.cytomine.command.AddCommand with flag false
+< 30-05-2017 14:06:18,655  INFO JobService - add param = [value:"2", softwareParameter:42475]
+< 30-05-2017 14:06:18,656  INFO ModelService - Command class be.cytomine.command.AddCommand with flag false
+< 30-05-2017 14:06:18,672  INFO JobService - add param = [value:"123", softwareParameter:42481]
+< 30-05-2017 14:06:18,673  INFO ModelService - Command class be.cytomine.command.AddCommand with flag false
+< 30-05-2017 14:06:18,691  INFO JobService - add param = [value:"sub", softwareParameter:42487]
+< 30-05-2017 14:06:18,691  INFO ModelService - Command class be.cytomine.command.AddCommand with flag false
+< 30-05-2017 14:06:18,704  INFO JobService - add param = [value:"0", softwareParameter:42493]
+< 30-05-2017 14:06:18,705  INFO ModelService - Command class be.cytomine.command.AddCommand with flag false
+< 30-05-2017 14:06:18,722  INFO JobService - add param = [value:"0", softwareParameter:42499]
+< 30-05-2017 14:06:18,723  INFO ModelService - Command class be.cytomine.command.AddCommand with flag false
+< 30-05-2017 14:06:18,739  INFO JobService - add param = [value:"0", softwareParameter:42505]
+< 30-05-2017 14:06:18,740  INFO ModelService - Command class be.cytomine.command.AddCommand with flag false
+< 30-05-2017 14:06:18,781  INFO SecUser - encodePassword for user=JOB[rvandaele ], 2017-05-30 14:06:18:776
+< 30-05-2017 14:06:18,806  INFO RequestFilters - restJob.add Request took 408ms
+< 30-05-2017 14:06:18,819  INFO RequestFilters - restJob.list: user:5180
+< 30-05-2017 14:06:18,822  INFO RequestFilters - restJob.execute: user:5180
+< 30-05-2017 14:06:18,828  INFO RequestFilters - restJob.show: user:5180
+< 30-05-2017 14:06:18,828  INFO RequestFilters - restSoftware.softwareInfoForProject: user:5180
+< 30-05-2017 14:06:18,835  INFO SecurityACLService - check:44506 className=be.cytomine.processing.Job method=container
+< 30-05-2017 14:06:18,836  INFO RequestFilters - restJob.list Request took 17ms
+< 30-05-2017 14:06:18,837  INFO RequestFilters - restSoftware.softwareInfoForProject Request took 8ms
+< 30-05-2017 14:06:18,841  INFO ModelService - Command class be.cytomine.command.AddCommand with flag false
+< 30-05-2017 14:06:18,850  INFO RequestFilters - restJob.show Request took 22ms
+< 30-05-2017 14:06:18,854  INFO RequestFilters - restJob.show: user:5180
+< 30-05-2017 14:06:18,868  INFO SecurityACLService - check:44506 className=be.cytomine.processing.Job method=container
+< 30-05-2017 14:06:18,869  INFO RequestFilters - restJob.show Request took 15ms
+< 30-05-2017 14:06:18,871  INFO ModelService - Command class be.cytomine.command.AddCommand with flag false
+< 30-05-2017 14:06:18,884  INFO SecurityACLService - check:44506 className=be.cytomine.processing.Job method=container
+< 30-05-2017 14:06:18,887  INFO ModelService - Command class be.cytomine.command.AddCommand with flag false
+< 30-05-2017 14:06:18,904  INFO CreateRabbitJobWithArgsService - Execute Job...
+< 30-05-2017 14:06:18,923  INFO RequestFilters - restJob.show: user:5180
+< 30-05-2017 14:06:18,923  INFO CreateRabbitJobWithArgsService - cytomine_id_terms=10879
+< 30-05-2017 14:06:18,925  INFO CreateRabbitJobWithArgsService - cytomine_training_images=all
+< 30-05-2017 14:06:18,928  INFO CreateRabbitJobWithArgsService - model_R=6
+< 30-05-2017 14:06:18,930  INFO CreateRabbitJobWithArgsService - model_njobs=4
+< 30-05-2017 14:06:18,931  INFO CreateRabbitJobWithArgsService - model_RMAX=100
+< 30-05-2017 14:06:18,934  INFO CreateRabbitJobWithArgsService - model_P=1
+< 30-05-2017 14:06:18,951  INFO CreateRabbitJobWithArgsService - model_npred=10000
+< 30-05-2017 14:06:18,953  INFO CreateRabbitJobWithArgsService - model_ntimes=1
+< 30-05-2017 14:06:18,956  INFO CreateRabbitJobWithArgsService - model_angle=0
+< 30-05-2017 14:06:18,957  INFO RequestFilters - retrievalSuggestStats.statRetrievalWorstTerm: user:5180
+< 30-05-2017 14:06:18,957  INFO RequestFilters - retrievalSuggestStats.statWorstTermWithSuggestedTerm: user:5180
+< 30-05-2017 14:06:18,958  INFO RetrievalSuggestStatsController - statWorstTermWithSuggestedTerm
+< 30-05-2017 14:06:18,958  INFO CreateRabbitJobWithArgsService - model_depth=5
+< 30-05-2017 14:06:18,959  INFO JobService - retrieveUserJobFromParams:[job:44506, action:[GET:statWorstTermWithSuggestedTerm], controller:retrievalSuggestStats, format:json]
+< 30-05-2017 14:06:18,959  INFO RequestFilters - restJob.show Request took 37ms
+< 30-05-2017 14:06:18,959  INFO JobService - retrieveUserJobFromParams:[job:44506, action:[GET:statRetrievalWorstTerm], controller:retrievalSuggestStats, format:json]
+< 30-05-2017 14:06:18,961  INFO RequestFilters - retrievalSuggestStats.statRetrievalWorstAnnotation: user:5180
+< 30-05-2017 14:06:18,962  INFO CreateRabbitJobWithArgsService - model_wsize=8
+< 30-05-2017 14:06:18,963  INFO JobService - retrieveUserJobFromParams:[job:44506, action:[GET:statRetrievalWorstAnnotation], controller:retrievalSuggestStats, format:json]
+< 30-05-2017 14:06:18,963  INFO CreateRabbitJobWithArgsService - model_ntrees=50
+< 30-05-2017 14:06:18,964  INFO RequestFilters - retrievalSuggestStats.statRetrievalEvolution: user:5180
+< 30-05-2017 14:06:18,965  INFO CreateRabbitJobWithArgsService - model_step=2
+< 30-05-2017 14:06:18,965  INFO JobService - retrieveUserJobFromParams:[job:44506, action:[GET:statRetrievalEvolution], controller:retrievalSuggestStats, format:json]
+< 30-05-2017 14:06:18,967  INFO CreateRabbitJobWithArgsService - forest_max_features=2
+< 30-05-2017 14:06:18,969  INFO CreateRabbitJobWithArgsService - forest_min_samples_split=2
+< 30-05-2017 14:06:18,971  INFO RequestFilters - retrievalSuggestStats.statRetrievalWorstAnnotation Request took 11ms
+< 30-05-2017 14:06:18,971  INFO CreateRabbitJobWithArgsService - model_name=123
+< 30-05-2017 14:06:18,978  INFO CreateRabbitJobWithArgsService - model_feature_type=sub
+< 30-05-2017 14:06:18,980  INFO CreateRabbitJobWithArgsService - model_feature_haar_n=0
+< 30-05-2017 14:06:18,982  INFO CreateRabbitJobWithArgsService - model_feature_gaussian_n=0
+< 30-05-2017 14:06:18,983  INFO RequestFilters - retrievalSuggestStats.statRetrievalEvolution Request took 20ms
+< 30-05-2017 14:06:18,984  INFO CreateRabbitJobWithArgsService - model_feature_gaussian_std=0
+< 30-05-2017 14:06:18,987  INFO CreateRabbitJobWithArgsService - host=http://localhost-core
+< 30-05-2017 14:06:18,989  INFO CreateRabbitJobWithArgsService - publicKey=2a1549ca-71b9-4c62-a4c2-00bbcea7160c
+< 30-05-2017 14:06:18,990  INFO CreateRabbitJobWithArgsService - privateKey=d72ebaa7-e100-46fa-bba1-0d55398efc84
+< 30-05-2017 14:06:18,991  INFO AbstractJobService - *******************************
+< 30-05-2017 14:06:18,991  INFO AbstractJobService - ****** Execute GLM_Builder2
+< 30-05-2017 14:06:18,992  INFO AbstractJobService - *******************************
+< 30-05-2017 14:06:18,992  INFO AbstractJobService - *******************************
+< 30-05-2017 14:06:18,992  INFO AbstractJobService - ****** Params:
+< 30-05-2017 14:06:18,992  INFO AbstractJobService - args[-1]=python
+< 30-05-2017 14:06:18,993  INFO AbstractJobService - args[0]=/software_router/algo/ldm_model_builder/build_generic_model.py
+< 30-05-2017 14:06:18,993  INFO AbstractJobService - args[1]=--cytomine_host
+< 30-05-2017 14:06:18,993  INFO AbstractJobService - args[2]=http://localhost-core
+< 30-05-2017 14:06:18,993  INFO AbstractJobService - args[3]=--cytomine_public_key
+< 30-05-2017 14:06:18,993  INFO AbstractJobService - args[4]=2a1549ca-71b9-4c62-a4c2-00bbcea7160c
+< 30-05-2017 14:06:18,993  INFO AbstractJobService - args[5]=--cytomine_private_key
+< 30-05-2017 14:06:18,993  INFO AbstractJobService - args[6]=d72ebaa7-e100-46fa-bba1-0d55398efc84
+< 30-05-2017 14:06:18,993  INFO AbstractJobService - args[7]=--cytomine_base_path
+< 30-05-2017 14:06:18,993  INFO AbstractJobService - args[8]=/api/
+< 30-05-2017 14:06:18,994  INFO AbstractJobService - args[9]=--cytomine_working_path
+< 30-05-2017 14:06:18,994  INFO AbstractJobService - args[10]=/software_router/algo/ldm_model_builder/
+< 30-05-2017 14:06:18,994  INFO AbstractJobService - args[11]=--cytomine_id_software
+< 30-05-2017 14:06:18,994  INFO AbstractJobService - args[12]=$cytomine_id_software
+< 30-05-2017 14:06:18,994  INFO AbstractJobService - args[13]=--cytomine_id_project
+< 30-05-2017 14:06:18,994  INFO AbstractJobService - args[14]=$cytomine_id_project
+< 30-05-2017 14:06:18,995  INFO AbstractJobService - args[15]=--cytomine_id_terms
+< 30-05-2017 14:06:18,995  INFO AbstractJobService - args[16]=10879
+< 30-05-2017 14:06:18,995  INFO AbstractJobService - args[17]=--cytomine_training_images
+< 30-05-2017 14:06:18,995  INFO AbstractJobService - args[18]=all
+< 30-05-2017 14:06:18,995  INFO AbstractJobService - args[19]=--image_type
+< 30-05-2017 14:06:18,995  INFO AbstractJobService - args[20]=jpg
+< 30-05-2017 14:06:18,995  INFO AbstractJobService - args[21]=--model_njobs
+< 30-05-2017 14:06:18,995  INFO AbstractJobService - args[22]=$model_njobs--model_R
+< 30-05-2017 14:06:18,996  INFO AbstractJobService - args[23]=$model_R--model_RMAX
+< 30-05-2017 14:06:18,996  INFO AbstractJobService - args[24]=$model_RMAX--model_P
+< 30-05-2017 14:06:18,996  INFO AbstractJobService - args[25]=$model_P--model_npred
+< 30-05-2017 14:06:18,996  INFO AbstractJobService - args[26]=$model_npred--model_ntrees
+< 30-05-2017 14:06:18,996  INFO AbstractJobService - args[27]=$model_ntrees--model_ntimes
+< 30-05-2017 14:06:18,996  INFO AbstractJobService - args[28]=$model_ntimes--model_angle
+< 30-05-2017 14:06:18,996  INFO AbstractJobService - args[29]=$model_angle--model_depth
+< 30-05-2017 14:06:18,997  INFO AbstractJobService - args[30]=$model_depth--model_step
+< 30-05-2017 14:06:18,997  INFO AbstractJobService - args[31]=$model_step--model_wsize
+< 30-05-2017 14:06:18,997  INFO AbstractJobService - args[32]=$model_wsize--model_feature_type
+< 30-05-2017 14:06:18,997  INFO AbstractJobService - args[33]=$model_feature_type--model_feature_haar_n
+< 30-05-2017 14:06:18,997  INFO AbstractJobService - args[34]=$model_feature_haar_n--model_feature_gaussian_n
+< 30-05-2017 14:06:18,997  INFO AbstractJobService - args[35]=$model_feature_gaussian_n--model_feature_gaussian_std
+< 30-05-2017 14:06:18,997  INFO AbstractJobService - args[36]=$model_feature_gaussian_std--model_save_to
+< 30-05-2017 14:06:18,997  INFO AbstractJobService - args[37]=/software_router/algo/ldm_model_builder/--model_name
+< 30-05-2017 14:06:18,998  INFO AbstractJobService - args[38]=$model_name--verbose
+< 30-05-2017 14:06:18,998  INFO AbstractJobService - args[39]=true
+< 30-05-2017 14:06:18,998  INFO AbstractJobService - *******************************
+< 30-05-2017 14:06:18,998  INFO CreateRabbitJobWithArgsService - Command tab : ["python","/software_router/algo/ldm_model_builder/build_generic_model.py","--cytomine_host","http://localhost-core","--cytomine_public_key","2a1549ca-71b9-4c62-a4c2-00bbcea7160c","--cytomine_private_key","d72ebaa7-e100-46fa-bba1-0d55398efc84","--cytomine_base_path","/api/","--cytomine_working_path","/software_router/algo/ldm_model_builder/","--cytomine_id_software","$cytomine_id_software","--cytomine_id_project","$cytomine_id_project","--cytomine_id_terms","10879","--cytomine_training_images","all","--image_type","jpg","--model_njobs","$model_njobs--model_R","$model_R--model_RMAX","$model_RMAX--model_P","$model_P--model_npred","$model_npred--model_ntrees","$model_ntrees--model_ntimes","$model_ntimes--model_angle","$model_angle--model_depth","$model_depth--model_step","$model_step--model_wsize","$model_wsize--model_feature_type","$model_feature_type--model_feature_haar_n","$model_feature_haar_n--model_feature_gaussian_n","$model_feature_gaussian_n--model_feature_gaussian_std","$model_feature_gaussian_std--model_save_to","/software_router/algo/ldm_model_builder/--model_name","$model_name--verbose","true"]
+< 30-05-2017 14:06:19,003  INFO AmqpQueueService - Exchange : exchangeSoftwareGLM_Builder2
+< 30-05-2017 14:06:19,014  INFO RequestFilters - restJob.execute Request took 192ms
+< 30-05-2017 14:06:19,014  INFO RetrievalSuggestStatsController - avg = -1.0 avgAveragedPerClass=0.0
+< 30-05-2017 14:06:19,017  INFO RequestFilters - retrievalSuggestStats.statWorstTermWithSuggestedTerm Request took 60ms
+< 30-05-2017 14:06:19,026  INFO RequestFilters - retrievalSuggestStats.statRetrievalWorstTerm Request took 69ms
+< 30-05-2017 14:06:23,924  INFO RequestFilters - restJob.show: user:5180
+< 30-05-2017 14:06:23,949  INFO RequestFilters - restJob.show Request took 25ms
