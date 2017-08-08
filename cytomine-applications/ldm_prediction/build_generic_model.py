@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #
-# * Copyright (c) 2009-2016. Authors: see NOTICE file.
+# * Copyright (c) 2009-2017. Authors: see NOTICE file.
 # *
 # * Licensed under the Apache License, Version 2.0 (the "License");
 # * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 
 __author__ = "Vandaele Rémy <remy.vandaele@ulg.ac.be>"
 __contributors__ = ["Marée Raphaël <raphael.maree@ulg.ac.be>"]
-__copyright__ = "Copyright 2010-2016 University of Liège, Belgium, http://www.cytomine.be/"
+__copyright__ = "Copyright 2010-2017 University of Liège, Belgium, http://www.cytomine.be/"
 
 from ldmtools import *
 import scipy.ndimage as snd
