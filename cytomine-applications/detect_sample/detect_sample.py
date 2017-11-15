@@ -35,7 +35,6 @@ from shapely.geometry.polygon import Polygon
 from shapely.wkt import dumps
 
 from time import strftime, gmtime,sleep
-import cv
 import cv2
 import os, optparse
 
@@ -215,8 +214,8 @@ def main(argv):
                         new_width=int(ori_width/resize_ratio)
                         cv_im = image
                         print cv_im.shape
-                        cv_im_thres = cv2.adaptiveThreshold(cv_im, 255, cv.CV_ADAPTIVE_THRESH_GAUSSIAN_C, 
-                                                            cv.CV_THRESH_BINARY, 
+                        cv_im_thres = cv2.adaptiveThreshold(cv_im, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                                            cv2.THRESH_BINARY,
                                                             parameters['cytomine_athreshold_blocksize'], 
                                                             parameters['cytomine_athreshold_constant'])
 

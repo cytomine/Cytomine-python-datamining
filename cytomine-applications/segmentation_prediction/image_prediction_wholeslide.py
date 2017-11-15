@@ -52,7 +52,6 @@ import numpy as np
 import matplotlib.path
 from matplotlib.path import Path
 import scipy.ndimage
-import cv
 import cv2
 import math
 
@@ -547,7 +546,7 @@ def main(argv):
                                     zoom = zoom,
                                     overlap = parameters['pyxit_target_width']+1)
             #opencv object image corresponding to a tile
-            cv_image = cv.CreateImageHeader((reader.window_position.width, reader.window_position.height), cv.IPL_DEPTH_8U, 1)
+            # cv_image = cv.CreateImageHeader((reader.window_position.width, reader.window_position.height), cv.IPL_DEPTH_8U, 1)
             wsi=0
             geometries = []
         
@@ -740,7 +739,7 @@ def main(argv):
                             geometries.extend(Utils().get_geometries(components))
                         else:
                             #opencv old object finder without all internal contours:
-                            cv.SetData(cv_image, output.tobytes())
+                            cv_image = np.array(output)
                             components = ObjectFinder_(cv_image).find_components()
                             components = whole_slide.convert_to_real_coordinates_(whole_slide, components, reader.window_position, reader.zoom)
                             geometries.extend(Utils_().get_geometries(components))

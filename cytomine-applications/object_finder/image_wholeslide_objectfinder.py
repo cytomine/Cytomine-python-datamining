@@ -26,7 +26,8 @@ __copyright__       = "Copyright 2010-2016 University of Liège, Belgium, http:/
 
 import os, sys, time
 import optparse
-import cv
+import numpy as np
+import cv2
 import pickle
 
 from cytomine import Cytomine, models
@@ -147,7 +148,7 @@ def main(argv):
     whole_slide = WholeSlide(conn.get_image_instance(parameters['cytomine_id_image'], True))
     async = False #True is experimental
     reader = CytomineReader(conn, whole_slide, window_position = Bounds(0,0, parameters['cytomine_tile_size'], parameters['cytomine_tile_size']), zoom = parameters['cytomine_zoom_level'], overlap = parameters['cytomine_tile_overlap'])
-    cv_image = cv.CreateImageHeader((reader.window_position.width, reader.window_position.height), cv.IPL_DEPTH_8U, 3)
+    # cv_image = cv2.CreateImageHeader((reader.window_position.width, reader.window_position.height), cv2.IPL_DEPTH_8U, 3)
     reader.window_position = Bounds(0, 0, reader.window_position.width, reader.window_position.height)
 
     #Create a new userjob if connected as human user
@@ -184,7 +185,7 @@ def main(argv):
                                                                       reader.window_position.y)
         image.save(tile_filename,"PNG")
         #Apply filtering
-        cv.SetData(cv_image, reader.result().tobytes())
+        cv_image = np.array(reader.result())
         filtered_cv_image = filter.process(cv_image)
         i += 1
         #Detect connected components
