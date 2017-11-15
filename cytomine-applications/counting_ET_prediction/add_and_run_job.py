@@ -71,6 +71,7 @@ def predict(argv):
     parser.add_argument('--n_jobs', dest='n_jobs', type=int, default=1, help="Number of jobs")
     parser.add_argument('--verbose', '-v', dest='verbose', default=0, help="Level of verbosity")
     parser.add_argument('--model_id_job', dest='model_id_job', type=int, default=None, help="Model job ID")
+    parser.add_argument('--model_file', dest="model_file", type=str, default=None, help="Model file")
 
     params, other = parser.parse_known_args(argv)
     if params.cytomine_working_path is None:
@@ -100,9 +101,12 @@ def predict(argv):
         cytomine.update_job_status(job.job, status_comment="Starting...", progress=0)
 
         cytomine.update_job_status(job.job, status_comment="Loading model...", progress=1)
-        model_job = cytomine.get_job(params.model_id_job)
-        model_file = os.path.join(params.cytomine_working_path, "models", str(model_job.software),
-                                  "{}.pkl".format(model_job.id))
+        if params.model_file:
+            model_file = params.model_file
+        else:
+            model_job = cytomine.get_job(params.model_id_job)
+            model_file = os.path.join(params.cytomine_working_path, "models", str(model_job.software),
+                                      "{}.pkl".format(model_job.id))
         with open(model_file, 'rb') as f:
             estimator = pickle.load(f)
 

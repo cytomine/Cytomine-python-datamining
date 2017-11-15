@@ -38,9 +38,10 @@ def install_CNN_ObjectCounter_Predictor(cytomine, software_router, software_path
     software.add_parameter("cytomine_id_software", int, 0, required=True, set_by_server=True)
     software.add_parameter("cytomine_id_project", int, 0, required=True, set_by_server=True)
 
-    software.add_parameter("model_id_job", "Domain", "", required=True, set_by_server=False,
+    software.add_parameter("model_id_job", "Domain", "", required=False, set_by_server=False,
                            uri="/api/job.json?project=$currentProject$", uri_print_attr="softwareName",
                            uri_sort_attr="softwareName")
+    software.add_parameter("model_file", str, "", required=False, set_by_server=False)
 
     software.add_parameter("cytomine_object_term", "Domain", "", required=True,
                            uri="/api/project/$currentProject$/term.json", uri_print_attr="name", uri_sort_attr="name")
