@@ -28,12 +28,12 @@ __copyright__ = "Copyright 2010-2017 University of Liège, Belgium, http://www.c
 
 def install_CNN_ObjectCounter_Predictor(cytomine, software_router, software_path, software_working_path):
     if software_path is not None:
-        software_path = os.path.join(software_path, "object_counter_predictor/CNN/add_and_run_job.py")
+        software_path = os.path.join(software_path, "add_and_run_job.py")
 
     if software_working_path is not None:
         software_working_path = os.path.join(software_working_path, "object_counter")
 
-    software = InstallSoftware("ObjectCounter_CNN_Predictor", "pyxitSuggestedTermJobService", "Default",
+    software = InstallSoftware("CellCounter_CNN_Predictor", "pyxitSuggestedTermJobService", "Default",
                                software_router, software_path, software_working_path)
     software.add_parameter("cytomine_id_software", int, 0, required=True, set_by_server=True)
     software.add_parameter("cytomine_id_project", int, 0, required=True, set_by_server=True)
