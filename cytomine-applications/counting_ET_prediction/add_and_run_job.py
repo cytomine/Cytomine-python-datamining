@@ -65,18 +65,24 @@ def predict(argv):
 
     # ROI
     parser.add_argument('--annotation', dest='annotation', type=int, default=None)
-    parser.add_argument('--image', dest='image', type=int, action='append', default=None)
+    parser.add_argument('--image', dest='image', type=str, action='append', default=None)
 
     # Execution
     parser.add_argument('--n_jobs', dest='n_jobs', type=int, default=1, help="Number of jobs")
     parser.add_argument('--verbose', '-v', dest='verbose', default=0, help="Level of verbosity")
-    parser.add_argument('--model_id_job', dest='model_id_job', type=int, default=None, help="Model job ID")
+    parser.add_argument('--model_id_job', dest='model_id_job', type=str, default=None, help="Model job ID")
     parser.add_argument('--model_file', dest="model_file", type=str, default=None, help="Model file")
 
     params, other = parser.parse_known_args(argv)
     if params.cytomine_working_path is None:
         params.cytomine_working_path = os.path.join(tempfile.gettempdir(), "cytomine")
     make_dirs(params.cytomine_working_path)
+
+    post_parameters = {
+        'post_threshold': params.post_threshold,
+        'post_sigma': params.post_sigma,
+        'post_min_dist': params.post_min_dist
+    }
 
     # Initialize logger
     logger = StandardOutputLogger(params.verbose)
@@ -99,6 +105,10 @@ def predict(argv):
                      params.cytomine_project,
                      parameters=vars(params_remove_none(params))) as job:
         cytomine.update_job_status(job.job, status_comment="Starting...", progress=0)
+        if params.model_id_job == 'null':
+            params.model_id_job = None
+        if params.image == 'null':
+            params.image = None
 
         cytomine.update_job_status(job.job, status_comment="Loading model...", progress=1)
         if params.model_file:
@@ -113,7 +123,7 @@ def predict(argv):
         cytomine.update_job_status(job.job, status_comment="Dumping annotations/images to predict...", progress=3)
         if params.annotation is not None:
             if not isinstance(params.annotation, list):
-                params.annotation = list(params.annotation)
+                params.annotation = [params.annotation]
             annots = [cytomine.get_annotation(id) for id in params.annotation]
             annots_collection = AnnotationCollection()
             annots_collection._data = annots
@@ -125,7 +135,7 @@ def predict(argv):
             X = crops.data()
         elif params.image is not None:
             if not isinstance(params.image, list):
-                params.image = list(params.image)
+                params.image = [params.image]
 
             image_instances = [cytomine.get_image_instance(id) for id in params.image]
             image_instances = cytomine.dump_project_images(id_project=params.cytomine_project,
@@ -141,6 +151,7 @@ def predict(argv):
             cytomine.update_job_status(job.job, status_comment="Predicting ID {}...".format(x.id),
                                        progress=5 + np.ceil(i / len(X)) * 95)
             y = estimator.predict([x.filename])
+            y = estimator.postprocessing([y], **post_parameters)
 
             cytomine.update_job_status(job.job, status_comment="Uploading annotations...")
             upload_annotations(cytomine, x, y, term=params.cytomine_object_term)
