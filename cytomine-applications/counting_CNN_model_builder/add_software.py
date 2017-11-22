@@ -49,8 +49,7 @@ def install_CNN_ObjectCounter_Model_builder(cytomine, software_router, software_
                            uri="/api/project/$currentProject$/user.json", uri_print_attr="username", uri_sort_attr="username")
     software.add_parameter("cytomine_roi_reviewed_only", bool, False, required=False)
 
-    software.add_parameter("mean_radius", float, "", required=True)
-    software.add_parameter("pre_transformer", str, default_value="", required=False)
+    software.add_parameter("pre_transformer", str, default_value="density", required=False)
     software.add_parameter("pre_alpha", int, default_value="", required=False)
 
     software.add_parameter("sw_input_size", int, default_value=128, required=True)
@@ -59,13 +58,12 @@ def install_CNN_ObjectCounter_Model_builder(cytomine, software_router, software_
 
     software.add_parameter("cnn_architecture", str, default_value="FCRN-A", required=True)
     software.add_parameter("cnn_initializer", str, default_value="orthogonal", required=True)
-    software.add_parameter("cnn_regularizer", str, default_value="", required=True)
-    software.add_parameter("cnn_batch_normalization", bool, default_value=False, required=True)
-    software.add_parameter("cnn_learning_rate", float, default_value=0.02, required=True)
+    software.add_parameter("cnn_batch_normalization", bool, default_value=True, required=True)
+    software.add_parameter("cnn_learning_rate", float, default_value=0.01, required=True)
     software.add_parameter("cnn_momentum", float, default_value=0.9, required=True)
     software.add_parameter("cnn_decay", float, default_value=0.0, required=True)
     software.add_parameter("cnn_epochs", int, default_value=24, required=True)
-    software.add_parameter("cnn_batch_size", int, default_value=32, required=True)
+    software.add_parameter("cnn_batch_size", int, default_value=16, required=True)
     software.add_parameter("augmentation", bool, default_value=True, required=True)
 
     software.add_parameter("n_jobs", int, default_value=1, required=True)

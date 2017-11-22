@@ -13,7 +13,7 @@ from sldc import DefaultTileBuilder, Image, TileTopologyIterator
 from cell_counting.base_method import BaseMethod
 from cell_counting.cnn_architectures import FCRN_A, FCRN_B, sgd_compile
 from cell_counting.subwindows import mk_subwindows
-from cell_counting.utils import open_image
+from cell_counting.utils import open_image_with_mask
 
 __author__ = "Ulysse Rubens <urubens@uliege.be>"
 __version__ = "0.1"
@@ -95,34 +95,33 @@ class FCRN(BaseMethod):
         max_width = 512
         max_height = 512
         overlap = 30
-        dtb = DefaultTileBuilder()
         _X = []
         for x in X:
-            x = open_image(x, flag='RGB')  # TODO: get mask
+            x, mask = open_image_with_mask(x, padding=(overlap, overlap))
             _x = np.zeros((x.shape[0], x.shape[1]))
-            count = np.zeros((x.shape[0], x.shape[1]))
+            count = np.zeros_like(_x)
 
-            tile_iterator = TiledImage(x).tile_iterator(dtb, max_width=max_width,
+            tile_iterator = TiledImage(x).tile_iterator(DefaultTileBuilder(), max_width=max_width,
                                                         max_height=max_height, overlap=overlap)
             for tile in tile_iterator:
-                height = tile.width
-                top = tile.offset_x
-                bottom = top + height
+                width = tile.width
+                minx = tile.offset_x
+                maxx = minx + width
 
-                width = tile.height
-                left = tile.offset_y
-                right = left + width
+                height = tile.height
+                miny = tile.offset_y
+                maxy = miny + height
 
-                __x = np.expand_dims(cv2.copyMakeBorder(x[top:bottom, left:right],
-                                                        0, ((height // div * div + div) - height),
-                                                        0, ((width // div * div + div) - width),
-                                                        borderType=cv2.BORDER_DEFAULT),
-                                     axis=0)
-                _x[top:bottom, left:right] += np.squeeze(self.model.predict(__x, **kwargs))[:height, :width]
-                count[top:bottom, left:right] += 1
-                _x[count > 1] = _x[count > 1] / count[count > 1]
-                # TODO: remove positions outside mask
-            _X.append(_x)
+                __x = np.expand_dims(cv2.copyMakeBorder(x[miny:maxy, minx:maxx],
+                                                        0, int((np.ceil(height/float(div))*div)),
+                                                        0, int((np.ceil(width/float(div))*div)),
+                                                        borderType=cv2.BORDER_DEFAULT), axis=0)
+                _x[miny:maxy, minx:maxx] += np.squeeze(self.model.predict(__x, **kwargs))[:height, :width]
+                count[miny:maxy, minx:maxx] += 1
+
+            _x[count > 1] = _x[count > 1] / count[count > 1]
+            _x *= mask.astype(np.float)
+            _X.append(_x[overlap:-overlap, overlap:-overlap])
 
         return np.squeeze(_X)
 
@@ -165,11 +164,11 @@ class TiledImage(Image):
 
     @property
     def width(self):
-        return self.np_array.shape[0]
+        return self.np_array.shape[1]
 
     @property
     def height(self):
-        return self.np_array.shape[1]
+        return self.np_array.shape[0]
 
     @property
     def np_image(self):

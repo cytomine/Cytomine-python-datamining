@@ -87,7 +87,7 @@ class CellCountRandomizedTrees(BaseMethod):
                     count[slice(top, bottom), slice(left, right)] += 1
 
             y[count > 1] = y[count > 1] / count[count > 1]
-
+            y *= mask.astype(np.float)
             ret_lst.append(y[window_input_size_half[0]: -window_input_size_half[0],
                            window_input_size_half[1]: -window_input_size_half[1]])
 

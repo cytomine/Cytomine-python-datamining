@@ -49,7 +49,7 @@ def install_ET_ObjectCounter_Model_builder(cytomine, software_router, software_p
                            uri="/api/project/$currentProject$/user.json", uri_print_attr="username", uri_sort_attr="username")
     software.add_parameter("cytomine_roi_reviewed_only", bool, False, required=False)
 
-    software.add_parameter("mean_radius", float, "", required=True)
+    software.add_parameter("mean_radius", float, "", required=False)
     software.add_parameter("pre_transformer", str, default_value="", required=False)
     software.add_parameter("pre_alpha", int, default_value="", required=False)
 
@@ -60,7 +60,7 @@ def install_ET_ObjectCounter_Model_builder(cytomine, software_router, software_p
     software.add_parameter("sw_extr_ratio", float, default_value="", required=False)
     software.add_parameter("sw_extr_npi", float, default_value="", required=False)
     software.add_parameter("sw_colorspace", str, required=True,
-                           default_value="RGB__rgb RGB__Luv RGB__hsv L__normalized L__sobel1 L__gradmagn")
+                           default_value="RGB__rgb+RGB__Luv+RGB__hsv+L__normalized+L__sobel1+L__gradmagn")
     software.add_parameter("forest_method", str, default_value="ET-regr", required=True)
     software.add_parameter("forest_n_estimators", int, default_value=10, required=True)
     software.add_parameter("forest_min_samples_split", int, default_value=2, required=True)

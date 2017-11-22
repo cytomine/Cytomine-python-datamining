@@ -103,8 +103,26 @@ def open_scoremap(filename, padding=(0, 0)):
     return scoremap.astype(np.float16)
 
 
+def str2bool(s):
+    return True if s in ['True', 'true', True] else False
+
+
+def str2int(s):
+    try:
+        return int(s)
+    except ValueError:
+        return None
+
+
+def str2float(s):
+    try:
+        return float(s)
+    except ValueError:
+        return None
+
+
 def check_default(param, default_value=None, return_list=True):
-    if param is None or len(param) == 0:
+    if param is None or (isinstance(param, list) and len(param) == 0):
         if return_list:
             return [default_value]
         else:
@@ -114,6 +132,8 @@ def check_default(param, default_value=None, return_list=True):
 
 
 def check_max_features(max_features):
+    if not isinstance(max_features, list):
+        max_features = [max_features]
     ret = []
     for mf in max_features:
         if '.' in mf:
