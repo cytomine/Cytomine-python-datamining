@@ -9,7 +9,7 @@ from cytomine_utilities import CytomineJob
 from sldc import StandardOutputLogger, Logger
 
 from cell_counting.cytomine_utils import get_dataset
-from cell_counting.utils import make_dirs, check_default, params_remove_list, check_max_features, params_remove_none, \
+from cell_counting.utils import make_dirs,check_max_features, params_remove_none, \
     str2bool, str2int, str2float
 from cell_counting.extratrees_methods import CellCountRandomizedTrees
 
@@ -149,8 +149,10 @@ def train(argv):
                      params.cytomine_project,
                      parameters=vars(params_remove_none(params))) as job:
         cytomine.update_job_status(job.job, status_comment="Starting...", progress=0)
+        logger.i("Starting...")
 
         cytomine.update_job_status(job.job, status_comment="Loading training set...", progress=1)
+        logger.i("Loading training set...")
         X, y = get_dataset(cytomine, params.cytomine_working_path, params.cytomine_project, params.cytomine_object_term,
                            params.cytomine_roi_term, params.cytomine_object_user, params.cytomine_object_reviewed_only,
                            params.cytomine_roi_user, params.cytomine_roi_reviewed_only, params.cytomine_force_download)
@@ -158,10 +160,12 @@ def train(argv):
         logger.d("y size: {} samples".format(len(y)))
 
         cytomine.update_job_status(job.job, status_comment="Training forest...", progress=5)
+        logger.i("Training forest...")
         estimator = CellCountRandomizedTrees(logger=logger, **vars(params))
         estimator.fit(np.asarray(X), np.asarray(y))
 
         cytomine.update_job_status(job.job, status_comment="Saving (best) model", progress=95)
+        logger.i("Saving model...")
         model_path = os.path.join(params.cytomine_working_path, "models", str(params.cytomine_software))
         model_file = os.path.join(model_path, "{}.pkl".format(job.job.id))
         make_dirs(model_path)

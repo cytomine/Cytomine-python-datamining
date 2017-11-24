@@ -59,6 +59,7 @@ class FCRN(BaseMethod):
 
         fit_args = copy.deepcopy(self.filter_sk_params(Sequential.fit))
         fit_args.update(kwargs)
+        fit_args['verbose'] = 2
         del fit_args['batch_size']
 
         # Make subwindows for training
@@ -90,6 +91,7 @@ class FCRN(BaseMethod):
 
     def predict(self, X, **kwargs):
         kwargs = self.filter_sk_params(Sequential.predict, kwargs)
+        kwargs['verbose'] = 1
 
         div = 8
         max_width = 512

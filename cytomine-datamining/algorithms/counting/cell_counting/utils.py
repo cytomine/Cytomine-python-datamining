@@ -108,6 +108,8 @@ def str2bool(s):
 
 
 def str2int(s):
+    if s is None:
+        return None
     try:
         return int(s)
     except ValueError:
@@ -115,6 +117,8 @@ def str2int(s):
 
 
 def str2float(s):
+    if s is None:
+        return None
     try:
         return float(s)
     except ValueError:

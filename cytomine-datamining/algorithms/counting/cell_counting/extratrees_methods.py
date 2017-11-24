@@ -41,6 +41,7 @@ class CellCountRandomizedTrees(BaseMethod):
 
         self.logger.i('[FIT] Start fitting from {} images, {} subwindows'.format(X.shape[0], _X.shape[0]))
         self.__forest.fit(_X, _y)
+        self.logger.i('[FIT] End of fitting')
 
         if isinstance(self.__forest, ForestClassifier):
             self.foreground_class_ = np.where(self.__forest.classes_ == 1.)
@@ -102,7 +103,7 @@ class CellCountRandomizedTrees(BaseMethod):
             pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
-    def build_rt(forest_method, forest_n_estimators, forest_min_samples_split, forest_max_features, n_jobs):
+    def build_rt(forest_method, forest_n_estimators, forest_min_samples_split, forest_max_features, n_jobs, verbose):
         if 'ET' in forest_method:
             if 'clf' in forest_method:
                 MLAlgo = partial(ExtraTreesClassifier, class_weight='balanced')
@@ -118,4 +119,5 @@ class CellCountRandomizedTrees(BaseMethod):
             n_estimators=forest_n_estimators,
             min_samples_split=forest_min_samples_split,
             max_features=forest_max_features,
-            n_jobs=n_jobs)
+            n_jobs=n_jobs,
+            verbose=3*verbose)

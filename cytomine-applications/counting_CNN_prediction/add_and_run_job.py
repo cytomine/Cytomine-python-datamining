@@ -104,8 +104,10 @@ def predict(argv):
                      params.cytomine_project,
                      parameters=vars(params_remove_none(params))) as job:
 
+        logger.i("Starting...")
         cytomine.update_job_status(job.job, status_comment="Starting...", progress=0)
 
+        logger.i("Loading model...")
         cytomine.update_job_status(job.job, status_comment="Loading model...", progress=1)
         if params.model_file:
             model_file = params.model_file
@@ -115,7 +117,12 @@ def predict(argv):
                                       "{}.h5".format(model_job.id))
         estimator = FCRN()
         estimator.model = load_model(model_file)
+        predict_params = vars(params).copy()
+        predict_params.pop("image", None)
+        predict_params.pop("annotation", None)
+        estimator.set_params(**predict_params)
 
+        logger.i("Dumping annotations/images to predict...")
         cytomine.update_job_status(job.job, status_comment="Dumping annotations/images to predict...", progress=3)
         if params.annotation[0] is not None:
             annots = [cytomine.get_annotation(id) for id in params.annotation]
@@ -140,14 +147,17 @@ def predict(argv):
         logger.d("X size: {} samples".format(len(X)))
 
         for i, x in enumerate(X):
+            logger.i("Predicting ID {}...".format(x.id))
             cytomine.update_job_status(job.job, status_comment="Predicting ID {}...".format(x.id),
                                        progress=5 + np.ceil(i / len(X)) * 95)
             y = estimator.predict([x.filename])
             y = estimator.postprocessing([y], **estimator.filter_sk_params(estimator.postprocessing))
 
+            logger.i("Uploading annotations...")
             cytomine.update_job_status(job.job, status_comment="Uploading annotations...")
             upload_annotations(cytomine, x, y, term=params.cytomine_object_term)
 
+        logger.i("Finished.")
         cytomine.update_job_status(job.job, status_comment="Finished.", progress=100)
 
 

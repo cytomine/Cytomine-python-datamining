@@ -74,8 +74,8 @@ class BaseMethod(object):
     def predict(self, *args, **kwargs):
         raise NotImplementedError()
 
-    def postprocessing(self, X, **post_params):
-        return np.squeeze([non_maximum_suppression(x, **post_params) for x in X])
+    def postprocessing(self, X, post_sigma=None, post_threshold=0.0, post_min_dist=7):
+        return np.squeeze([non_maximum_suppression(x, post_sigma, post_threshold, post_min_dist) for x in X])
 
     def score(self, X_test, y_test, me, untrainable_param_grid):
         candidate_untrainable_params = ParameterGrid(untrainable_param_grid)

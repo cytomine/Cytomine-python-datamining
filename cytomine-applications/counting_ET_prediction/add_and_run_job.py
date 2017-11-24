@@ -105,6 +105,7 @@ def predict(argv):
         cytomine.update_job_status(job.job, status_comment="Starting...", progress=0)
 
         cytomine.update_job_status(job.job, status_comment="Loading model...", progress=1)
+        logger.i("Loading model...")
         if params.model_file:
             model_file = params.model_file
         else:
@@ -113,8 +114,13 @@ def predict(argv):
                                       "{}.pkl".format(model_job.id))
         with open(model_file, 'rb') as f:
             estimator = pickle.load(f)
+            predict_params = vars(params).copy()
+            predict_params.pop("image", None)
+            predict_params.pop("annotation", None)
+            estimator.set_params(**predict_params)
 
         cytomine.update_job_status(job.job, status_comment="Dumping annotations/images to predict...", progress=3)
+        logger.i("Dumping annotations/images to predict...")
         if params.annotation[0] is not None:
             annots = [cytomine.get_annotation(id) for id in params.annotation]
             annots_collection = AnnotationCollection()
@@ -138,14 +144,17 @@ def predict(argv):
         logger.d("X size: {} samples".format(len(X)))
 
         for i, x in enumerate(X):
+            logger.i("Predicting ID {}...".format(x.id))
             cytomine.update_job_status(job.job, status_comment="Predicting ID {}...".format(x.id),
                                        progress=5 + np.ceil(i / len(X)) * 95)
             y = estimator.predict([x.filename])
             y = estimator.postprocessing([y], **estimator.filter_sk_params(estimator.postprocessing))
 
+            logger.i("Uploading annotations...")
             cytomine.update_job_status(job.job, status_comment="Uploading annotations...")
             upload_annotations(cytomine, x, y, term=params.cytomine_object_term)
 
+        logger.i("Finished.")
         cytomine.update_job_status(job.job, status_comment="Finished.", progress=100)
 
 

@@ -167,6 +167,7 @@ def train(argv):
         cytomine.update_job_status(job.job, status_comment="Starting...", progress=0)
 
         cytomine.update_job_status(job.job, status_comment="Loading training set...", progress=1)
+        logger.i("Loading training set...")
         X, y = get_dataset(cytomine, params.cytomine_working_path, params.cytomine_project, params.cytomine_object_term,
                            params.cytomine_roi_term, params.cytomine_object_user, params.cytomine_object_reviewed_only,
                            params.cytomine_roi_user, params.cytomine_roi_reviewed_only, params.cytomine_force_download)
@@ -190,17 +191,20 @@ def train(argv):
         make_dirs(model_path)
 
         # Callbacks
-        checkpoint_callback = ModelCheckpoint(model_file, monitor='loss', save_best_only=True)
+        # checkpoint_callback = ModelCheckpoint(model_file, monitor='loss', save_best_only=True)
         lr_callback = LearningRateScheduler(lr_scheduler)
-        callbacks = [checkpoint_callback, lr_callback]
+        callbacks = [lr_callback]
 
+        logger.i("Training FCRN...")
         cytomine.update_job_status(job.job, status_comment="Training FCRN...", progress=5)
         estimator = FCRN(FCRN.build_fcrn, callbacks, **vars(params))
         estimator.fit(np.asarray(X), np.asarray(y))
 
+        logger.i("Saving model...")
         cytomine.update_job_status(job.job, status_comment="Saving (best) model", progress=95)
         estimator.save(model_file)
 
+        logger.i("Finished.")
         cytomine.update_job_status(job.job, status_comment="Finished.", progress=100)
 
 
