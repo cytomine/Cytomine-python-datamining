@@ -27,8 +27,8 @@ from download import *
 
 if __name__ == "__main__":
 
-	public_key = 'c3090afd-b793-4ae2-a5f3-2cfdaee01f32'
-	private_key = 'd7768538-db66-4aa6-882c-55f520f1be69'
+	public_key = 'XXX'
+	private_key = 'XXX'
 	wpath = sys.argv[1]
 	if (wpath.endswith('/')):
 		wpath = wpath + '/'
