@@ -408,7 +408,7 @@ def run(cyto_job, parameters):
 
             wsi = 0  # tile number
 
-            logging.info("Starting browsing the image using tiles")
+            logging.info("Starting browsing the image %s using tiles", image.instanceFilename)
             while True:
                 tile_component = reader.convert_to_real_coordinates([local_tile_component])[0]
                 tile_polygon = shapely.geometry.Polygon(tile_component[0], tile_component[1])
