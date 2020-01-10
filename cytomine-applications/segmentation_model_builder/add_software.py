@@ -62,7 +62,7 @@ execute_command = ("python algo/segmentation_model_builder/add_and_run_job.py " 
                    "--log_level INFO")
 
 # define software parameter template
-software = Software("Segmentation_Model_Builder", "pyxitSuggestedTermJobService",
+software = Software("Segmentation_Model_Builder", "createRabbitJobWithArgsService",
                     "ValidateAnnotation", execute_command).save()
 
 SoftwareParameter("cytomine_id_software", "Number", software.id,  0, True, 400, True).save()

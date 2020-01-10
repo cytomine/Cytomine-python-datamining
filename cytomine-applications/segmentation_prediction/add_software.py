@@ -85,7 +85,7 @@ execute_command = ("python algo/segmentation_prediction/image_prediction_wholesl
                    "--log_level INFO")
 
 # define software parameter template
-software = Software("Segmentation_Model_Builder", "pyxitSuggestedTermJobService",
+software = Software("Segmentation_Prediction", "createRabbitJobWithArgsService",
                     "ValidateAnnotation", execute_command).save()
 
 SoftwareParameter("cytomine_id_software", "Number", software.id,  0, True, 400, True).save()
@@ -106,10 +106,10 @@ SoftwareParameter("cytomine_startx", "Number", software.id, 0, True, 80, False).
 SoftwareParameter("cytomine_starty", "Number", software.id, 0, True, 90, False).save()
 SoftwareParameter("cytomine_endx", "Number", software.id, 0, True, 91, False).save()
 SoftwareParameter("cytomine_endy", "Number", software.id, 0, True, 92, False).save()
-SoftwareParameter("cytomine_roi_term", "Number", software.id, "", True, 100, False,
+SoftwareParameter("cytomine_roi_term", "Domain", software.id, "", True, 100, False,
                   "/api/project/$currentProject$/term.json", "name", "name").save()
 SoftwareParameter("cytomine_reviewed_roi", "Boolean", software.id, "false", False, 101, False).save()
-SoftwareParameter("cytomine_predict_term", "Number", software.id, "", True, 105, False,
+SoftwareParameter("cytomine_predict_term", "Domain", software.id, "", True, 105, False,
                   "/api/project/$currentProject$/term.json", "name", "name").save()
 SoftwareParameter("cytomine_predict_step", "Number", software.id, 8, True, 110, False).save()
 SoftwareParameter("cytomine_min_size", "Number", software.id, 1000, True, 120, False).save()
