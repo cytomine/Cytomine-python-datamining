@@ -100,7 +100,7 @@ def run(cyto_job, parameters):
             if class_annot == -1:  # excluded => do not dump and do not add to dataset
                 continue
 
-            annot.dump(dest_patterns[class_annot], mask=True, alpha=True, zoom=parameters.cytomine_zoom_level)
+            assert annot.dump(dest_patterns[class_annot], mask=True, alpha=True, zoom=parameters.cytomine_zoom_level), ("Unable to dump annotations")
             x.append(annot.filename)
             y.append(class_annot)
 
